@@ -3,19 +3,19 @@ package engine
 type position struct {
 	// 0x88 board
 	board       [128]piece
-	blackPieces []Square
-	blackKing   Square
-	whitePieces []Square
-	whiteKing   Square
-	flags       uint8
-	enPassSq    Square
+	blackPieces []square
+	blackKing   square
+	whitePieces []square
+	whiteKing   square
+	flags       byte
+	enPassSq    square
 }
 
 // used for position.flags
 const (
-	WhiteTurnFlag byte = iota
-	WhiteKingsideCastlePossible
-	WhiteQsideCastlePossible
-	BlackKsideCastlePossible
-	BlackQsideCastlePossible
+	FlagWhiteTurn byte = 1 << iota
+	FlagWhiteCanCastleKside
+	FlagWhiteCanCastleQside
+	FlagBlackCanCastleKside
+	FlagBlackCanCastleQside
 )

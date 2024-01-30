@@ -9,12 +9,10 @@ import (
 
 func main() {
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Printf("%T; %T; \n%T; %T; \n%T\n", engine.A1, engine.A2, engine.B1, engine.B3, engine.C3)
-	fmt.Println("--------------")
-	fmt.Printf("%v: %v; \n%X; %X; \n%X\n", engine.A1, engine.A2, engine.B1, engine.B3, engine.C3)
+	fmt.Printf("%v: %v;\n%v; %v;\n%v\n", engine.A1, engine.A2, engine.B1, engine.B3, engine.C3)
 	fmt.Println("-------")
-	fmt.Println(engine.A1, engine.A2, engine.B2, engine.InvalidSquare,
-		 engine.H8, engine.Square(0x81), engine.Square(0x18))
+	fmt.Println(engine.A1, engine.A2, engine.B2, engine.InvalidSquare, engine.H8)
+	fmt.Println(engine.BlackBishop, engine.NullPiece)
 	for {
 
 		scanner.Scan()
