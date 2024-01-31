@@ -4,18 +4,48 @@ import (
 	"fmt"
 )
 
+type rank int8
+
+const (
+	Rank1 rank = iota * 0x10
+	Rank2
+	Rank3
+	Rank4
+	Rank5
+	Rank6
+	Rank7
+	Rank8
+)
+
+func (r rank) String() string {
+	return fmt.Sprintf("%d.", int(r)>>4 + 1)
+}
+
+type file byte
+
+const (
+	A file = iota
+	B
+	C
+	D
+	E
+	F
+	G
+	H
+)
+
 // square on 0x88 board -> https://www.chessprogramming.org/0x88
 type square byte
 
 const (
-	A1, A2, A3, A4, A5, A6, A7, A8 square = iota * 0x10, iota*0x10 + 1, iota*0x10 + 2, iota*0x10 + 3, iota*0x10 + 4, iota*0x10 + 5, iota*0x10 + 6, iota*0x10 + 7
-	B1, B2, B3, B4, B5, B6, B7, B8
-	C1, C2, C3, C4, C5, C6, C7, C8
-	D1, D2, D3, D4, D5, D6, D7, D8
-	E1, E2, E3, E4, E5, E6, E7, E8
-	F1, F2, F3, F4, F5, F6, F7, F8
-	G1, G2, G3, G4, G5, G6, G7, G8
-	H1, H2, H3, H4, H5, H6, H7, H8
+	A1, B1, C1, D1, E1, F1, G1, H1 square = iota * 0x10, iota*0x10 + 1, iota*0x10 + 2, iota*0x10 + 3, iota*0x10 + 4, iota*0x10 + 5, iota*0x10 + 6, iota*0x10 + 7
+	A2, B2, C2, D2, E2, F2, G2, H2
+	A3, B3, C3, D3, E3, F3, G3, H3
+	A4, B4, C4, D4, E4, F4, G4, H4
+	A5, B5, C5, D5, E5, F5, G5, H5
+	A6, B6, C6, D6, E6, F6, G6, H6
+	A7, B7, C7, D7, E7, F7, G7, H7
+	A8, B8, C8, D8, E8, F8, G8, H8
 	InvalidSquare square = 0x88
 )
 
@@ -23,8 +53,8 @@ func (s square) String() string {
 	if s&InvalidSquare != 0 {
 		return "InvalidSquare"
 	}
-	var rank rune = rune(s&0x0F) + '1'
-	var file rune = rune((s&0xF0)>>4) + 'a'
+	var file rune = rune(s&0x0F) + 'a'
+	var rank rune = rune((s&0xF0)>>4) + '1'
 	return fmt.Sprintf("%c%c", file, rank)
 }
 
@@ -32,51 +62,51 @@ func (s square) String() string {
 type piece byte
 
 const (
-	NullPiece   piece = iota
-	BlackPawn         //0b0001
-	BlackKnight       //0b0010
-	BlackBishop       //0b0011
-	BlackRook         //0b0100
-	BlackQueen        //0b0101
-	BlackKing         //0b0110
+	NullPiece piece = iota
+	BPawn           //0b0001
+	BKnight         //0b0010
+	BBishop         //0b0011
+	BRook           //0b0100
+	BQueen          //0b0101
+	BKing           //0b0110
 )
 const (
-	WhitePawn piece = iota + 0b1001
-	WhiteKnight
-	WhiteBishop
-	WhiteRook
-	WhiteQueen
-	WhiteKing
+	WPawn piece = iota + 0b1001
+	WKnight
+	WBishop
+	WRook
+	WQueen
+	WKing
 )
 
 func (p piece) String() string {
 	switch p {
 	case NullPiece:
 		return "- "
-	case BlackPawn:
+	case BPawn:
 		return "pp"
-	case BlackKnight:
+	case BKnight:
 		return "NN"
-	case BlackBishop:
+	case BBishop:
 		return "BB"
-	case BlackRook:
+	case BRook:
 		return "RR"
-	case BlackQueen:
+	case BQueen:
 		return "QQ"
-	case BlackKing:
+	case BKing:
 		return "KK"
 
-	case WhitePawn:
+	case WPawn:
 		return "p "
-	case WhiteKnight:
+	case WKnight:
 		return "N "
-	case WhiteBishop:
+	case WBishop:
 		return "B "
-	case WhiteRook:
+	case WRook:
 		return "R "
-	case WhiteQueen:
+	case WQueen:
 		return "Q "
-	case WhiteKing:
+	case WKing:
 		return "K "
 	}
 	panic(fmt.Sprintf("Unknown piece %X", byte(p)))
