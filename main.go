@@ -14,6 +14,9 @@ func main() {
 	
 	var startPos *engine.Position = engine.NewPosition()
 	fmt.Println("startPos:", startPos)
+	moves := startPos.GenerateMoves()
+	fmt.Println("moves:", moves)
+
 	for {
 		scanner.Scan()
 		line := scanner.Text()

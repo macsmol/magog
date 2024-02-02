@@ -18,7 +18,7 @@ const (
 )
 
 func (r rank) String() string {
-	return fmt.Sprintf("%d.", int(r)>>4 + 1)
+	return fmt.Sprintf("%d.", int(r)>>4+1)
 }
 
 type file byte
@@ -58,20 +58,38 @@ func (s square) String() string {
 	return fmt.Sprintf("%c%c", file, rank)
 }
 
+type Direction int8
+
+const (
+	DirN  Direction = 0x10  // towards 8th rank
+	DirS            = -DirN // towards 1st rank
+	DirE            = 0x01  // towards H file
+	DirW            = -DirE // towards A file
+	DirNE           = 0x11
+	DirSW           = -DirNE
+	DirNW           = 0x0F
+	DirSE           = -DirNW
+)
+
 // ----wppp; w - isWhite; ppp - piece type
 type piece byte
 
 const (
+	BlackPieceBit piece = 0x08
+	WhitePieceBit       = 0x10
+)
+
+const (
 	NullPiece piece = iota
-	BPawn           //0b0001
-	BKnight         //0b0010
-	BBishop         //0b0011
-	BRook           //0b0100
-	BQueen          //0b0101
-	BKing           //0b0110
+	BPawn           = iota + BlackPieceBit //0b0000_1001
+	BKnight                                //0b0000_1010
+	BBishop                                //0b0000_1011
+	BRook                                  //0b0000_1100
+	BQueen                                 //0b0000_1101
+	BKing                                  //0b0000_1110
 )
 const (
-	WPawn piece = iota + 0b1001
+	WPawn piece = iota + WhitePieceBit + 1
 	WKnight
 	WBishop
 	WRook

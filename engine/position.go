@@ -53,8 +53,6 @@ func NewPosition() *Position {
 func (pos *Position) String() string {
 	var sb strings.Builder
 	sb.WriteRune('\n')
-	appendFlagsString(&sb, pos.flags&FlagBlackCanCastleQside != 0, pos.flags&FlagBlackCanCastleKside != 0,
-		pos.flags&FlagWhiteTurn == 0)
 	sb.WriteString("  | a| b| c| d| e| f| g| h|\n")
 	sb.WriteString("===========================\n")
 	for r := Rank8; r >= Rank1; r -= (Rank2 - Rank1) {
@@ -65,19 +63,25 @@ func (pos *Position) String() string {
 		}
 		sb.WriteRune('\n')
 	}
-	appendFlagsString(&sb, pos.flags&FlagWhiteCanCastleQside != 0, pos.flags&FlagWhiteCanCastleKside != 0,
-		pos.flags&FlagWhiteTurn != 0)
+	appendFlagsString(&sb, 
+		pos.flags&FlagBlackCanCastleQside != 0,
+		pos.flags&FlagBlackCanCastleKside != 0,
+		pos.flags&FlagWhiteTurn == 0)
 	sb.WriteString(fmt.Sprintf("BlackKing: %v; BlackPieces: %v\n", pos.blackKing, pos.blackPieces))
+	appendFlagsString(&sb, 
+		pos.flags&FlagWhiteCanCastleQside != 0, 
+		pos.flags&FlagWhiteCanCastleKside != 0,
+		pos.flags&FlagWhiteTurn != 0)
 	sb.WriteString(fmt.Sprintf("WhiteKing: %v; WhitePieces: %v\n", pos.whiteKing, pos.whitePieces))
-	sb.WriteString(fmt.Sprintf("En passant square: %v\n", pos.enPassSquare))
+	sb.WriteString(fmt.Sprintf("En passant square: %v", pos.enPassSquare))
 	return sb.String()
 }
 
 func appendFlagsString(sb *strings.Builder, castleQueenside, castleKingside, myTurn bool) {
 	if castleQueenside {
-		sb.WriteString("    <----------")
+		sb.WriteString("<--")
 	} else {
-		sb.WriteString("               ")
+		sb.WriteString("   ")
 	}
 	if myTurn {
 		sb.WriteRune('X')
@@ -85,9 +89,9 @@ func appendFlagsString(sb *strings.Builder, castleQueenside, castleKingside, myT
 		sb.WriteRune(' ')
 	}
 	if castleKingside {
-		sb.WriteString("-------->\n")
+		sb.WriteString("--> ")
 	} else {
-		sb.WriteString("         \n")
+		sb.WriteString("    ")
 	}
 }
 
