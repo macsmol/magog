@@ -18,7 +18,7 @@ const (
 )
 
 func (r rank) String() string {
-	return fmt.Sprintf("%d.", int(r)>>4+1)
+	return fmt.Sprintf("#%d", int(r)>>4+1)
 }
 
 type file byte
@@ -49,12 +49,16 @@ const (
 	InvalidSquare square = 0x88
 )
 
+func (s square) getRank() rank {
+	return rank(s&0xF0)
+}
+
 func (s square) String() string {
 	if s&InvalidSquare != 0 {
 		return "InvalidSquare"
 	}
 	var file rune = rune(s&0x0F) + 'a'
-	var rank rune = rune((s&0xF0)>>4) + '1'
+	var rank rune = rune(s>>4) + '1'
 	return fmt.Sprintf("%c%c", file, rank)
 }
 
@@ -69,14 +73,22 @@ const (
 	DirSW           = -DirNE
 	DirNW           = 0x0F
 	DirSE           = -DirNW
+	// knight moves
+	DirNNE			= 0x21
+	DirSSW			= -DirNNE
+	DirNNW			= 0x1F
+    DirSSE 			= -DirNNW;
+    DirNEE 			= 0x12;
+    DirSWW 			= -DirNEE;
+    DirNWW 			= 0x0E;
+    DirSEE 			= -DirNWW;
 )
 
-// ----wppp; w - isWhite; ppp - piece type
 type piece byte
 
 const (
 	BlackPieceBit piece = 0x08
-	WhitePieceBit       = 0x10
+	WhitePieceBit piece = 0x10
 )
 
 const (

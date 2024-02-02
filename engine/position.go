@@ -95,6 +95,18 @@ func appendFlagsString(sb *strings.Builder, castleQueenside, castleKingside, myT
 	}
 }
 
+func (pos *Position) GetCurrentContext() (
+	currPieces []square,
+	currKing square, pawnAdvance Direction,
+	currPieceColorBit piece, enemyColorPieceBit piece,
+	currPawnsStartRank rank,
+) {
+	if pos.flags&FlagWhiteTurn == 0 {
+		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit, Rank7
+	}
+	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit, Rank2
+}
+
 func (pos *Position) GetAtSquare(s square) piece {
 	return pos.board[s]
 }
