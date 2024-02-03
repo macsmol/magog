@@ -53,15 +53,15 @@ func NewPosition() *Position {
 func (pos *Position) String() string {
 	var sb strings.Builder
 	sb.WriteRune('\n')
-	sb.WriteString("  | a| b| c| d| e| f| g| h|\n")
-	sb.WriteString("===========================\n")
+	sb.WriteString("  ┃ a│ b│ c│ d│ e│ f│ g│ h│\n")
+	sb.WriteString("━━╋━━┿━━┿━━┿━━┿━━┿━━┿━━┿━━┥\n")
 	for r := Rank8; r >= Rank1; r -= (Rank2 - Rank1) {
-		sb.WriteString(fmt.Sprintf("%v│", r))
+		sb.WriteString(fmt.Sprintf("%v┃", r))
 		for f := A; f <= H; f++ {
 			p := pos.GetAtFileRank(f, r)
 			sb.WriteString(fmt.Sprintf("%v│", p))
 		}
-		sb.WriteString("\n──┼──┼──┼──┼──┼──┼──┼──┼──┤\n")
+		sb.WriteString("\n──╂──┼──┼──┼──┼──┼──┼──┼──┤\n")
 	}
 	appendFlagsString(&sb,
 		pos.flags&FlagBlackCanCastleQside != 0,
@@ -100,11 +100,15 @@ func (pos *Position) GetCurrentContext() (
 	currKing square, pawnAdvance Direction,
 	currColorBit piece, enemyColorBit piece,
 	currPawnsStartRank rank,
+	queensideCastlePossible bool,
+	kingsideCastlePossible bool,
 ) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit, Rank7
+		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit, Rank7, 
+		pos.flags&FlagBlackCanCastleQside!=0, pos.flags&FlagBlackCanCastleKside!=0
 	}
-	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit, Rank2
+	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit, Rank2,
+	pos.flags&FlagWhiteCanCastleQside!=0, pos.flags&FlagWhiteCanCastleKside!=0
 }
 
 func (pos *Position) MakeMove(mov Move) {

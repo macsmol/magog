@@ -6,6 +6,8 @@ type Move struct {
 	from, to square
 }
 
+var kingDirections = []Direction{DirN, DirS, DirE, DirW, DirNE, DirNW, DirSW, DirSE}
+
 func (move Move) String() string {
 	return move.from.String() + move.to.String()
 }
@@ -14,12 +16,14 @@ func (pos *Position) GenerateMoves() []Move {
 	// TODO - move this to Position - and recycle it - benchmark speed difference
 	var outputMoves []Move = make([]Move, 0, 60)
 	currentPieces, currentKing, pawnAdvanceDirection,
-		currColorBit, enemyColorBit, pawnStartRank := pos.GetCurrentContext()
+		currColorBit, enemyColorBit, pawnStartRank,
+		queensideCastlePossible, kingsideCastlePossible := pos.GetCurrentContext()
+	// _,_ := pos.GetCurrentContext()
 	for _, from := range currentPieces {
-		p := pos.board[from]
+		piece := pos.board[from]
 		//IDEA table of functions indexed by piece? Benchmark it
 		//IDEA No piece lists? just iterate over all fields. Perhaps add list once material gone
-		switch p {
+		switch piece {
 		case WPawn, BPawn:
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
@@ -55,20 +59,34 @@ func (pos *Position) GenerateMoves() []Move {
 			dirs := []Direction{DirN, DirS, DirE, DirW}
 			pos.generateSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &outputMoves)
 		case WQueen, BQueen:
-			dirs := []Direction{DirN, DirS, DirE, DirW, DirNE, DirNW, DirSW, DirSE}
-			pos.generateSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &outputMoves)
+			pos.generateSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, &outputMoves)
 		default:
-			panic(fmt.Sprintf("Unexpected piece found: %v", byte(p)))
+			panic(fmt.Sprintf("Unexpected piece found: %v", byte(piece)))
 		}
 	}
+	// king moves
+	for _, dir := range kingDirections {
+		to := currentKing + square(dir)
+		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
+			outputMoves = append(outputMoves, Move{currentKing, to})
+		}
+	}
+	if queensideCastlePossible {
+		kingDest := square(int8(currentKing) + int8(DirW)*2)
+		// Position.MakeMove() should recognize castling, or add a field to Move type?
+		outputMoves = append(outputMoves, Move{currentKing, kingDest})
+	}
+	if kingsideCastlePossible {
+		kingDest := square(int8(currentKing) + int8(DirE)*2)
+		outputMoves = append(outputMoves, Move{currentKing, kingDest})
+	}
 
-	fmt.Printf("King at square: %v\n", currentKing)
 	return outputMoves
 }
 
 func (pos *Position) generateSlidingPieceMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction, outputMoves *[]Move) {
 	for _, dir := range dirs {
-		for to := from + square(dir); to&InvalidSquare == 0 ; to = to + square(dir) {
+		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
 			toContent := pos.board[to]
 			if toContent&currColorBit != 0 {
 				break
