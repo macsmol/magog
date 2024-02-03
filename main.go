@@ -12,10 +12,38 @@ func main() {
 	fmt.Println(engine.A1, engine.A2, engine.B2, engine.InvalidSquare, engine.H8)
 	fmt.Println(engine.BBishop, engine.WBishop, engine.NullPiece)
 	
-	var startPos *engine.Position = engine.NewPosition()
-	fmt.Println("startPos:", startPos)
-	moves := startPos.GenerateMoves()
-	fmt.Println("moves:", moves)
+	var pos *engine.Position = engine.NewPosition()
+	fmt.Println("pos1:", pos)
+	// ply 1-----------
+	moves := pos.GenerateMoves()
+	fmt.Println("moves1:", moves)
+	move := moves[13]
+	fmt.Println("Making move: ", move)
+	pos.MakeMove(move)
+	fmt.Println("pos2:", pos)
+
+	// ply 2-----------
+	moves = pos.GenerateMoves()
+	fmt.Println("moves2:", moves)
+	move = moves[13]
+	fmt.Println("Making move2: ", move)
+	pos.MakeMove(move)
+	fmt.Println("pos3:", pos)
+	
+	// ply 3-----------
+	moves = pos.GenerateMoves()
+	fmt.Println("moves3:", moves)
+	move = moves[8]
+	fmt.Println("Making move3: ", move)
+	pos.MakeMove(move)
+	fmt.Println("pos4:", pos)
+	// ply 4-----------
+	moves = pos.GenerateMoves()
+	fmt.Println("moves4:", moves)
+	move = moves[8]
+	fmt.Println("Making move4: ", move)
+	pos.MakeMove(move)
+	fmt.Println("pos5:", pos)
 
 	for {
 		scanner.Scan()

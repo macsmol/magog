@@ -50,7 +50,7 @@ const (
 )
 
 func (s square) getRank() rank {
-	return rank(s&0xF0)
+	return rank(s & 0xF0)
 }
 
 func (s square) String() string {
@@ -66,23 +66,62 @@ type Direction int8
 
 const (
 	DirN  Direction = 0x10  // towards 8th rank
-	DirS            = -DirN // towards 1st rank
-	DirE            = 0x01  // towards H file
-	DirW            = -DirE // towards A file
-	DirNE           = 0x11
-	DirSW           = -DirNE
-	DirNW           = 0x0F
-	DirSE           = -DirNW
+	DirS  Direction = -DirN // towards 1st rank
+	DirE  Direction = 0x01  // towards H file
+	DirW  Direction = -DirE // towards A file
+	DirNE Direction = 0x11
+	DirSW Direction = -DirNE
+	DirNW Direction = 0x0F
+	DirSE Direction = -DirNW
 	// knight moves
-	DirNNE			= 0x21
-	DirSSW			= -DirNNE
-	DirNNW			= 0x1F
-    DirSSE 			= -DirNNW;
-    DirNEE 			= 0x12;
-    DirSWW 			= -DirNEE;
-    DirNWW 			= 0x0E;
-    DirSEE 			= -DirNWW;
+	DirNNE Direction = 0x21
+	DirSSW Direction = -DirNNE
+	DirNNW Direction = 0x1F
+	DirSSE Direction = -DirNNW
+	DirNEE Direction = 0x12
+	DirSWW Direction = -DirNEE
+	DirNWW Direction = 0x0E
+	DirSEE Direction = -DirNWW
 )
+
+// I don't see it used in the debugger.. why? See constant names thoug so no big problem
+func (dir Direction) String() string {
+	switch dir {
+	case DirN:
+		return "↑"
+	case DirS:
+		return "↓"
+	case DirE:
+		return "→"
+	case DirW:
+		return "←"
+	case DirNE:
+		return "↗"
+	case DirSW:
+		return "↙"
+	case DirNW:
+		return "↖"
+	case DirSE:
+		return "↘"
+	case DirNNE:
+		return "↱"
+	case DirSSW:
+		return "↲"
+	case DirNNW:
+		return "↰"
+	case DirSSE:
+		return "↳"
+	case DirNEE:
+		return "⬏"
+	case DirSWW:
+		return "⬐"
+	case DirNWW:
+		return "⬑"
+	case DirSEE:
+		return "⬎"
+	}
+	panic(fmt.Sprintf("Uknnown direction: %x", byte(dir)))
+}
 
 type piece byte
 

@@ -56,20 +56,20 @@ func (pos *Position) String() string {
 	sb.WriteString("  | a| b| c| d| e| f| g| h|\n")
 	sb.WriteString("===========================\n")
 	for r := Rank8; r >= Rank1; r -= (Rank2 - Rank1) {
-		sb.WriteString(fmt.Sprintf("%v|", r))
+		sb.WriteString(fmt.Sprintf("%v│", r))
 		for f := A; f <= H; f++ {
 			p := pos.GetAtFileRank(f, r)
-			sb.WriteString(fmt.Sprintf("%v|", p))
+			sb.WriteString(fmt.Sprintf("%v│", p))
 		}
-		sb.WriteRune('\n')
+		sb.WriteString("\n──┼──┼──┼──┼──┼──┼──┼──┼──┤\n")
 	}
-	appendFlagsString(&sb, 
+	appendFlagsString(&sb,
 		pos.flags&FlagBlackCanCastleQside != 0,
 		pos.flags&FlagBlackCanCastleKside != 0,
 		pos.flags&FlagWhiteTurn == 0)
 	sb.WriteString(fmt.Sprintf("BlackKing: %v; BlackPieces: %v\n", pos.blackKing, pos.blackPieces))
-	appendFlagsString(&sb, 
-		pos.flags&FlagWhiteCanCastleQside != 0, 
+	appendFlagsString(&sb,
+		pos.flags&FlagWhiteCanCastleQside != 0,
 		pos.flags&FlagWhiteCanCastleKside != 0,
 		pos.flags&FlagWhiteTurn != 0)
 	sb.WriteString(fmt.Sprintf("WhiteKing: %v; WhitePieces: %v\n", pos.whiteKing, pos.whitePieces))
@@ -98,13 +98,40 @@ func appendFlagsString(sb *strings.Builder, castleQueenside, castleKingside, myT
 func (pos *Position) GetCurrentContext() (
 	currPieces []square,
 	currKing square, pawnAdvance Direction,
-	currPieceColorBit piece, enemyColorPieceBit piece,
+	currColorBit piece, enemyColorBit piece,
 	currPawnsStartRank rank,
 ) {
 	if pos.flags&FlagWhiteTurn == 0 {
 		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit, Rank7
 	}
 	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit, Rank2
+}
+
+func (pos *Position) MakeMove(mov Move) {
+
+	currPieces, currKing := pos.GetCurrentWritableContext()
+	for i := range currPieces {
+		if mov.from == currPieces[i] {
+			currPieces[i] = mov.to
+		}
+	}
+	if mov.from == *currKing {
+		*currKing = mov.to
+	}
+	pos.board[mov.to] = pos.board[mov.from]
+	pos.board[mov.from] = NullPiece
+
+	pos.flags = pos.flags ^ FlagWhiteTurn
+}
+
+func (pos *Position) GetCurrentWritableContext() (
+	currPieces []square,
+	currKing *square,
+) {
+	if pos.flags&FlagWhiteTurn == 0 {
+		return pos.blackPieces, &pos.blackKing
+	}
+	return pos.whitePieces, &pos.whiteKing
 }
 
 func (pos *Position) GetAtSquare(s square) piece {
