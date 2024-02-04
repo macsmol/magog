@@ -4,11 +4,19 @@ import "fmt"
 
 type Move struct {
 	from, to square
+	promoteTo piece
+}
+
+func NewMove(from, to square) Move{
+	return Move{from, to, NullPiece}
 }
 
 var kingDirections = []Direction{DirN, DirS, DirE, DirW, DirNE, DirNW, DirSW, DirSE}
 
 func (move Move) String() string {
+	if move.promoteTo != NullPiece {
+		return move.from.String() + move.to.String() + move.promoteTo.String()
+	}
 	return move.from.String() + move.to.String()
 }
 
@@ -16,9 +24,9 @@ func (pos *Position) GenerateMoves() []Move {
 	// TODO - move this to Position - and recycle it - benchmark speed difference
 	var outputMoves []Move = make([]Move, 0, 60)
 	currentPieces, currentKing, pawnAdvanceDirection,
-		currColorBit, enemyColorBit, pawnStartRank,
-		queensideCastlePossible, kingsideCastlePossible := pos.GetCurrentContext()
-	// _,_ := pos.GetCurrentContext()
+		currColorBit, enemyColorBit, 
+		queensideCastlePossible, kingsideCastlePossible,
+		pawnStartRank, promotionRank := pos.GetCurrentContext()
 	for _, from := range currentPieces {
 		piece := pos.board[from]
 		//IDEA table of functions indexed by piece? Benchmark it
@@ -28,20 +36,24 @@ func (pos *Position) GenerateMoves() []Move {
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
 			if pos.board[to]&enemyColorBit != 0 {
-				outputMoves = append(outputMoves, Move{from, to})
+				if to.getRank() == promotionRank {
+					outputMoves = append(outputMoves, Move{from, to, BQueen})
+				} else {
+					outputMoves = append(outputMoves, NewMove(from, to))
+				}
 			}
 			// kingside take
 			to = to + 2
 			if pos.board[to]&enemyColorBit != 0 {
-				outputMoves = append(outputMoves, Move{from, to})
+				outputMoves = append(outputMoves, NewMove(from, to))
 			}
 			//pushes
 			to = from + square(pawnAdvanceDirection)
 			if pos.board[to] == NullPiece {
-				outputMoves = append(outputMoves, Move{from, to})
+				outputMoves = append(outputMoves, NewMove(from, to))
 				to = to + square(pawnAdvanceDirection)
 				if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
-					outputMoves = append(outputMoves, Move{from, to})
+					outputMoves = append(outputMoves, NewMove(from, to))
 				}
 			}
 		case WKnight, BKnight:
@@ -49,7 +61,7 @@ func (pos *Position) GenerateMoves() []Move {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-					outputMoves = append(outputMoves, Move{from, to})
+					outputMoves = append(outputMoves, NewMove(from, to))
 				}
 			}
 		case WBishop, BBishop:
@@ -61,24 +73,33 @@ func (pos *Position) GenerateMoves() []Move {
 		case WQueen, BQueen:
 			pos.generateSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, &outputMoves)
 		default:
-			panic(fmt.Sprintf("Unexpected piece found: %v", byte(piece)))
+			panic(fmt.Sprintf("Unexpected piece found: %v at %v", byte(piece), from))
 		}
 	}
 	// king moves
 	for _, dir := range kingDirections {
 		to := currentKing + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-			outputMoves = append(outputMoves, Move{currentKing, to})
+			outputMoves = append(outputMoves, NewMove(currentKing, to))
 		}
 	}
 	if queensideCastlePossible {
-		kingDest := square(int8(currentKing) + int8(DirW)*2)
-		// Position.MakeMove() should recognize castling, or add a field to Move type?
-		outputMoves = append(outputMoves, Move{currentKing, kingDest})
+		//so much casting.. could it be modelled better
+		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirW)
+		kingDest := kingAsByte + dirAsByte*2
+		if pos.board[kingAsByte+dirAsByte] == NullPiece &&
+			pos.board[kingDest] == NullPiece &&
+			pos.board[kingAsByte+dirAsByte*3] == NullPiece {
+			// TODO Position.MakeMove() should recognize castling, or add a field to Move type?
+			outputMoves = append(outputMoves, NewMove(currentKing, square(kingDest)))
+		}
 	}
 	if kingsideCastlePossible {
-		kingDest := square(int8(currentKing) + int8(DirE)*2)
-		outputMoves = append(outputMoves, Move{currentKing, kingDest})
+		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirE)
+		kingDest := kingAsByte + dirAsByte*2
+		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece {
+			outputMoves = append(outputMoves, NewMove(currentKing, square(kingDest)))
+		}
 	}
 
 	return outputMoves
@@ -91,7 +112,7 @@ func (pos *Position) generateSlidingPieceMoves(from square, currColorBit, enemyC
 			if toContent&currColorBit != 0 {
 				break
 			}
-			*outputMoves = append(*outputMoves, Move{from, to})
+			*outputMoves = append(*outputMoves, NewMove(from, to))
 			if toContent&enemyColorBit != 0 {
 				break
 			}

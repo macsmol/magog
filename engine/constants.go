@@ -21,6 +21,14 @@ func (r rank) String() string {
 	return fmt.Sprintf("#%d", int(r)>>4+1)
 }
 
+func rankFrom07Number(num int) rank {
+	if num > 7 {
+		panic("Expecting number in 0-7 range")
+	}
+	return rank(num << 4)
+
+}
+
 type file byte
 
 const (
@@ -130,28 +138,34 @@ const (
 	WhitePieceBit piece = 0x10
 )
 
+// 0b000w_bppp
 const (
-	NullPiece piece = iota
-	BPawn           = iota + BlackPieceBit //0b0000_1001
-	BKnight                                //0b0000_1010
-	BBishop                                //0b0000_1011
-	BRook                                  //0b0000_1100
-	BQueen                                 //0b0000_1101
-	BKing                                  //0b0000_1110
-)
-const (
-	WPawn piece = iota + WhitePieceBit + 1
-	WKnight
-	WBishop
-	WRook
-	WQueen
-	WKing
+	NullPiece          piece = iota
+	Pawn, BPawn, WPawn       = iota, iota + BlackPieceBit, iota + WhitePieceBit
+	Knight, BKnight, WKnight
+	Bishop, BBishop, WBishop
+	Rook, BRook, WRook
+	Queen, BQueen, WQueen
+	King, BKing, WKing
 )
 
 func (p piece) String() string {
 	switch p {
 	case NullPiece:
 		return "- "
+	case Pawn:
+		return "p"
+	case Knight:
+		return "n"
+	case Bishop:
+		return "b"
+	case Rook:
+		return "r"
+	case Queen:
+		return "q"
+	case King:
+		return "k"
+
 	case BPawn:
 		return "pp"
 	case BKnight:

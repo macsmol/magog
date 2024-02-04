@@ -27,6 +27,7 @@ const (
 	FlagBlackCanCastleQside
 )
 
+// returns new starting position
 func NewPosition() *Position {
 	return &Position{
 		board: [128]piece{
@@ -99,16 +100,16 @@ func (pos *Position) GetCurrentContext() (
 	currPieces []square,
 	currKing square, pawnAdvance Direction,
 	currColorBit piece, enemyColorBit piece,
-	currPawnsStartRank rank,
-	queensideCastlePossible bool,
-	kingsideCastlePossible bool,
-) {
+	queensideCastlePossible, kingsideCastlePossible bool,
+	currPawnsStartRank, promotionRank rank) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit, Rank7, 
-		pos.flags&FlagBlackCanCastleQside!=0, pos.flags&FlagBlackCanCastleKside!=0
+		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit, 
+		pos.flags&FlagBlackCanCastleQside!=0, pos.flags&FlagBlackCanCastleKside!=0,
+		Rank7, Rank1
 	}
-	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit, Rank2,
-	pos.flags&FlagWhiteCanCastleQside!=0, pos.flags&FlagWhiteCanCastleKside!=0
+	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit, 
+	pos.flags&FlagWhiteCanCastleQside!=0, pos.flags&FlagWhiteCanCastleKside!=0,
+	Rank2, Rank8
 }
 
 func (pos *Position) MakeMove(mov Move) {
