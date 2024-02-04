@@ -45,6 +45,13 @@ func main() {
 	pos.MakeMove(move)
 	fmt.Println("pos5:", pos)
 
+	fenPos, err := engine.NewPositionFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+	if err != nil {
+		fmt.Println("Cannot parse FEN", err)
+	} else {
+		fmt.Println("from FEN", fenPos)
+	}
+
 	for {
 		scanner.Scan()
 		line := scanner.Text()
