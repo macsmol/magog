@@ -8,12 +8,9 @@ import (
 func NewPositionFromFEN(fen string) (*Position, error) {
 	fields := strings.Split(fen, " ")
 	if len(fields) != 6 {
-		return nil, fmt.Errorf("FEN string does not have 6 fields separated by spaces", fen)
+		return nil, fmt.Errorf("FEN string does not have 6 fields separated by spaces: %v", fen)
 	}
 	boardStr := fields[0]
-	// enPassantStr := fields[3]
-	// halfmoveClockStr := fields[4]
-	// halfmoveClockStr := fields[5]
 
 	rankStrings := strings.Split(boardStr, "/")
 	if len(rankStrings) != 8 {
@@ -57,23 +54,26 @@ func NewPositionFromFEN(fen string) (*Position, error) {
 	}
 
 	castleStr := fields[2]
-	if strings.Contains(castleStr,"K") {
-		pos.flags|=FlagWhiteCanCastleKside
+	if strings.Contains(castleStr, "K") {
+		pos.flags |= FlagWhiteCanCastleKside
 	}
-	if strings.Contains(castleStr,"Q") {
-		pos.flags|=FlagWhiteCanCastleQside
+	if strings.Contains(castleStr, "Q") {
+		pos.flags |= FlagWhiteCanCastleQside
 	}
-	if strings.Contains(castleStr,"k") {
-		pos.flags|=FlagBlackCanCastleKside
+	if strings.Contains(castleStr, "k") {
+		pos.flags |= FlagBlackCanCastleKside
 	}
-	if strings.Contains(castleStr,"q") {
-		pos.flags|=FlagBlackCanCastleQside
+	if strings.Contains(castleStr, "q") {
+		pos.flags |= FlagBlackCanCastleQside
 	}
 
-	// rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+	//TODO read rest of the fields
+	// enPassantStr := fields[3]
+	// halfmoveClockStr := fields[4]
+	// halfmoveClockStr := fields[5]
+
 	return pos, nil
 }
-
 
 func charToPiece(c rune) piece {
 	switch c {

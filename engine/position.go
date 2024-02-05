@@ -103,18 +103,17 @@ func (pos *Position) GetCurrentContext() (
 	queensideCastlePossible, kingsideCastlePossible bool,
 	currPawnsStartRank, promotionRank rank) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit, 
-		pos.flags&FlagBlackCanCastleQside!=0, pos.flags&FlagBlackCanCastleKside!=0,
-		Rank7, Rank1
+		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit,
+			pos.flags&FlagBlackCanCastleQside != 0, pos.flags&FlagBlackCanCastleKside != 0,
+			Rank7, Rank1
 	}
-	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit, 
-	pos.flags&FlagWhiteCanCastleQside!=0, pos.flags&FlagWhiteCanCastleKside!=0,
-	Rank2, Rank8
+	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit,
+		pos.flags&FlagWhiteCanCastleQside != 0, pos.flags&FlagWhiteCanCastleKside != 0,
+		Rank2, Rank8
 }
 
 func (pos *Position) MakeMove(mov Move) {
-
-	currPieces, currKing := pos.GetCurrentWritableContext()
+	currPieces, currKing, currColorBit := pos.getCurrentMakeMoveContext()
 	for i := range currPieces {
 		if mov.from == currPieces[i] {
 			currPieces[i] = mov.to
@@ -123,20 +122,60 @@ func (pos *Position) MakeMove(mov Move) {
 	if mov.from == *currKing {
 		*currKing = mov.to
 	}
-	pos.board[mov.to] = pos.board[mov.from]
+	if mov.promoteTo == NullPiece {
+		pos.board[mov.to] = pos.board[mov.from]
+	} else {
+		pos.board[mov.to] = mov.promoteTo | currColorBit
+	}
 	pos.board[mov.from] = NullPiece
 
 	pos.flags = pos.flags ^ FlagWhiteTurn
 }
 
-func (pos *Position) GetCurrentWritableContext() (
+func (pos *Position) UnmakeMove(mov Move) {
+	unmadePieces, unmadeKing, unmadeColorBit := pos.getUnmakeMoveContext()
+
+	for i := range unmadePieces {
+		if mov.to == unmadePieces[i] {
+			unmadePieces[i] = mov.from
+		}
+	}
+	if mov.to == *unmadeKing {
+		*unmadeKing = mov.from
+	}
+
+	if mov.promoteTo == NullPiece {
+		pos.board[mov.from] = pos.board[mov.to]
+	} else {
+		pos.board[mov.from] = Pawn | unmadeColorBit
+	}
+	pos.board[mov.to] = NullPiece
+
+	pos.flags = pos.flags ^ FlagWhiteTurn
+}
+
+func (pos *Position) getCurrentMakeMoveContext() (
 	currPieces []square,
 	currKing *square,
+	currColorBit piece,
 ) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return pos.blackPieces, &pos.blackKing
+		return pos.blackPieces, &pos.blackKing, BlackPieceBit
 	}
-	return pos.whitePieces, &pos.whiteKing
+	return pos.whitePieces, &pos.whiteKing, WhitePieceBit
+}
+
+// inverse of GetCurrentMakeMoveContext()
+func (pos *Position) getUnmakeMoveContext() (
+	currPieces []square,
+	currKing *square,
+	currColorBit piece,
+) {
+	if pos.flags&FlagWhiteTurn != 0 {
+		return pos.blackPieces, &pos.blackKing, BlackPieceBit
+	}
+	return pos.whitePieces, &pos.whiteKing, WhitePieceBit
+
 }
 
 func (pos *Position) GetAtSquare(s square) piece {

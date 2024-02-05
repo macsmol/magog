@@ -11,7 +11,7 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Println(engine.A1, engine.A2, engine.B2, engine.InvalidSquare, engine.H8)
 	fmt.Println(engine.BBishop, engine.WBishop, engine.NullPiece)
-	
+
 	var pos *engine.Position = engine.NewPosition()
 	fmt.Println("pos1:", pos)
 	// ply 1-----------
@@ -30,27 +30,22 @@ func main() {
 	pos.MakeMove(move)
 	fmt.Println("pos3:", pos)
 	
-	// ply 3-----------
-	moves = pos.GenerateMoves()
-	fmt.Println("moves3:", moves)
-	move = moves[8]
-	fmt.Println("Making move3: ", move)
-	pos.MakeMove(move)
-	fmt.Println("pos4:", pos)
-	// ply 4-----------
-	moves = pos.GenerateMoves()
-	fmt.Println("moves4:", moves)
-	move = moves[8]
-	fmt.Println("Making move4: ", move)
-	pos.MakeMove(move)
-	fmt.Println("pos5:", pos)
+	pos.UnmakeMove(move)
+	fmt.Println("pos3 unmade:", pos)
 
-	fenPos, err := engine.NewPositionFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+	// fenPos, err := engine.NewPositionFromFEN("rnbqkb1r/pppp1ppp/8/4P3/2B1n3/8/PPP2PPP/RNBQK1NR b KQkq - 0 4")
+	fenPos, err := engine.NewPositionFromFEN("8/2P3k1/1B3p1p/3B2pP/2P3K1/4p3/8/8 w - - 0 47")
 	if err != nil {
 		fmt.Println("Cannot parse FEN", err)
 	} else {
 		fmt.Println("from FEN", fenPos)
 	}
+	moves = fenPos.GenerateMoves()
+	fmt.Println("FEN moves:", moves)
+	fenPos.MakeMove(moves[0])
+	fmt.Println("fenPos+1:", fenPos)
+	fenPos.UnmakeMove(moves[0])
+	fmt.Println("fenPos+1 unmade:", fenPos)
 
 	for {
 		scanner.Scan()

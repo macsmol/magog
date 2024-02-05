@@ -36,21 +36,17 @@ func (pos *Position) GenerateMoves() []Move {
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
 			if pos.board[to]&enemyColorBit != 0 {
-				if to.getRank() == promotionRank {
-					outputMoves = append(outputMoves, Move{from, to, BQueen})
-				} else {
-					outputMoves = append(outputMoves, NewMove(from, to))
-				}
+				appendPawnMoves(from, to, promotionRank, &outputMoves)
 			}
 			// kingside take
-			to = to + 2
+			to = from + square(pawnAdvanceDirection) + 1
 			if pos.board[to]&enemyColorBit != 0 {
-				outputMoves = append(outputMoves, NewMove(from, to))
+				appendPawnMoves(from, to, promotionRank, &outputMoves)
 			}
 			//pushes
 			to = from + square(pawnAdvanceDirection)
 			if pos.board[to] == NullPiece {
-				outputMoves = append(outputMoves, NewMove(from, to))
+				appendPawnMoves(from, to, promotionRank, &outputMoves)
 				to = to + square(pawnAdvanceDirection)
 				if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
 					outputMoves = append(outputMoves, NewMove(from, to))
@@ -66,12 +62,12 @@ func (pos *Position) GenerateMoves() []Move {
 			}
 		case WBishop, BBishop:
 			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
-			pos.generateSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &outputMoves)
 		case WRook, BRook:
 			dirs := []Direction{DirN, DirS, DirE, DirW}
-			pos.generateSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &outputMoves)
 		case WQueen, BQueen:
-			pos.generateSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, &outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, &outputMoves)
 		default:
 			panic(fmt.Sprintf("Unexpected piece found: %v at %v", byte(piece), from))
 		}
@@ -105,7 +101,18 @@ func (pos *Position) GenerateMoves() []Move {
 	return outputMoves
 }
 
-func (pos *Position) generateSlidingPieceMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction, outputMoves *[]Move) {
+func appendPawnMoves(from, to square, promotionRank rank, outputMoves *[]Move) {
+	if to.getRank() == promotionRank {
+		*outputMoves = append(*outputMoves, Move{from, to, Queen})
+		*outputMoves = append(*outputMoves, Move{from, to, Rook})
+		*outputMoves = append(*outputMoves, Move{from, to, Bishop})
+		*outputMoves = append(*outputMoves, Move{from, to, Knight})
+	} else {
+		*outputMoves = append(*outputMoves, NewMove(from, to))
+	}
+}
+
+func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction, outputMoves *[]Move) {
 	for _, dir := range dirs {
 		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
 			toContent := pos.board[to]
