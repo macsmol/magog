@@ -1,0 +1,4 @@
+06.02.2024
+Parsing FEN strings determines ordering of piece lists in Position. Consequently it determines move generation order. 
+So probably this will cause engine to play color-flipped position much weaker/ stronger.
+Should either do some nice move ordering or at least shuffle generated moves at random?
