@@ -5,10 +5,15 @@ import "fmt"
 type Move struct {
 	from, to square
 	promoteTo piece
+	enPassant square
 }
 
 func NewMove(from, to square) Move{
-	return Move{from, to, NullPiece}
+	return Move{from, to, NullPiece, InvalidSquare}
+}
+
+func NewPromotionMove(from, to square, promoteTo piece) Move{
+	return Move{from, to, promoteTo, InvalidSquare}
 }
 
 var kingDirections = []Direction{DirN, DirS, DirE, DirW, DirNE, DirNW, DirSW, DirSE}
@@ -35,21 +40,22 @@ func (pos *Position) GenerateMoves() []Move {
 		case WPawn, BPawn:
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
-			if pos.board[to]&enemyColorBit != 0 {
+			if pos.board[to]&enemyColorBit != 0 || to==pos.enPassSquare {
 				appendPawnMoves(from, to, promotionRank, &outputMoves)
 			}
 			// kingside take
 			to = from + square(pawnAdvanceDirection) + 1
-			if pos.board[to]&enemyColorBit != 0 {
+			if pos.board[to]&enemyColorBit != 0 || to==pos.enPassSquare {
 				appendPawnMoves(from, to, promotionRank, &outputMoves)
 			}
 			//pushes
 			to = from + square(pawnAdvanceDirection)
 			if pos.board[to] == NullPiece {
 				appendPawnMoves(from, to, promotionRank, &outputMoves)
+				enPassantSquare := to
 				to = to + square(pawnAdvanceDirection)
 				if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
-					outputMoves = append(outputMoves, NewMove(from, to))
+					outputMoves = append(outputMoves, Move{from, to, NullPiece, enPassantSquare})
 				}
 			}
 		case WKnight, BKnight:
@@ -103,10 +109,10 @@ func (pos *Position) GenerateMoves() []Move {
 
 func appendPawnMoves(from, to square, promotionRank rank, outputMoves *[]Move) {
 	if to.getRank() == promotionRank {
-		*outputMoves = append(*outputMoves, Move{from, to, Queen})
-		*outputMoves = append(*outputMoves, Move{from, to, Rook})
-		*outputMoves = append(*outputMoves, Move{from, to, Bishop})
-		*outputMoves = append(*outputMoves, Move{from, to, Knight})
+		*outputMoves = append(*outputMoves, NewPromotionMove(from, to, Queen))
+		*outputMoves = append(*outputMoves, NewPromotionMove(from, to, Rook))
+		*outputMoves = append(*outputMoves, NewPromotionMove(from, to, Bishop))
+		*outputMoves = append(*outputMoves, NewPromotionMove(from, to, Knight))
 	} else {
 		*outputMoves = append(*outputMoves, NewMove(from, to))
 	}

@@ -61,6 +61,10 @@ func (s square) getRank() rank {
 	return rank(s & 0xF0)
 }
 
+func (s square) getFile() file {
+	return file(s & 0x0F)
+}
+
 func (s square) String() string {
 	if s&InvalidSquare != 0 {
 		return "InvalidSquare"

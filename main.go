@@ -17,34 +17,21 @@ func main() {
 	// ply 1-----------
 	moves := pos.GenerateMoves()
 	fmt.Println("moves1:", moves)
-	move := moves[13]
-	fmt.Println("Making move: ", move)
-	pos.MakeMove(move)
-	fmt.Println("pos2:", pos)
-
-	// ply 2-----------
-	moves = pos.GenerateMoves()
-	fmt.Println("moves2:", moves)
-	move = moves[13]
-	fmt.Println("Making move2: ", move)
-	pos.MakeMove(move)
-	fmt.Println("pos3:", pos)
-	
-	pos.UnmakeMove(move)
-	fmt.Println("pos3 unmade:", pos)
 
 	// fenPos, err := engine.NewPositionFromFEN("rnbqkb1r/pppp1ppp/8/4P3/2B1n3/8/PPP2PPP/RNBQK1NR b KQkq - 0 4")
-	fenPos, err := engine.NewPositionFromFEN("8/2P3k1/1B3p1p/3B2pP/2P3K1/4p3/8/8 w - - 0 47")
+	fenPos, err := engine.NewPositionFromFEN("r3kbnr/ppp1pppp/2nq4/3p1b2/3P1B2/2NQ4/PPP1PPPP/R3KBNR w KQkq - 6 5")
 	if err != nil {
-		fmt.Println("Cannot parse FEN", err)
-	} else {
-		fmt.Println("from FEN", fenPos)
+		panic(fmt.Sprintf("Cannot parse FEN: %v", err))
 	}
+	fmt.Println("from FEN", fenPos)
+
 	moves = fenPos.GenerateMoves()
 	fmt.Println("FEN moves:", moves)
-	fenPos.MakeMove(moves[0])
+	daMove := moves[len(moves)-1]
+	fenPos.MakeMove(daMove)
 	fmt.Println("fenPos+1:", fenPos)
-	fenPos.UnmakeMove(moves[0])
+
+	fenPos.UnmakeMove(daMove)
 	fmt.Println("fenPos+1 unmade:", fenPos)
 
 	for {
