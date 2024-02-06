@@ -3,9 +3,13 @@ package engine
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 func NewPositionFromFEN(fen string) (*Position, error) {
+	if !isASCII(fen) {
+		return nil, fmt.Errorf("FEN string should contain only ASCII characters: %v", fen)
+	}
 	fields := strings.Split(fen, " ")
 	if len(fields) != 6 {
 		return nil, fmt.Errorf("FEN string does not have 6 fields separated by spaces: %v", fen)
@@ -30,7 +34,7 @@ func NewPositionFromFEN(fen string) (*Position, error) {
 			var sq square = square(r + rank(f))
 			piece := charToPiece(c)
 			if piece == NullPiece {
-				return nil, fmt.Errorf("unknown piece in FEN: %v", c)
+				return nil, fmt.Errorf("uknown piece: %q", c)
 			}
 			pos.board[sq] = piece
 			if piece == BKing {
@@ -43,6 +47,9 @@ func NewPositionFromFEN(fen string) (*Position, error) {
 				pos.whitePieces = append(pos.whitePieces, sq)
 			}
 			f++
+		}
+		if f != H+1 {
+			return nil, error(fmt.Errorf("this rank does not have 8 files: %q", rankStr))
 		}
 	}
 
@@ -67,12 +74,33 @@ func NewPositionFromFEN(fen string) (*Position, error) {
 		pos.flags |= FlagBlackCanCastleQside
 	}
 
+	enPassantStr := fields[3]
+	if len(enPassantStr) > 2 {
+		return nil, fmt.Errorf("invalid en passant square %v", enPassantStr)
+	} else if len(enPassantStr) == 2 {
+		fileChar := enPassantStr[0]
+		rankChar := enPassantStr[1]
+		if fileChar < 'a' || fileChar > 'h' || (rankChar != '3' && rankChar != '6') {
+			return nil, fmt.Errorf("invalid en passant square %v", enPassantStr)
+		}
+		file := fileChar - 'a'
+		rank := (rankChar - '1') << 4
+		pos.enPassSquare = square(file) + square(rank)
+	}
 	//TODO read rest of the fields
-	// enPassantStr := fields[3]
 	// halfmoveClockStr := fields[4]
 	// halfmoveClockStr := fields[5]
 
 	return pos, nil
+}
+
+func isASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > unicode.MaxASCII {
+			return false
+		}
+	}
+	return true
 }
 
 func charToPiece(c rune) piece {
