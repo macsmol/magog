@@ -112,9 +112,15 @@ func (pos *Position) GetCurrentContext() (
 		Rank2, Rank8
 }
 
-func (pos *Position) MakeMove(mov Move) {
+func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	currPieces, enemyPieces, currKing, castleRank,
-	currColorBit, kingSideCastleFlag, queenSideCastleFlag := pos.getCurrentMakeMoveContext()
+		currColorBit, kingSideCastleFlag, queenSideCastleFlag := pos.getCurrentMakeMoveContext()
+
+	undo = backtrackInfo{
+		lastFlags:     pos.flags,
+		lastEnPassant: pos.enPassSquare,
+	}
+
 	for i := range currPieces {
 		if mov.from == currPieces[i] {
 			currPieces[i] = mov.to
@@ -129,30 +135,32 @@ func (pos *Position) MakeMove(mov Move) {
 	}
 
 	if mov.from == *currKing {
-		pos.flags &= ^(kingSideCastleFlag | queenSideCastleFlag) 
+		pos.flags &= ^(kingSideCastleFlag | queenSideCastleFlag)
 		*currKing = mov.to
 		if mov.from.getFile() == E {
-			 if mov.to.getFile() == C {
-				rookFrom 	:= square(A + file(castleRank))
-				rookTo 		:= square(D + file(castleRank))
+			if mov.to.getFile() == C {
+				rookFrom := square(A + file(castleRank))
+				rookTo := square(D + file(castleRank))
 				pos.moveRook(rookFrom, rookTo, currPieces, currColorBit)
-			 } else if mov.to.getFile() == G {
-				rookFrom 	:= square(H + file(castleRank))
-				rookTo 		:= square(F + file(castleRank))
+			} else if mov.to.getFile() == G {
+				rookFrom := square(H + file(castleRank))
+				rookTo := square(F + file(castleRank))
 				pos.moveRook(rookFrom, rookTo, currPieces, currColorBit)
 			}
 		}
 	}
 
 	if pos.board[mov.to] != NullPiece {
+		undo.takenPiece = pos.board[mov.to]
 		*enemyPieces = killPiece(*enemyPieces, mov.to)
 	}
 	if mov.promoteTo == NullPiece {
 		pos.board[mov.to] = pos.board[mov.from]
 		//en passant take
-		if pos.enPassSquare == mov.to && pos.board[mov.from] == Pawn | currColorBit {
+		if pos.enPassSquare == mov.to && pos.board[mov.from] == Pawn|currColorBit {
 			killSquare := square(mov.to.getFile() + file(mov.from.getRank()))
 			*enemyPieces = killPiece(*enemyPieces, killSquare)
+			undo.takenPiece = pos.board[killSquare]
 			pos.board[killSquare] = NullPiece
 		}
 	} else {
@@ -163,6 +171,8 @@ func (pos *Position) MakeMove(mov Move) {
 	pos.enPassSquare = mov.enPassant
 
 	pos.flags = pos.flags ^ FlagWhiteTurn
+
+	return undo
 }
 
 func killPiece(enemyPieces []square, killSquare square) []square {
@@ -175,8 +185,9 @@ func killPiece(enemyPieces []square, killSquare square) []square {
 	panic(fmt.Sprintf("Didn't find square: %v on enemyPieces: %v", killSquare, enemyPieces))
 }
 
-func (pos *Position) UnmakeMove(mov Move) {
-	unmadePieces, unmadeKing, unmadeColorBit, castleRank := pos.getUnmakeMoveContext()
+func (pos *Position) UnmakeMove(mov Move, undo backtrackInfo) {
+	unmadePieces, unkilledPieces, unmadeKing, unmadeColorBit,
+	castleRank, enPassantUnkillRank := pos.getUnmakeMoveContext()
 
 	for i := range unmadePieces {
 		if mov.to == unmadePieces[i] {
@@ -187,19 +198,18 @@ func (pos *Position) UnmakeMove(mov Move) {
 		*unmadeKing = mov.from
 		if mov.from.getFile() == E {
 			if mov.to.getFile() == C {
-			   rookFrom 	:= square(A + file(castleRank))
-			   rookTo 		:= square(D + file(castleRank))
-			   // just call the castleRook with To/From squares swapped
-			   pos.moveRook(rookTo, rookFrom, unmadePieces, unmadeColorBit)
+				rookFrom := square(A + file(castleRank))
+				rookTo := square(D + file(castleRank))
+				// just call the castleRook with To/From squares swapped
+				pos.moveRook(rookTo, rookFrom, unmadePieces, unmadeColorBit)
 			} else if mov.to.getFile() == G {
-			   rookFrom 	:= square(H + file(castleRank))
-			   rookTo 		:= square(F + file(castleRank))
-			   pos.moveRook(rookTo, rookFrom, unmadePieces, unmadeColorBit)
-		   }
-	   }
+				rookFrom := square(H + file(castleRank))
+				rookTo := square(F + file(castleRank))
+				pos.moveRook(rookTo, rookFrom, unmadePieces, unmadeColorBit)
+			}
+		}
 	}
 
-	// TODO reflect takes on piecelists!!!!
 	if mov.promoteTo == NullPiece {
 		pos.board[mov.from] = pos.board[mov.to]
 	} else {
@@ -207,9 +217,19 @@ func (pos *Position) UnmakeMove(mov Move) {
 	}
 	pos.board[mov.to] = NullPiece
 
-	//TODO undo en passant, castling rights - pop from stack?
-
-	pos.flags = pos.flags ^ FlagWhiteTurn
+	if undo.takenPiece != NullPiece {
+		var killSquare square
+		//mov was an en passant take
+		if undo.lastEnPassant == mov.to && pos.board[mov.from] == Pawn|unmadeColorBit {
+			killSquare = square(mov.to.getFile()) + square(enPassantUnkillRank)
+		} else {
+			killSquare = mov.to
+		}
+		*unkilledPieces = append(*unkilledPieces, killSquare)
+		pos.board[killSquare] = undo.takenPiece
+	}
+	pos.enPassSquare = undo.lastEnPassant
+	pos.flags = undo.lastFlags
 }
 
 // used to castle/undo castle
@@ -217,11 +237,11 @@ func (pos *Position) moveRook(rookFrom, rookTo square, pieces []square, colorBit
 	for i := range pieces {
 		if pieces[i] == rookFrom {
 			pieces[i] = rookTo
-			break;
+			break
 		}
 	}
 	pos.board[rookFrom] = NullPiece
-	pos.board[rookTo] = Rook|colorBit
+	pos.board[rookTo] = Rook | colorBit
 }
 
 func (pos *Position) getCurrentMakeMoveContext() (
@@ -230,27 +250,29 @@ func (pos *Position) getCurrentMakeMoveContext() (
 	currKing *square,
 	castleRank rank,
 	currColorBit piece,
-	kingSideCastleFlag , queenSideCastleFlag byte,
+	kingSideCastleFlag, queenSideCastleFlag byte,
 ) {
 	if pos.flags&FlagWhiteTurn == 0 {
 		return pos.blackPieces, &pos.whitePieces, &pos.blackKing, Rank8,
-		BlackPieceBit, FlagBlackCanCastleKside, FlagBlackCanCastleQside
+			BlackPieceBit, FlagBlackCanCastleKside, FlagBlackCanCastleQside
 	}
 	return pos.whitePieces, &pos.blackPieces, &pos.whiteKing, Rank1,
-	WhitePieceBit, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside
+		WhitePieceBit, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside
 }
 
 // inverse of GetCurrentMakeMoveContext()
 func (pos *Position) getUnmakeMoveContext() (
 	unmadePieces []square,
+	unkilledPieces *[]square,
 	unmadeKing *square,
 	unmadeColorBit piece,
 	castleRank rank,
+	enPassantUnkillRank rank,
 ) {
 	if pos.flags&FlagWhiteTurn != 0 {
-		return pos.blackPieces, &pos.blackKing, BlackPieceBit, Rank8
+		return pos.blackPieces, &pos.whitePieces, &pos.blackKing, BlackPieceBit, Rank8, Rank4
 	}
-	return pos.whitePieces, &pos.whiteKing, WhitePieceBit, Rank1
+	return pos.whitePieces, &pos.blackPieces, &pos.whiteKing, WhitePieceBit, Rank1, Rank5
 }
 
 func (pos *Position) GetAtSquare(s square) piece {

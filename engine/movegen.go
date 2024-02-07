@@ -8,6 +8,17 @@ type Move struct {
 	enPassant square
 }
 
+type backtrackInfo struct {
+	lastFlags byte
+	lastEnPassant square
+	takenPiece piece
+}
+
+type Generator struct {
+	pos *Position
+	history []backtrackInfo
+}
+
 func NewMove(from, to square) Move{
 	return Move{from, to, NullPiece, InvalidSquare}
 }
