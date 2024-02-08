@@ -3,27 +3,28 @@ package engine
 import "fmt"
 
 type Move struct {
-	from, to square
+	from, to  square
 	promoteTo piece
 	enPassant square
 }
 
 type backtrackInfo struct {
-	lastFlags byte
+	move          Move
+	lastFlags     byte
 	lastEnPassant square
-	takenPiece piece
+	takenPiece    piece
 }
 
 type Generator struct {
-	pos *Position
+	pos     *Position
 	history []backtrackInfo
 }
 
-func NewMove(from, to square) Move{
+func NewMove(from, to square) Move {
 	return Move{from, to, NullPiece, InvalidSquare}
 }
 
-func NewPromotionMove(from, to square, promoteTo piece) Move{
+func NewPromotionMove(from, to square, promoteTo piece) Move {
 	return Move{from, to, promoteTo, InvalidSquare}
 }
 
@@ -36,11 +37,41 @@ func (move Move) String() string {
 	return move.from.String() + move.to.String()
 }
 
-func (pos *Position) GenerateMoves() []Move {
+func NewGenerator() *Generator {
+	return &Generator{
+		pos:     NewPosition(),
+		history: make([]backtrackInfo, 0, 20),
+	}
+}
+
+func NewGeneratorFromFen(fen string) (*Generator,error) {
+	//new pos allocation for every generator, worthwhile reusing?
+	fenPos, err := NewPositionFromFen(fen)
+	if err != nil {
+		return nil, err
+	}
+	return &Generator{
+		pos:     fenPos,
+		history: make([]backtrackInfo, 0, 20),
+	}, nil
+}
+
+func (gen *Generator) PushMove(move Move) {
+	gen.history = append(gen.history, gen.pos.MakeMove(move))
+}
+
+func (gen *Generator) PopMove() {
+	lastIdx := len(gen.history) - 1
+	gen.pos.UnmakeMove(gen.history[lastIdx])
+	gen.history = gen.history[:lastIdx]
+}
+
+func (gen *Generator) GenerateMoves() []Move {
+	pos := gen.pos
 	// TODO - move this to Position - and recycle it - benchmark speed difference
 	var outputMoves []Move = make([]Move, 0, 60)
 	currentPieces, currentKing, pawnAdvanceDirection,
-		currColorBit, enemyColorBit, 
+		currColorBit, enemyColorBit,
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
 	for _, from := range currentPieces {
@@ -51,12 +82,12 @@ func (pos *Position) GenerateMoves() []Move {
 		case WPawn, BPawn:
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
-			if pos.board[to]&enemyColorBit != 0 || to==pos.enPassSquare {
+			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
 				appendPawnMoves(from, to, promotionRank, &outputMoves)
 			}
 			// kingside take
 			to = from + square(pawnAdvanceDirection) + 1
-			if pos.board[to]&enemyColorBit != 0 || to==pos.enPassSquare {
+			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
 				appendPawnMoves(from, to, promotionRank, &outputMoves)
 			}
 			//pushes
@@ -97,7 +128,7 @@ func (pos *Position) GenerateMoves() []Move {
 		}
 	}
 	if queensideCastlePossible {
-		//so much casting.. could it be modelled better
+		//so much casting.. could it be modelled better?
 		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirW)
 		kingDest := kingAsByte + dirAsByte*2
 		if pos.board[kingAsByte+dirAsByte] == NullPiece &&
@@ -114,8 +145,11 @@ func (pos *Position) GenerateMoves() []Move {
 			outputMoves = append(outputMoves, NewMove(currentKing, square(kingDest)))
 		}
 	}
-
 	return outputMoves
+}
+
+func (gen *Generator)String() string {
+	return gen.pos.String()
 }
 
 func appendPawnMoves(from, to square, promotionRank rank, outputMoves *[]Move) {

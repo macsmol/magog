@@ -117,6 +117,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		currColorBit, kingSideCastleFlag, queenSideCastleFlag := pos.getCurrentMakeMoveContext()
 
 	undo = backtrackInfo{
+		move: mov,
 		lastFlags:     pos.flags,
 		lastEnPassant: pos.enPassSquare,
 	}
@@ -185,10 +186,11 @@ func killPiece(enemyPieces []square, killSquare square) []square {
 	panic(fmt.Sprintf("Didn't find square: %v on enemyPieces: %v", killSquare, enemyPieces))
 }
 
-func (pos *Position) UnmakeMove(mov Move, undo backtrackInfo) {
+func (pos *Position) UnmakeMove(undo backtrackInfo) {
 	unmadePieces, unkilledPieces, unmadeKing, unmadeColorBit,
 	castleRank, enPassantUnkillRank := pos.getUnmakeMoveContext()
 
+	mov := undo.move
 	for i := range unmadePieces {
 		if mov.to == unmadePieces[i] {
 			unmadePieces[i] = mov.from

@@ -6,7 +6,7 @@ import (
 	"unicode"
 )
 
-func NewPositionFromFEN(fen string) (*Position, error) {
+func NewPositionFromFen(fen string) (*Position, error) {
 	if !isASCII(fen) {
 		return nil, fmt.Errorf("FEN string should contain only ASCII characters: %v", fen)
 	}
