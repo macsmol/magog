@@ -117,7 +117,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		currColorBit, kingSideCastleFlag, queenSideCastleFlag := pos.getCurrentMakeMoveContext()
 
 	undo = backtrackInfo{
-		move: mov,
+		move:          mov,
 		lastFlags:     pos.flags,
 		lastEnPassant: pos.enPassSquare,
 	}
@@ -173,6 +173,21 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 
 	pos.flags = pos.flags ^ FlagWhiteTurn
 
+	//check if legal
+	for _, attackFrom := range *enemyPieces {
+		switch pos.board[attackFrom] {
+		case WBishop:
+			attIdx := attackIndex(attackFrom, *currKing)
+			fmt.Printf("-----Move:%v, attackfrom %v, attack index:%x \n", mov, attackFrom, attIdx)
+			if attackTable[attIdx]&BishopAttacks == 0 {
+				fmt.Println("ok. no attack")
+			} else {
+				fmt.Println("Bishop attacks!!!!")
+			}
+
+		}
+	}
+
 	return undo
 }
 
@@ -188,7 +203,7 @@ func killPiece(enemyPieces []square, killSquare square) []square {
 
 func (pos *Position) UnmakeMove(undo backtrackInfo) {
 	unmadePieces, unkilledPieces, unmadeKing, unmadeColorBit,
-	castleRank, enPassantUnkillRank := pos.getUnmakeMoveContext()
+		castleRank, enPassantUnkillRank := pos.getUnmakeMoveContext()
 
 	mov := undo.move
 	for i := range unmadePieces {
