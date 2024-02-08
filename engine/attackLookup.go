@@ -40,7 +40,7 @@ func init() {
 	attackTable[lastValidSquare+int16(DirW)] |= KingAttacks
 	attackTable[lastValidSquare+int16(DirNW)] |= KingAttacks
 	//rook and queen moving north
-	for rankChange := Rank2; rankChange <= Rank8; rankChange += 0x10 {
+	for  rankChange := int16(Rank2); rankChange <= int16(Rank8); rankChange += 0x10 {
 		attackTable[lastValidSquare+int16(rankChange)] |= RookAttacks | QueenAttacks
 	}
 	//rook and queen moving south
@@ -54,8 +54,8 @@ func init() {
 		attackTable[lastValidSquare+int16(file)] |= RookAttacks | QueenAttacks
 	}
 	// rook and queen moving west
-	startingFile := H
-	for destFile := G; destFile >= A; destFile-- {
+	startingFile := int16(H)
+	for destFile := int16(G); destFile >= int16(A); destFile-- {
 		fileDifference := destFile-startingFile
 		attackTable[lastValidSquare+int16(fileDifference)] |= RookAttacks | QueenAttacks
 	}
