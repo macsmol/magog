@@ -2,3 +2,10 @@
 Parsing FEN strings determines ordering of piece lists in Position. Consequently it determines move generation order. 
 So probably this will cause engine to play color-flipped position much weaker/ stronger.
 Should either do some nice move ordering or at least shuffle generated moves at random?
+
+08.02.2024
+Thinking about attack LUT and promotions. At first I thought that I should consider promotions in attack LUT 
+(e.g pawn should square on the other side  the board be flagged as 'attacked by pawn on promotion rank'). But then I realized
+that the table is indexed by square difference, not by actual squares. So one entry in the table can originate from arbitrary rank-
+not necessarily from the promoting rank.
+Looks like promoting and then looking up is the way to go. Also.. pretty natural in typical movegen algorithm (generate pseudolegal and then filter out illegal)
