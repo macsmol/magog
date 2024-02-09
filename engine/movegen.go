@@ -44,7 +44,7 @@ func NewGenerator() *Generator {
 	}
 }
 
-func NewGeneratorFromFen(fen string) (*Generator,error) {
+func NewGeneratorFromFen(fen string) (*Generator, error) {
 	//new pos allocation for every generator, worthwhile reusing?
 	fenPos, err := NewPositionFromFen(fen)
 	if err != nil {
@@ -56,8 +56,14 @@ func NewGeneratorFromFen(fen string) (*Generator,error) {
 	}, nil
 }
 
-func (gen *Generator) PushMove(move Move) {
-	gen.history = append(gen.history, gen.pos.MakeMove(move))
+// TODO add a method AssertAndPushMove() 
+func (gen *Generator) PushMove(move Move) (success bool) {
+	undo := gen.pos.MakeMove(move)
+	if (undo.move == Move{}) {
+		return false
+	}
+	gen.history = append(gen.history, undo)
+	return true
 }
 
 func (gen *Generator) PopMove() {
@@ -66,7 +72,7 @@ func (gen *Generator) PopMove() {
 	gen.history = gen.history[:lastIdx]
 }
 
-func (gen *Generator) GenerateMoves() []Move {
+func (gen *Generator) GenPseudoLegalMoves() []Move {
 	pos := gen.pos
 	// TODO - move this to Position - and recycle it - benchmark speed difference
 	var outputMoves []Move = make([]Move, 0, 60)
@@ -148,7 +154,7 @@ func (gen *Generator) GenerateMoves() []Move {
 	return outputMoves
 }
 
-func (gen *Generator)String() string {
+func (gen *Generator) String() string {
 	return gen.pos.String()
 }
 
