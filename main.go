@@ -11,32 +11,23 @@ func main() {
 	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Println("-----------------")
-	var moveOk bool
 	// gener.Pos, err := engine.NewPositionFromFEN("r3kbnr/ppp1pppp/2nq4/3p1b2/3P1B2/2NQ4/PPP1PPPP/R3KBNR w KQkq - 6 5")
 	// gener, err := engine.NewGeneratorFromFen("rn1qkbnr/pppb1ppp/8/1B1pp3/P3P3/8/1PPP1PPP/RNBQK1NR b KQkq - 0 4")
-	gener, err := engine.NewGeneratorFromFen("1nbqkbnr/pppppppp/8/8/4P3/8/PPr2KPP/RNBQ1BNR w k - 0 1")
-	if err != nil {
-		panic(fmt.Sprintf("Cannot parse FEN: %v", err))
-	}
+	// gener, err := engine.NewGeneratorFromFen("1nb1kbnr/pppppppp/8/5r2/4P3/5q2/PP3K1P/RNB1B1BR w k - 0 1")
+	gener := engine.NewGenerator()
+	fmt.Println("perft1",gener.Perft(1))
+	fmt.Println("gener after perft(1)",gener)
+
+	//bugs to fix
+	// fmt.Println("perft2",gener.Perft(2))
+	// fmt.Println("perft3",gener.Perft(3))
+	// if err != nil {
+	// 	panic(fmt.Sprintf("Cannot parse FEN: %v", err))
+	// }
 	fmt.Println("from FEN", gener)
 
-	moves := gener.GenPseudoLegalMoves()
-	fmt.Println("FEN moves:", moves)
-
-	mov1 := engine.NewMove(engine.F2, engine.E2)
-	moveOk = gener.PushMove(mov1)
-	if moveOk {
-		fmt.Println("possss after ", mov1, gener)
-
-		gener.PopMove()
-		fmt.Println("pos after pop", gener)
-
-		mov2 := engine.NewMove(engine.D1, engine.E2)
-		gener.PushMove(mov2)
-		fmt.Println("pos after", mov2, gener)
-	} else {
-		fmt.Println("that move was illegal: ", mov1)
-	}
+	moves := gener.GenerateMoves()
+	fmt.Println("FEN LEGAL moves:", moves)
 
 	for {
 		scanner.Scan()

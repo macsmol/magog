@@ -121,7 +121,8 @@ func (pos *Position) GetCurrentContext() (
 func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	currPieces, enemyPieces, currKing, enemyKing, castleRank,
 		currColorBit, kingSideCastleFlag, queenSideCastleFlag := pos.getCurrentMakeMoveContext()
-	fmt.Printf("\tMakeMove(%v)\n", mov)
+	// fmt.Printf("\tMakeMove(%v) from position: %v\n", mov, pos)
+
 	undo = backtrackInfo{
 		move:          mov,
 		lastFlags:     pos.flags,
@@ -176,85 +177,76 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	}
 	pos.board[mov.from] = NullPiece
 
+	// move mov was a double push
+	pos.enPassSquare = mov.enPassant
+	
+	pos.flags = pos.flags ^ FlagWhiteTurn
+
 	// everything's been moved to it's place - time to check if it's actually legal
 	if !pos.isLegal(*enemyPieces, *currKing, enemyKing) {
 		pos.UnmakeMove(undo)
 		return backtrackInfo{}
 	}
-	// move mov was a double push
-	pos.enPassSquare = mov.enPassant
-
-	pos.flags = pos.flags ^ FlagWhiteTurn
 
 	return undo
 }
 
 // Returns true if the last move "didn't forget" to protect the king from check
 func (pos *Position) isLegal(enemyPieces []square, currKing square, enemyKing square) bool {
-	fmt.Println("isLegal()", currKing)
 	var moveIdx int16
 	for _, attackFrom := range enemyPieces {
 		moveIdx = moveIndex(attackFrom, currKing)
 		switch pos.board[attackFrom] {
 		case WKnight, BKnight:
-			fmt.Printf(" check possible attack by a knight on %v, attack index:%x \n", attackFrom, moveIdx)
 			if attackTable[moveIdx]&KnightAttacks == 0 {
-				fmt.Println("no knight")
 				continue
 			}
-			fmt.Println(" knight attacks!!")
+			fmt.Println(" knight attacks from: ", attackFrom)
 			return false
 		case WBishop, BBishop:
-			fmt.Printf("  check possible attack by a bishop on %v, attack index:%x \n", attackFrom, moveIdx)
 			if attackTable[moveIdx]&BishopAttacks == 0 {
-				fmt.Println("ok. no bishop attack")
 				continue
 			}
 			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				fmt.Println("Bishop attacks!!")
+				fmt.Println(" bishop attacks from: ", attackFrom)
 				return false
 			}
 		case WRook, BRook:
-			fmt.Printf("  check possible attack by a rook on %v, attack index:%x \n", attackFrom, moveIdx)
 			if attackTable[moveIdx]&RookAttacks == 0 {
-				fmt.Println("ok. no rook attack")
 				continue
 			}
 			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				fmt.Println("Rook attacks!!")
+				fmt.Println(" rook attacks from: ", attackFrom)
 				return false
 			}
 		case WQueen, BQueen:
-			fmt.Printf("  check possible attack by a queen on %v, attack index:%x \n", attackFrom, moveIdx)
 			if attackTable[moveIdx]&QueenAttacks == 0 {
-				fmt.Println("ok. no queen attack")
 				continue
 			}
 			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				fmt.Println("Queen attacks!!")
+				fmt.Println(" queen attacks from: ", attackFrom)
 				return false
 			}
 		case WPawn:
-			fmt.Printf("  check possible attack by a white pawn on %v, attack index:%x \n", attackFrom, moveIdx)
 			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
-				fmt.Println("ok. no white pawn attack")
 				continue
 			} 
-			fmt.Println("White pawn attacks!!")
+			fmt.Println(" white pawn attacks from: ", attackFrom)
 			return true
 		case BPawn:
-			fmt.Printf("  check possible attack by a white pawn on %v, attack index:%x \n", attackFrom, moveIdx)
 			if attackTable[moveIdx]&BlackPawnAttacks == 0 {
-				fmt.Println("ok. no black pawn attack")
 				continue
 			}
-			fmt.Println("Black pawn attacks!!")
+			fmt.Println(" black attacks from: ", attackFrom)
 			return true
 		}
 	}
 	moveIdx = moveIndex(enemyKing, currKing)
-	fmt.Printf("  enemy king at: %v, it's attack index:%x \n", enemyKing, moveIdx)
-	return attackTable[moveIdx]&KingAttacks == 0
+	noKingAttack := attackTable[moveIdx]&KingAttacks == 0
+	if !noKingAttack {
+		fmt.Println(" other king attacks from: ", enemyKing)
+	}
+	return noKingAttack
 }
 
 func (pos *Position) checkedBySlidingPiece(slidingPieceSquare, destSquare square, moveIndex int16) bool {

@@ -18,6 +18,7 @@ type backtrackInfo struct {
 type Generator struct {
 	pos     *Position
 	history []backtrackInfo
+	outputMoves []Move
 }
 
 func NewMove(from, to square) Move {
@@ -41,6 +42,7 @@ func NewGenerator() *Generator {
 	return &Generator{
 		pos:     NewPosition(),
 		history: make([]backtrackInfo, 0, 20),
+		outputMoves: make([]Move, 0, 60),
 	}
 }
 
@@ -72,10 +74,47 @@ func (gen *Generator) PopMove() {
 	gen.history = gen.history[:lastIdx]
 }
 
-func (gen *Generator) GenPseudoLegalMoves() []Move {
+// GenerateMoves returns legal moves from position that this generator is currently holding
+func (gen *Generator) GenerateMoves() []Move {
+	gen.generatePseudoLegalMoves()
+	fmt.Println("Pseudo legal movessssssss ", gen.outputMoves)
+	i := 0
+	for _, pseudoMove := range gen.outputMoves {
+		
+		undo := gen.pos.MakeMove(pseudoMove)
+		// move is valid
+		if (undo.move != Move{}) {
+			gen.outputMoves[i] = pseudoMove
+			i++
+			gen.pos.UnmakeMove(undo)
+		}
+	}
+	gen.outputMoves = gen.outputMoves[:i]
+	return gen.outputMoves
+}
+
+func(gen *Generator) Perft(depth byte) int {
+	var movesCount int = 0
+	if depth == 1 {
+		//TODO implement method that only counts the moves
+		return len(gen.GenerateMoves())
+	}
+
+	for _, move := range gen.GenerateMoves() {
+		gen.PushMove(move)
+		fmt.Printf("Depth: %v Just pushed %v. position is: %v\n", depth, move, gen)
+		movesCount += gen.Perft(depth-1)
+		fmt.Printf("movesCount: %v \n", movesCount)
+
+		gen.PopMove()
+	}
+	return movesCount
+}
+
+func (gen *Generator) generatePseudoLegalMoves() {
 	pos := gen.pos
-	// TODO - move this to Position - and recycle it - benchmark speed difference
-	var outputMoves []Move = make([]Move, 0, 60)
+	gen.outputMoves = gen.outputMoves[:0]
+
 	currentPieces, currentKing, pawnAdvanceDirection,
 		currColorBit, enemyColorBit,
 		queensideCastlePossible, kingsideCastlePossible,
@@ -89,21 +128,21 @@ func (gen *Generator) GenPseudoLegalMoves() []Move {
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
 			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
-				appendPawnMoves(from, to, promotionRank, &outputMoves)
+				appendPawnMoves(from, to, promotionRank, &gen.outputMoves)
 			}
 			// kingside take
 			to = from + square(pawnAdvanceDirection) + 1
 			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
-				appendPawnMoves(from, to, promotionRank, &outputMoves)
+				appendPawnMoves(from, to, promotionRank, &gen.outputMoves)
 			}
 			//pushes
 			to = from + square(pawnAdvanceDirection)
 			if pos.board[to] == NullPiece {
-				appendPawnMoves(from, to, promotionRank, &outputMoves)
+				appendPawnMoves(from, to, promotionRank, &gen.outputMoves)
 				enPassantSquare := to
 				to = to + square(pawnAdvanceDirection)
 				if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
-					outputMoves = append(outputMoves, Move{from, to, NullPiece, enPassantSquare})
+					gen.outputMoves = append(gen.outputMoves, Move{from, to, NullPiece, enPassantSquare})
 				}
 			}
 		case WKnight, BKnight:
@@ -111,26 +150,26 @@ func (gen *Generator) GenPseudoLegalMoves() []Move {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-					outputMoves = append(outputMoves, NewMove(from, to))
+					gen.outputMoves = append(gen.outputMoves, NewMove(from, to))
 				}
 			}
 		case WBishop, BBishop:
 			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &gen.outputMoves)
 		case WRook, BRook:
 			dirs := []Direction{DirN, DirS, DirE, DirW}
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &gen.outputMoves)
 		case WQueen, BQueen:
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, &outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, &gen.outputMoves)
 		default:
-			panic(fmt.Sprintf("Unexpected piece found: %v at %v", byte(piece), from))
+			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, gen.pos))
 		}
 	}
 	// king moves
 	for _, dir := range kingDirections {
 		to := currentKing + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-			outputMoves = append(outputMoves, NewMove(currentKing, to))
+			gen.outputMoves = append(gen.outputMoves, NewMove(currentKing, to))
 		}
 	}
 	if queensideCastlePossible {
@@ -140,18 +179,16 @@ func (gen *Generator) GenPseudoLegalMoves() []Move {
 		if pos.board[kingAsByte+dirAsByte] == NullPiece &&
 			pos.board[kingDest] == NullPiece &&
 			pos.board[kingAsByte+dirAsByte*3] == NullPiece {
-			// TODO Position.MakeMove() should recognize castling, or add a field to Move type?
-			outputMoves = append(outputMoves, NewMove(currentKing, square(kingDest)))
+			gen.outputMoves = append(gen.outputMoves, NewMove(currentKing, square(kingDest)))
 		}
 	}
 	if kingsideCastlePossible {
 		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirE)
 		kingDest := kingAsByte + dirAsByte*2
 		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece {
-			outputMoves = append(outputMoves, NewMove(currentKing, square(kingDest)))
+			gen.outputMoves = append(gen.outputMoves, NewMove(currentKing, square(kingDest)))
 		}
 	}
-	return outputMoves
 }
 
 func (gen *Generator) String() string {
