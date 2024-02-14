@@ -1,6 +1,9 @@
 package engine
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type Move struct {
 	from, to  square
@@ -15,10 +18,16 @@ type backtrackInfo struct {
 	takenPiece    piece
 }
 
+// Ply meaning: https://www.chessprogramming.org/Ply
+type PlyContext struct {
+	moves   []Move
+	undo    backtrackInfo
+}
+
 type Generator struct {
-	pos     *Position
-	history []backtrackInfo
-	outputMoves []Move
+	pos    *Position
+	plies  []PlyContext
+	plyIdx int16
 }
 
 func NewMove(from, to square) Move {
@@ -40,9 +49,9 @@ func (move Move) String() string {
 
 func NewGenerator() *Generator {
 	return &Generator{
-		pos:     NewPosition(),
-		history: make([]backtrackInfo, 0, 20),
-		outputMoves: make([]Move, 0, 60),
+		pos:    NewPosition(),
+		plies:  newPlies(),
+		plyIdx: 0,
 	}
 }
 
@@ -53,67 +62,107 @@ func NewGeneratorFromFen(fen string) (*Generator, error) {
 		return nil, err
 	}
 	return &Generator{
-		pos:     fenPos,
-		history: make([]backtrackInfo, 0, 20),
+		pos:    fenPos,
+		plies:  newPlies(),
+		plyIdx: 0,
 	}, nil
 }
 
-// TODO add a method AssertAndPushMove() 
+func newPlies() []PlyContext {
+	const plyBufferCapacity int = 50
+	const moveBufferCapacity int = 60
+
+	// IDEA probably will experiment with something that does not realloc whole
+	// thing when exceeding max
+	newPlies := make([]PlyContext, plyBufferCapacity)
+	for ply := 0; ply < plyBufferCapacity; ply++ {
+		newPlies[ply] = PlyContext{moves: make([]Move, 0, moveBufferCapacity)}
+	}
+	return newPlies
+}
+
+// TODO add a method AssertAndPushMove()
 func (gen *Generator) PushMove(move Move) (success bool) {
 	undo := gen.pos.MakeMove(move)
 	if (undo.move == Move{}) {
 		return false
 	}
-	gen.history = append(gen.history, undo)
+	gen.plies[gen.plyIdx].undo = undo
+	gen.plyIdx++
 	return true
 }
 
 func (gen *Generator) PopMove() {
-	lastIdx := len(gen.history) - 1
-	gen.pos.UnmakeMove(gen.history[lastIdx])
-	gen.history = gen.history[:lastIdx]
+	//IDEA could probably skip this for perf but better to keep it in order
+	gen.plies[gen.plyIdx].undo = backtrackInfo{}
+	gen.plyIdx--
+	gen.pos.UnmakeMove(gen.plies[gen.plyIdx].undo)
 }
 
 // GenerateMoves returns legal moves from position that this generator is currently holding
 func (gen *Generator) GenerateMoves() []Move {
 	gen.generatePseudoLegalMoves()
-	fmt.Println("Pseudo legal movessssssss ", gen.outputMoves)
+	plyContext := &gen.plies[gen.plyIdx]
 	i := 0
-	for _, pseudoMove := range gen.outputMoves {
-		
+	for _, pseudoMove := range plyContext.moves {
+
 		undo := gen.pos.MakeMove(pseudoMove)
 		// move is valid
 		if (undo.move != Move{}) {
-			gen.outputMoves[i] = pseudoMove
+			plyContext.moves[i] = pseudoMove
 			i++
 			gen.pos.UnmakeMove(undo)
 		}
 	}
-	gen.outputMoves = gen.outputMoves[:i]
-	return gen.outputMoves
+	plyContext.moves = plyContext.moves[:i]
+	return plyContext.moves
 }
 
-func(gen *Generator) Perft(depth byte) int {
+func (gen *Generator) Perft(depth byte) int {
+	// prefix := prefix(depth)
+	// fmt.Printf(prefix+"Perft(depth: %v)\n", depth)
+
 	var movesCount int = 0
-	if depth == 1 {
+	if depth <= 1 {
 		//TODO implement method that only counts the moves
 		return len(gen.GenerateMoves())
 	}
 
 	for _, move := range gen.GenerateMoves() {
 		gen.PushMove(move)
-		fmt.Printf("Depth: %v Just pushed %v. position is: %v\n", depth, move, gen)
-		movesCount += gen.Perft(depth-1)
-		fmt.Printf("movesCount: %v \n", movesCount)
-
+		// fmt.Printf(prefix+"Perft: Just pushed %v. position is: %v\n", move, gen)
+		movesCount += gen.Perft(depth - 1)
 		gen.PopMove()
+		// fmt.Printf(prefix+"Perft: Just popped %v. movesCount: %v; position is: %v\n", move, movesCount, gen)
 	}
 	return movesCount
 }
 
+func (gen *Generator) Perftd(depth byte) {
+	if depth <= 1 {
+		return
+	}
+	for _, move := range gen.GenerateMoves() {
+		gen.PushMove(move)
+		fmt.Printf("%v: %d\n", move, gen.Perft(depth-1))
+		gen.PopMove()
+	}
+}
+
+func prefix(depth byte) string {
+	var sb strings.Builder
+
+	prefixLength := 3 - depth
+	for i := 0; i < int(prefixLength); i++ {
+		sb.WriteRune('\t')
+	}
+	return sb.String()
+}
+
 func (gen *Generator) generatePseudoLegalMoves() {
 	pos := gen.pos
-	gen.outputMoves = gen.outputMoves[:0]
+	var outputMoves *[]Move = &gen.plies[gen.plyIdx].moves
+	*outputMoves = (*outputMoves)[:0]
 
 	currentPieces, currentKing, pawnAdvanceDirection,
 		currColorBit, enemyColorBit,
@@ -128,21 +177,21 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
 			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
-				appendPawnMoves(from, to, promotionRank, &gen.outputMoves)
+				appendPawnMoves(from, to, promotionRank, outputMoves)
 			}
 			// kingside take
 			to = from + square(pawnAdvanceDirection) + 1
 			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
-				appendPawnMoves(from, to, promotionRank, &gen.outputMoves)
+				appendPawnMoves(from, to, promotionRank, outputMoves)
 			}
 			//pushes
 			to = from + square(pawnAdvanceDirection)
 			if pos.board[to] == NullPiece {
-				appendPawnMoves(from, to, promotionRank, &gen.outputMoves)
+				appendPawnMoves(from, to, promotionRank, outputMoves)
 				enPassantSquare := to
 				to = to + square(pawnAdvanceDirection)
 				if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
-					gen.outputMoves = append(gen.outputMoves, Move{from, to, NullPiece, enPassantSquare})
+					*outputMoves = append(*outputMoves, Move{from, to, NullPiece, enPassantSquare})
 				}
 			}
 		case WKnight, BKnight:
@@ -150,17 +199,17 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-					gen.outputMoves = append(gen.outputMoves, NewMove(from, to))
+					*outputMoves = append(*outputMoves, NewMove(from, to))
 				}
 			}
 		case WBishop, BBishop:
 			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &gen.outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
 		case WRook, BRook:
 			dirs := []Direction{DirN, DirS, DirE, DirW}
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, &gen.outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
 		case WQueen, BQueen:
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, &gen.outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, outputMoves)
 		default:
 			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, gen.pos))
 		}
@@ -169,9 +218,10 @@ func (gen *Generator) generatePseudoLegalMoves() {
 	for _, dir := range kingDirections {
 		to := currentKing + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-			gen.outputMoves = append(gen.outputMoves, NewMove(currentKing, to))
+			*outputMoves = append(*outputMoves, NewMove(currentKing, to))
 		}
 	}
+	//BUG - castling possible when D8/D1 under check
 	if queensideCastlePossible {
 		//so much casting.. could it be modelled better?
 		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirW)
@@ -179,14 +229,15 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		if pos.board[kingAsByte+dirAsByte] == NullPiece &&
 			pos.board[kingDest] == NullPiece &&
 			pos.board[kingAsByte+dirAsByte*3] == NullPiece {
-			gen.outputMoves = append(gen.outputMoves, NewMove(currentKing, square(kingDest)))
+			*outputMoves = append(*outputMoves, NewMove(currentKing, square(kingDest)))
 		}
 	}
+	//BUG - castling possible when F8/F1 under check -but how and when to check it nicely in the attack table?
 	if kingsideCastlePossible {
 		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirE)
 		kingDest := kingAsByte + dirAsByte*2
 		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece {
-			gen.outputMoves = append(gen.outputMoves, NewMove(currentKing, square(kingDest)))
+			*outputMoves = append(*outputMoves, NewMove(currentKing, square(kingDest)))
 		}
 	}
 }

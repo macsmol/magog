@@ -50,19 +50,19 @@ func NewPosition() *Position {
 		enPassSquare: InvalidSquare,
 	}
 }
-
+// BUG/IDEA This string is too long to fit in 'debug watch' in VSCode. Not sure how to change cfg.
 func (pos *Position) String() string {
 	var sb strings.Builder
 	sb.WriteRune('\n')
-	sb.WriteString("  ┃ a│ b│ c│ d│ e│ f│ g│ h│\n")
-	sb.WriteString("━━╋━━┿━━┿━━┿━━┿━━┿━━┿━━┿━━┥\n")
+	sb.WriteString("  ┃ a │ b │ c │ d │ e │ f │ g │ h │\n")
+	sb.WriteString("━━╋━━━┿━━━┿━━━┿━━━┿━━━┿━━━┿━━━┿━━━┥\n")
 	for r := Rank8; r >= Rank1; r -= (Rank2 - Rank1) {
 		sb.WriteString(fmt.Sprintf("%v┃", r))
 		for f := A; f <= H; f++ {
 			p := pos.GetAtFileRank(f, r)
-			sb.WriteString(fmt.Sprintf("%v│", p))
+			sb.WriteString(fmt.Sprintf(" %v│", p))
 		}
-		sb.WriteString("\n──╂──┼──┼──┼──┼──┼──┼──┼──┤\n")
+		sb.WriteString("\n──╂───┼───┼───┼───┼───┼───┼───┼───┤\n")
 	}
 	appendFlagsString(&sb,
 		pos.flags&FlagBlackCanCastleQside != 0,
@@ -121,7 +121,6 @@ func (pos *Position) GetCurrentContext() (
 func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	currPieces, enemyPieces, currKing, enemyKing, castleRank,
 		currColorBit, kingSideCastleFlag, queenSideCastleFlag := pos.getCurrentMakeMoveContext()
-	// fmt.Printf("\tMakeMove(%v) from position: %v\n", mov, pos)
 
 	undo = backtrackInfo{
 		move:          mov,
@@ -201,14 +200,12 @@ func (pos *Position) isLegal(enemyPieces []square, currKing square, enemyKing sq
 			if attackTable[moveIdx]&KnightAttacks == 0 {
 				continue
 			}
-			fmt.Println(" knight attacks from: ", attackFrom)
 			return false
 		case WBishop, BBishop:
 			if attackTable[moveIdx]&BishopAttacks == 0 {
 				continue
 			}
 			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				fmt.Println(" bishop attacks from: ", attackFrom)
 				return false
 			}
 		case WRook, BRook:
@@ -216,7 +213,6 @@ func (pos *Position) isLegal(enemyPieces []square, currKing square, enemyKing sq
 				continue
 			}
 			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				fmt.Println(" rook attacks from: ", attackFrom)
 				return false
 			}
 		case WQueen, BQueen:
@@ -224,28 +220,22 @@ func (pos *Position) isLegal(enemyPieces []square, currKing square, enemyKing sq
 				continue
 			}
 			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				fmt.Println(" queen attacks from: ", attackFrom)
 				return false
 			}
 		case WPawn:
 			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
 				continue
 			} 
-			fmt.Println(" white pawn attacks from: ", attackFrom)
 			return true
 		case BPawn:
 			if attackTable[moveIdx]&BlackPawnAttacks == 0 {
 				continue
 			}
-			fmt.Println(" black attacks from: ", attackFrom)
 			return true
 		}
 	}
 	moveIdx = moveIndex(enemyKing, currKing)
 	noKingAttack := attackTable[moveIdx]&KingAttacks == 0
-	if !noKingAttack {
-		fmt.Println(" other king attacks from: ", enemyKing)
-	}
 	return noKingAttack
 }
 

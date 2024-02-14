@@ -13,21 +13,22 @@ func main() {
 	fmt.Println("-----------------")
 	// gener.Pos, err := engine.NewPositionFromFEN("r3kbnr/ppp1pppp/2nq4/3p1b2/3P1B2/2NQ4/PPP1PPPP/R3KBNR w KQkq - 6 5")
 	// gener, err := engine.NewGeneratorFromFen("rn1qkbnr/pppb1ppp/8/1B1pp3/P3P3/8/1PPP1PPP/RNBQK1NR b KQkq - 0 4")
-	// gener, err := engine.NewGeneratorFromFen("1nb1kbnr/pppppppp/8/5r2/4P3/5q2/PP3K1P/RNB1B1BR w k - 0 1")
-	gener := engine.NewGenerator()
-	fmt.Println("perft1",gener.Perft(1))
-	fmt.Println("gener after perft(1)",gener)
+	gener, err := engine.NewGeneratorFromFen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 0")
+	if err != nil {
+		panic(fmt.Sprintf("Cannot parse FEN: %v", err))
+	}
+
+	// gener := engine.NewGenerator()
+	// fmt.Println("perft1",gener.Perft(1))
+	// fmt.Println("gener after perft(1)",gener)
 
 	//bugs to fix
-	// fmt.Println("perft2",gener.Perft(2))
+	fmt.Println("perft1",gener.Perft(1))
+	fmt.Println("perft2",gener.Perft(2))
+	fmt.Println("perftd2")
+	gener.Perftd(2)
 	// fmt.Println("perft3",gener.Perft(3))
-	// if err != nil {
-	// 	panic(fmt.Sprintf("Cannot parse FEN: %v", err))
-	// }
-	fmt.Println("from FEN", gener)
-
-	moves := gener.GenerateMoves()
-	fmt.Println("FEN LEGAL moves:", moves)
+	// fmt.Println("perft4",gener.Perft(4))
 
 	for {
 		scanner.Scan()
