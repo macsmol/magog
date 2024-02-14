@@ -2,7 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"strings"
 )
 
 type Move struct {
@@ -20,8 +19,8 @@ type backtrackInfo struct {
 
 // Ply meaning: https://www.chessprogramming.org/Ply
 type PlyContext struct {
-	moves   []Move
-	undo    backtrackInfo
+	moves []Move
+	undo  backtrackInfo
 }
 
 type Generator struct {
@@ -149,22 +148,14 @@ func (gen *Generator) Perftd(depth byte) {
 	}
 }
 
-func prefix(depth byte) string {
-	var sb strings.Builder
-
-	prefixLength := 3 - depth
-	for i := 0; i < int(prefixLength); i++ {
-		sb.WriteRune('\t')
-	}
-	return sb.String()
-}
-
 func (gen *Generator) generatePseudoLegalMoves() {
 	pos := gen.pos
 	var outputMoves *[]Move = &gen.plies[gen.plyIdx].moves
 	*outputMoves = (*outputMoves)[:0]
 
-	currentPieces, currentKing, pawnAdvanceDirection,
+	currentPieces, enemyPieces,
+		currentKing, enemyKing,
+		pawnAdvanceDirection,
 		currColorBit, enemyColorBit,
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
@@ -221,22 +212,26 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			*outputMoves = append(*outputMoves, NewMove(currentKing, to))
 		}
 	}
-	//BUG - castling possible when D8/D1 under check
 	if queensideCastlePossible {
 		//so much casting.. could it be modelled better?
 		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirW)
 		kingDest := kingAsByte + dirAsByte*2
 		if pos.board[kingAsByte+dirAsByte] == NullPiece &&
 			pos.board[kingDest] == NullPiece &&
-			pos.board[kingAsByte+dirAsByte*3] == NullPiece {
+			pos.board[kingAsByte+dirAsByte*3] == NullPiece &&
+			!pos.isUnderCheck(enemyPieces, enemyKing, currentKing) &&
+			!pos.isUnderCheck(enemyPieces, enemyKing, square(kingAsByte+dirAsByte)) &&
+			!pos.isUnderCheck(enemyPieces, enemyKing, square(kingDest)) {
 			*outputMoves = append(*outputMoves, NewMove(currentKing, square(kingDest)))
 		}
 	}
-	//BUG - castling possible when F8/F1 under check -but how and when to check it nicely in the attack table?
 	if kingsideCastlePossible {
 		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirE)
 		kingDest := kingAsByte + dirAsByte*2
-		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece {
+		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece &&
+			!pos.isUnderCheck(enemyPieces, enemyKing, currentKing) &&
+			!pos.isUnderCheck(enemyPieces, enemyKing, square(kingAsByte+dirAsByte)) &&
+			!pos.isUnderCheck(enemyPieces, enemyKing, square(kingDest)) {
 			*outputMoves = append(*outputMoves, NewMove(currentKing, square(kingDest)))
 		}
 	}

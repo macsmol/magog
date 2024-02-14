@@ -25,10 +25,9 @@ func main() {
 	//bugs to fix
 	fmt.Println("perft1",gener.Perft(1))
 	fmt.Println("perft2",gener.Perft(2))
-	fmt.Println("perftd2")
-	gener.Perftd(2)
-	// fmt.Println("perft3",gener.Perft(3))
-	// fmt.Println("perft4",gener.Perft(4))
+	fmt.Println("perft3",gener.Perft(3))
+	fmt.Println("perftd4")
+	gener.Perftd(4)
 
 	for {
 		scanner.Scan()

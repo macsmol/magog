@@ -97,17 +97,22 @@ func appendFlagsString(sb *strings.Builder, castleQueenside, castleKingside, myT
 }
 
 func (pos *Position) GetCurrentContext() (
-	currPieces []square,
-	currKing square, pawnAdvance Direction,
+	currPieces []square, enemyPieces []square,
+	currKing square, enemyKing square,
+	pawnAdvance Direction,
 	currColorBit piece, enemyColorBit piece,
 	queensideCastlePossible, kingsideCastlePossible bool,
 	currPawnsStartRank, promotionRank rank) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return pos.blackPieces, pos.blackKing, DirS, BlackPieceBit, WhitePieceBit,
+		return pos.blackPieces, pos.whitePieces,
+		pos.blackKing, pos.whiteKing, 
+		DirS, BlackPieceBit, WhitePieceBit,
 			pos.flags&FlagBlackCanCastleQside != 0, pos.flags&FlagBlackCanCastleKside != 0,
 			Rank7, Rank1
 	}
-	return pos.whitePieces, pos.whiteKing, DirN, WhitePieceBit, BlackPieceBit,
+	return pos.whitePieces, pos.blackPieces, 
+	pos.whiteKing, pos.blackKing,
+	DirN, WhitePieceBit, BlackPieceBit,
 		pos.flags&FlagWhiteCanCastleQside != 0, pos.flags&FlagWhiteCanCastleKside != 0,
 		Rank2, Rank8
 }
@@ -182,7 +187,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	pos.flags = pos.flags ^ FlagWhiteTurn
 
 	// everything's been moved to it's place - time to check if it's actually legal
-	if !pos.isLegal(*enemyPieces, *currKing, enemyKing) {
+	if pos.isUnderCheck(*enemyPieces, enemyKing, *currKing) {
 		pos.UnmakeMove(undo)
 		return backtrackInfo{}
 	}
@@ -190,37 +195,37 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	return undo
 }
 
-// Returns true if the last move "didn't forget" to protect the king from check
-func (pos *Position) isLegal(enemyPieces []square, currKing square, enemyKing square) bool {
+// Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on enemyKing square.
+func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSquare square) bool {
 	var moveIdx int16
 	for _, attackFrom := range enemyPieces {
-		moveIdx = moveIndex(attackFrom, currKing)
+		moveIdx = moveIndex(attackFrom, destSquare)
 		switch pos.board[attackFrom] {
 		case WKnight, BKnight:
 			if attackTable[moveIdx]&KnightAttacks == 0 {
 				continue
 			}
-			return false
+			return true
 		case WBishop, BBishop:
 			if attackTable[moveIdx]&BishopAttacks == 0 {
 				continue
 			}
-			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				return false
+			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
+				return true
 			}
 		case WRook, BRook:
 			if attackTable[moveIdx]&RookAttacks == 0 {
 				continue
 			}
-			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				return false
+			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
+				return true
 			}
 		case WQueen, BQueen:
 			if attackTable[moveIdx]&QueenAttacks == 0 {
 				continue
 			}
-			if pos.checkedBySlidingPiece(attackFrom, currKing, moveIdx) {
-				return false
+			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
+				return true
 			}
 		case WPawn:
 			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
@@ -234,9 +239,9 @@ func (pos *Position) isLegal(enemyPieces []square, currKing square, enemyKing sq
 			return true
 		}
 	}
-	moveIdx = moveIndex(enemyKing, currKing)
-	noKingAttack := attackTable[moveIdx]&KingAttacks == 0
-	return noKingAttack
+	moveIdx = moveIndex(enemyKing, destSquare)
+	kingAttack := attackTable[moveIdx]&KingAttacks != 0
+	return kingAttack
 }
 
 func (pos *Position) checkedBySlidingPiece(slidingPieceSquare, destSquare square, moveIndex int16) bool {
