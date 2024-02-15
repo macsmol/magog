@@ -9,3 +9,6 @@ Thinking about attack LUT and promotions. At first I thought that I should consi
 that the table is indexed by square difference, not by actual squares. So one entry in the table can originate from arbitrary rank-
 not necessarily from the promoting rank.
 Looks like promoting and then looking up is the way to go. Also.. pretty natural in typical movegen algorithm (generate pseudolegal and then filter out illegal)
+
+15.02.2024
+Done with perft test suite. Machess completes the suite in ~46.6 seconds; magog completes the same test in ~27,0 s! Great!

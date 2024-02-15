@@ -121,7 +121,7 @@ func (gen *Generator) GenerateMoves() []Move {
 	return plyContext.moves
 }
 
-func (gen *Generator) Perft(depth byte) int64 {
+func (gen *Generator) Perft(depth int) int64 {
 
 	var movesCount int64 = 0
 	if depth <= 1 {
@@ -138,7 +138,7 @@ func (gen *Generator) Perft(depth byte) int64 {
 	return movesCount
 }
 
-func (gen *Generator) Perftd(depth byte) {
+func (gen *Generator) Perftd(depth int) {
 	if depth <= 1 {
 		return
 	}
@@ -149,7 +149,7 @@ func (gen *Generator) Perftd(depth byte) {
 	}
 }
 
-func (gen *Generator) Perftdd(depth byte) {
+func (gen *Generator) Perftdd(depth int) {
 	if depth <= 1 {
 		return
 	}
