@@ -105,34 +105,35 @@ func (gen *Generator) GenerateMoves() []Move {
 	i := 0
 	for _, pseudoMove := range plyContext.moves {
 
+		// gen.pos.AssertConsistency("before making: "+ pseudoMove.String() + gen.pos.String())
 		undo := gen.pos.MakeMove(pseudoMove)
 		// move is valid
 		if (undo.move != Move{}) {
 			plyContext.moves[i] = pseudoMove
 			i++
+			// todo add string for generator to print the current line/move sequence
+			// gen.pos.AssertConsistency("before Unmake: " + pseudoMove.String() + gen.pos.String())
 			gen.pos.UnmakeMove(undo)
 		}
+		// gen.pos.AssertConsistency("after making: "+ pseudoMove.String() + gen.pos.String())
 	}
 	plyContext.moves = plyContext.moves[:i]
 	return plyContext.moves
 }
 
-func (gen *Generator) Perft(depth byte) int {
-	// prefix := prefix(depth)
-	// fmt.Printf(prefix+"Perft(depth: %v)\n", depth)
+func (gen *Generator) Perft(depth byte) int64 {
 
-	var movesCount int = 0
+	var movesCount int64 = 0
 	if depth <= 1 {
 		//TODO implement method that only counts the moves
-		return len(gen.GenerateMoves())
+		return int64(len(gen.GenerateMoves()))
 	}
 
-	for _, move := range gen.GenerateMoves() {
+	moves := gen.GenerateMoves()
+	for _, move := range moves {
 		gen.PushMove(move)
-		// fmt.Printf(prefix+"Perft: Just pushed %v. position is: %v\n", move, gen)
 		movesCount += gen.Perft(depth - 1)
 		gen.PopMove()
-		// fmt.Printf(prefix+"Perft: Just popped %v. movesCount: %v; position is: %v\n", move, movesCount, gen)
 	}
 	return movesCount
 }
@@ -144,6 +145,31 @@ func (gen *Generator) Perftd(depth byte) {
 	for _, move := range gen.GenerateMoves() {
 		gen.PushMove(move)
 		fmt.Printf("%v: %d\n", move, gen.Perft(depth-1))
+		gen.PopMove()
+	}
+}
+
+func (gen *Generator) Perftdd(depth byte) {
+	if depth <= 1 {
+		return
+	}
+	for _, move := range gen.GenerateMoves() {
+		gen.PushMove(move)
+		fmt.Printf("Pushed %v: \n", move)
+		
+		var sumOfPerft2LevsDown int64 = 0
+		if depth <= 1 {
+			return
+		}
+		for _, movePrime := range gen.GenerateMoves() {
+			gen.PushMove(movePrime)
+			fmt.Printf("\tPushed %v: \n", movePrime)
+			perft2 := gen.Perft(depth - 2)
+			sumOfPerft2LevsDown += perft2
+			fmt.Printf("\t%v: %d\n", movePrime, perft2)
+			gen.PopMove()
+		}
+		fmt.Printf("%v: %d\n", move, sumOfPerft2LevsDown)
 		gen.PopMove()
 	}
 }
@@ -167,7 +193,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		case WPawn, BPawn:
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
-			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
+			if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
 				appendPawnMoves(from, to, promotionRank, outputMoves)
 			}
 			// kingside take

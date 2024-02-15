@@ -62,7 +62,8 @@ func (pos *Position) String() string {
 			p := pos.GetAtFileRank(f, r)
 			sb.WriteString(fmt.Sprintf(" %v│", p))
 		}
-		sb.WriteString("\n──╂───┼───┼───┼───┼───┼───┼───┼───┤\n")
+		sb.WriteRune('\n')
+		// sb.WriteString("\n──╂───┼───┼───┼───┼───┼───┼───┼───┤\n")
 	}
 	appendFlagsString(&sb,
 		pos.flags&FlagBlackCanCastleQside != 0,
@@ -124,8 +125,10 @@ func (pos *Position) GetCurrentContext() (
 // -not possible in this position.
 // -not possible according to the rules of chess: a1b8
 func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
-	currPieces, enemyPieces, currKing, enemyKing, castleRank,
-		currColorBit, kingSideCastleFlag, queenSideCastleFlag := pos.getCurrentMakeMoveContext()
+	currPieces, enemyPieces, currKing, enemyKing, 
+	currCastleRank, currKingSideCastleFlag, currQueenSideCastleFlag,
+	enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
+	currColorBit:= pos.getCurrentMakeMoveContext()
 
 	undo = backtrackInfo{
 		move:          mov,
@@ -140,24 +143,30 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		}
 	}
 
-	if mov.from.getFile() == A && mov.from.getRank() == castleRank {
-		pos.flags &= ^queenSideCastleFlag
+	if mov.from.getFile() == A && mov.from.getRank() == currCastleRank {
+		pos.flags &= ^currQueenSideCastleFlag
 	}
-	if mov.from.getFile() == H && mov.from.getRank() == castleRank {
-		pos.flags &= ^kingSideCastleFlag
+	if mov.from.getFile() == H && mov.from.getRank() == currCastleRank {
+		pos.flags &= ^currKingSideCastleFlag
+	}
+	if mov.to.getFile() == A && mov.to.getRank() == enemyCastleRank {
+		pos.flags &= ^enemyQueenSideCastleFlag
+	}
+	if mov.to.getFile() == H && mov.to.getRank() == enemyCastleRank {
+		pos.flags &= ^enemyKingSideCastleFlag
 	}
 
 	if mov.from == *currKing {
-		pos.flags &= ^(kingSideCastleFlag | queenSideCastleFlag)
+		pos.flags &= ^(currKingSideCastleFlag | currQueenSideCastleFlag)
 		*currKing = mov.to
 		if mov.from.getFile() == E {
 			if mov.to.getFile() == C {
-				rookFrom := square(A + file(castleRank))
-				rookTo := square(D + file(castleRank))
+				rookFrom := square(A + file(currCastleRank))
+				rookTo := square(D + file(currCastleRank))
 				pos.moveRook(rookFrom, rookTo, currPieces, currColorBit)
 			} else if mov.to.getFile() == G {
-				rookFrom := square(H + file(castleRank))
-				rookTo := square(F + file(castleRank))
+				rookFrom := square(H + file(currCastleRank))
+				rookTo := square(F + file(currCastleRank))
 				pos.moveRook(rookFrom, rookTo, currPieces, currColorBit)
 			}
 		}
@@ -193,6 +202,51 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	}
 
 	return undo
+}
+
+func (pos *Position)AssertConsistency(prefix string) {
+	for _, piece := range pos.blackPieces {
+		pieceOnBoard := pos.board[piece]
+		if pieceOnBoard&BlackPieceBit==0 {
+			panic(fmt.Sprintf("%v Piece on board should be black but was: %v", prefix, pieceOnBoard))
+		}
+	}
+	for _, piece := range pos.whitePieces {
+		pieceOnBoard := pos.board[piece]
+		if pieceOnBoard&WhitePieceBit==0 {
+			panic(fmt.Sprintf("%v Piece on board should be white but was: %v", prefix, pieceOnBoard))
+		}
+	}
+	for  i, p := range pos.board {
+		currSquare := square(i)
+		if currSquare == InvalidSquare {
+			continue
+		}
+		if p&BlackPieceBit != 0 {
+			matchFound := false
+			for _, sq := range pos.blackPieces {
+				if sq==square(i) {
+					matchFound =true
+					break;
+				}
+			}
+			if !matchFound && pos.blackKing!=currSquare {
+				panic(fmt.Sprintf("%v Square %v has %v that's not on the black pieces list", prefix, currSquare, p))
+			}
+
+		} else if p&WhitePieceBit != 0 {
+			matchFound := false
+			for _, sq := range pos.whitePieces {
+				if sq==square(i) {
+					matchFound =true
+					break;
+				}
+			}
+			if !matchFound && pos.whiteKing!=currSquare {
+				panic(fmt.Sprintf("%v Square %v has %v that's not on the white pieces list", prefix, currSquare, p))
+			}
+		}
+	}
 }
 
 // Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on enemyKing square.
@@ -329,20 +383,22 @@ func (pos *Position) getCurrentMakeMoveContext() (
 	enemyPieces *[]square,
 	currKing *square,
 	enemyKing square,
-	castleRank rank,
+	currCastleRank rank, currKingSideCastleFlag, currQueenSideCastleFlag byte,
+	enemyCastleRank rank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag byte,
 	currColorBit piece,
-	kingSideCastleFlag, queenSideCastleFlag byte,
 ) {
 	if pos.flags&FlagWhiteTurn == 0 {
 		return pos.blackPieces, &pos.whitePieces,
 			&pos.blackKing, pos.whiteKing,
-			Rank8,
-			BlackPieceBit, FlagBlackCanCastleKside, FlagBlackCanCastleQside
-	}
-	return pos.whitePieces, &pos.blackPieces,
+			Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
+			Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
+			BlackPieceBit
+		}
+		return pos.whitePieces, &pos.blackPieces,
 		&pos.whiteKing, pos.blackKing,
-		Rank1,
-		WhitePieceBit, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside
+		Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
+		Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
+		WhitePieceBit
 }
 
 // inverse of GetCurrentMakeMoveContext()
