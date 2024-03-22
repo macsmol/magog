@@ -11,4 +11,9 @@ not necessarily from the promoting rank.
 Looks like promoting and then looking up is the way to go. Also.. pretty natural in typical movegen algorithm (generate pseudolegal and then filter out illegal)
 
 15.02.2024
-Done with perft test suite. Machess completes the suite in ~46.6 seconds; magog completes the same test in ~27,0 s! Great!
+Done with perft test suite. Machess completes the suite in ~46.6 seconds; magog completes the same test in ~27.0 s! Great!
+
+22.03.2024
+Done with iterative perft. The implementation is on the "iterativePerft" branch. 
+Perftsuite (recursive) done in ~27.4 s. Iterative version completed in ~27-29s. 
+Disappointing result - was expecting some speedup after reading https://www.talkchess.com/forum3/viewtopic.php?t=53408
