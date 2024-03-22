@@ -149,6 +149,7 @@ func TestPerftOnReferencePositions(t *testing.T) {
 				depth := i + 1
 				fmt.Printf("Perft(%d).. ", depth)
 				actualPerft := gen.Perft(depth)
+				// actualPerft := gen.PerftIterative(depth)
 				if actualPerft != expectedMoves {
 					t.Fatalf("expected %v but was %v", expectedMoves, actualPerft)
 				}

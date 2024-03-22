@@ -20,6 +20,7 @@ type backtrackInfo struct {
 // Ply meaning: https://www.chessprogramming.org/Ply
 type PlyContext struct {
 	moves []Move
+	moveIdx byte
 	undo  backtrackInfo
 }
 
@@ -134,6 +135,58 @@ func (gen *Generator) Perft(depth int) int64 {
 		gen.PushMove(move)
 		movesCount += gen.Perft(depth - 1)
 		gen.PopMove()
+	}
+	return movesCount
+}
+
+// Iteravive variant of Perft. Just to see if it's any faster than recursive Perft.
+// Inspired by implementation from https://www.talkchess.com/forum3/viewtopic.php?t=53408
+func (gen *Generator) PerftIterative(depth int) int64 {
+	type perftState byte
+	const (
+		pInit perftState = iota
+		pDescend  				// as step into a (recursive) Perft call; increase depth/ply
+		pAscend					// as return from a (recursive) Perft call; decrease depth/ply
+		pNextMove
+		pExit
+	)
+	var movesCount int64
+	var pState perftState = pInit
+	
+	for pState != pExit {
+		switch pState {
+		case pInit:
+			movesCount = 0
+			gen.plyIdx = 0
+			pState = pDescend;
+		case pDescend:
+			if gen.plyIdx+1 == int16(depth) {
+				movesCount += int64(len(gen.GenerateMoves()))
+				pState = pAscend
+			} else {
+				gen.GenerateMoves()
+				gen.plies[gen.plyIdx].moveIdx = 0
+				pState = pNextMove
+			}
+		case pAscend:
+			if gen.plyIdx == 0 {
+				pState = pExit
+			} else {
+				gen.PopMove()
+				pState = pNextMove
+			}
+		case pNextMove:
+			moveIdx := gen.plies[gen.plyIdx].moveIdx
+			moves := gen.plies[gen.plyIdx].moves
+			if moveIdx < byte(len(moves)) {
+				nexMove := moves[moveIdx]
+				gen.plies[gen.plyIdx].moveIdx++
+				gen.PushMove(nexMove)
+				pState = pDescend
+			} else {
+				pState = pAscend
+			}
+		}
 	}
 	return movesCount
 }
