@@ -29,6 +29,7 @@ const (
 
 // returns new starting position
 func NewPosition() *Position {
+	// &Position{}  - shorthand for new Position on heap + return a pointer to it
 	return &Position{
 		board: [128]piece{
 			// FFS how do you turn off whitespace formatting in VSCode?
@@ -50,6 +51,7 @@ func NewPosition() *Position {
 		enPassSquare: InvalidSquare,
 	}
 }
+
 // BUG/IDEA This string is too long to fit in 'debug watch' in VSCode. Not sure how to change cfg.
 func (pos *Position) String() string {
 	var sb strings.Builder
@@ -106,14 +108,14 @@ func (pos *Position) GetCurrentContext() (
 	currPawnsStartRank, promotionRank rank) {
 	if pos.flags&FlagWhiteTurn == 0 {
 		return pos.blackPieces, pos.whitePieces,
-		pos.blackKing, pos.whiteKing, 
-		DirS, BlackPieceBit, WhitePieceBit,
+			pos.blackKing, pos.whiteKing,
+			DirS, BlackPieceBit, WhitePieceBit,
 			pos.flags&FlagBlackCanCastleQside != 0, pos.flags&FlagBlackCanCastleKside != 0,
 			Rank7, Rank1
 	}
-	return pos.whitePieces, pos.blackPieces, 
-	pos.whiteKing, pos.blackKing,
-	DirN, WhitePieceBit, BlackPieceBit,
+	return pos.whitePieces, pos.blackPieces,
+		pos.whiteKing, pos.blackKing,
+		DirN, WhitePieceBit, BlackPieceBit,
 		pos.flags&FlagWhiteCanCastleQside != 0, pos.flags&FlagWhiteCanCastleKside != 0,
 		Rank2, Rank8
 }
@@ -125,10 +127,10 @@ func (pos *Position) GetCurrentContext() (
 // -not possible in this position.
 // -not possible according to the rules of chess: a1b8
 func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
-	currPieces, enemyPieces, currKing, enemyKing, 
-	currCastleRank, currKingSideCastleFlag, currQueenSideCastleFlag,
-	enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
-	currColorBit:= pos.getCurrentMakeMoveContext()
+	currPieces, enemyPieces, currKing, enemyKing,
+		currCastleRank, currKingSideCastleFlag, currQueenSideCastleFlag,
+		enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
+		currColorBit := pos.getCurrentMakeMoveContext()
 
 	undo = backtrackInfo{
 		move:          mov,
@@ -192,7 +194,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 
 	// move mov was a double push
 	pos.enPassSquare = mov.enPassant
-	
+
 	pos.flags = pos.flags ^ FlagWhiteTurn
 
 	// everything's been moved to it's place - time to check if it's actually legal
@@ -204,20 +206,20 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	return undo
 }
 
-func (pos *Position)AssertConsistency(prefix string) {
+func (pos *Position) AssertConsistency(prefix string) {
 	for _, piece := range pos.blackPieces {
 		pieceOnBoard := pos.board[piece]
-		if pieceOnBoard&BlackPieceBit==0 {
+		if pieceOnBoard&BlackPieceBit == 0 {
 			panic(fmt.Sprintf("%v Piece on board should be black but was: %v", prefix, pieceOnBoard))
 		}
 	}
 	for _, piece := range pos.whitePieces {
 		pieceOnBoard := pos.board[piece]
-		if pieceOnBoard&WhitePieceBit==0 {
+		if pieceOnBoard&WhitePieceBit == 0 {
 			panic(fmt.Sprintf("%v Piece on board should be white but was: %v", prefix, pieceOnBoard))
 		}
 	}
-	for  i, p := range pos.board {
+	for i, p := range pos.board {
 		currSquare := square(i)
 		if currSquare == InvalidSquare {
 			continue
@@ -225,24 +227,24 @@ func (pos *Position)AssertConsistency(prefix string) {
 		if p&BlackPieceBit != 0 {
 			matchFound := false
 			for _, sq := range pos.blackPieces {
-				if sq==square(i) {
-					matchFound =true
-					break;
+				if sq == square(i) {
+					matchFound = true
+					break
 				}
 			}
-			if !matchFound && pos.blackKing!=currSquare {
+			if !matchFound && pos.blackKing != currSquare {
 				panic(fmt.Sprintf("%v Square %v has %v that's not on the black pieces list", prefix, currSquare, p))
 			}
 
 		} else if p&WhitePieceBit != 0 {
 			matchFound := false
 			for _, sq := range pos.whitePieces {
-				if sq==square(i) {
-					matchFound =true
-					break;
+				if sq == square(i) {
+					matchFound = true
+					break
 				}
 			}
-			if !matchFound && pos.whiteKing!=currSquare {
+			if !matchFound && pos.whiteKing != currSquare {
 				panic(fmt.Sprintf("%v Square %v has %v that's not on the white pieces list", prefix, currSquare, p))
 			}
 		}
@@ -284,7 +286,7 @@ func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSq
 		case WPawn:
 			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
 				continue
-			} 
+			}
 			return true
 		case BPawn:
 			if attackTable[moveIdx]&BlackPawnAttacks == 0 {
@@ -393,8 +395,8 @@ func (pos *Position) getCurrentMakeMoveContext() (
 			Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
 			Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
 			BlackPieceBit
-		}
-		return pos.whitePieces, &pos.blackPieces,
+	}
+	return pos.whitePieces, &pos.blackPieces,
 		&pos.whiteKing, pos.blackKing,
 		Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
 		Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
