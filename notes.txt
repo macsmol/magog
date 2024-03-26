@@ -17,3 +17,11 @@ Done with perft test suite. Machess completes the suite in ~46.6 seconds; magog 
 Done with iterative perft. The implementation is on the "iterativePerft" branch. 
 Perftsuite (recursive) done in ~27.4 s. Iterative version completed in ~27-29s. 
 Disappointing result - was expecting some speedup after reading https://www.talkchess.com/forum3/viewtopic.php?t=53408
+
+26.03.2024
+Done with basic static position evaluation. Includes material and mobility. I've decided to copy-paste-modify original move generation code rather
+than make the old one more general. This way I can skip the need for slice with moves completely. As a bonus I discovered that I can skip 
+some superfluous legality tests:
+-now I have one legality test for all 4 promotions
+-no need to do legality test after castling
+Another minor optimization: appending four promotions at once
