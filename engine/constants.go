@@ -138,8 +138,9 @@ func (dir Direction) String() string {
 type piece byte
 
 const (
-	BlackPieceBit piece = 0x08
-	WhitePieceBit piece = 0x10
+	BlackPieceBit  piece = 0x08
+	WhitePieceBit  piece = 0x10
+	ColorlessPiece piece = 0x07
 )
 
 // 0b000w_bppp

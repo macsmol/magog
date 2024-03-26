@@ -92,8 +92,6 @@ func (gen *Generator) PushMove(move Move) (success bool) {
 }
 
 func (gen *Generator) PopMove() {
-	//IDEA could probably skip this for perf but better to keep it in order
-	gen.plies[gen.plyIdx].undo = backtrackInfo{}
 	gen.plyIdx--
 	gen.pos.UnmakeMove(gen.plies[gen.plyIdx].undo)
 }
@@ -126,7 +124,7 @@ func (gen *Generator) Perft(depth int) int64 {
 	var movesCount int64 = 0
 	if depth <= 1 {
 		//TODO implement method that only counts the moves
-		return int64(len(gen.GenerateMoves()))
+		return int64(gen.pos.countMoves())
 	}
 
 	moves := gen.GenerateMoves()
@@ -156,7 +154,7 @@ func (gen *Generator) Perftdd(depth int) {
 	for _, move := range gen.GenerateMoves() {
 		gen.PushMove(move)
 		fmt.Printf("Pushed %v: \n", move)
-		
+
 		var sumOfPerft2LevsDown int64 = 0
 		if depth <= 1 {
 			return
@@ -187,8 +185,6 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
 	for _, from := range currentPieces {
 		piece := pos.board[from]
-		//IDEA table of functions indexed by piece? Benchmark it
-		//IDEA No piece lists? just iterate over all fields. Perhaps add list once material gone
 		switch piece {
 		case WPawn, BPawn:
 			// queenside take
@@ -228,7 +224,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		case WQueen, BQueen:
 			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, outputMoves)
 		default:
-			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, gen.pos))
+			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
 		}
 	}
 	// king moves
@@ -269,10 +265,12 @@ func (gen *Generator) String() string {
 
 func appendPawnMoves(from, to square, promotionRank rank, outputMoves *[]Move) {
 	if to.getRank() == promotionRank {
-		*outputMoves = append(*outputMoves, NewPromotionMove(from, to, Queen))
-		*outputMoves = append(*outputMoves, NewPromotionMove(from, to, Rook))
-		*outputMoves = append(*outputMoves, NewPromotionMove(from, to, Bishop))
-		*outputMoves = append(*outputMoves, NewPromotionMove(from, to, Knight))
+		*outputMoves = append(*outputMoves,
+			NewPromotionMove(from, to, Queen),
+			NewPromotionMove(from, to, Rook),
+			NewPromotionMove(from, to, Bishop),
+			NewPromotionMove(from, to, Knight),
+		)
 	} else {
 		*outputMoves = append(*outputMoves, NewMove(from, to))
 	}
