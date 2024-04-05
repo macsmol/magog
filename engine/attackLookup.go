@@ -14,6 +14,7 @@ const (
 const lastValidSquare = int16(H8)
 
 var attackTable [239]byte
+// contains directions by sliding pieces only
 var directionTable [239]Direction
 
 func init() {

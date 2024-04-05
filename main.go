@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"macsmol/magog/engine"
 	"os"
+	"time"
 )
 
 func main() {
@@ -12,17 +13,21 @@ func main() {
 
 	fmt.Println("-----------------")
 	// r3k2r/8/8/8/8/8/8/R3K1R1_w_Qkq_-_0_1
-	fenStr := "r3k2r/8/8/8/8/2B5/8/R3K1R1 w Qkq - 0 1"
-	fmt.Println("----------- " + fenStr)
+	fenStr := "8/8/8/2k5/8/8/6Kp/Q7 w - - 3 3"
 	
 	
 	
-	pos, err := engine.NewPositionFromFen(fenStr)
+	generator,err := engine.NewGeneratorFromFen(fenStr)
 	if err != nil {
 		panic(fmt.Sprintf("Cannot parse FEN: %v", err))
 	}
-	fmt.Println("evaluation is: ", engine.Evaluate(pos))
-	
+
+	fmt.Println("position is", generator)
+	const depth = 2
+	fmt.Printf("perftd(%d)--------------------\n", depth)
+	start := time.Now()
+	generator.Perftd(depth)
+	fmt.Printf("took %v millis\n", time.Since(start).Milliseconds())
 	for {
 		scanner.Scan()
 		line := scanner.Text()

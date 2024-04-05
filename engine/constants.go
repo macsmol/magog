@@ -6,8 +6,12 @@ import (
 
 type rank int8
 
+
 const (
-	Rank1 rank = iota * 0x10
+	UnitRank rank = 0x10
+)
+const (
+	Rank1 rank = iota * UnitRank
 	Rank2
 	Rank3
 	Rank4

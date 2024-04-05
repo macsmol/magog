@@ -35,12 +35,13 @@ func Evaluate(pos *Position) int {
 }
 
 func (pos *Position) mobilityScore() int {
-	currentMobilityScore := pos.countMoves() * MobilityFactor
+	currentMobilityScore := pos.countMoves()
 	pos.flags = pos.flags ^ FlagWhiteTurn
-	enemyMobilityScore := pos.countMoves() * MobilityFactor
+	enemyMobilityScore := pos.countMoves()
 	pos.flags = pos.flags ^ FlagWhiteTurn
 	fmt.Println("Current mobility: ", currentMobilityScore, " enemy mobility: ", enemyMobilityScore)
-	return currentMobilityScore - enemyMobilityScore
+
+	return (currentMobilityScore - enemyMobilityScore) * MobilityFactor
 }
 
 func (pos *Position) evaluationContext() (currPieces, enemyPieces []square) {
@@ -60,6 +61,14 @@ func (pos *Position) countMoves() int {
 		currColorBit, enemyColorBit,
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
+
+	attackersCount, attackerSquare := pos.countPseudolegalChecksOn(enemyPieces, currentKing)
+	if attackersCount >= 2 {
+		return pos.countNormalKingMoves(currentKing, currColorBit)
+	}
+	if attackersCount == 1 {
+		return pos.countNormalKingMoves(currentKing, currColorBit) + pos.countKingProtectingMoves(currentKing, attackerSquare, currentPieces, enemyColorBit)
+	}
 	for _, from := range currentPieces {
 		piece := pos.board[from]
 		//IDEA table of functions indexed by piece? Benchmark it
@@ -111,14 +120,8 @@ func (pos *Position) countMoves() int {
 		}
 	}
 	// king moves
-	for _, dir := range kingDirections {
-		to := currentKing + square(dir)
-		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-			if pos.isLegal(NewMove(currentKing, to)) {
-				movesCount++
-			}
-		}
-	}
+	movesCount += pos.countNormalKingMoves(currentKing, currColorBit)
+
 	if queensideCastlePossible {
 		//so much casting.. could it be modelled better?
 		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirW)
@@ -143,6 +146,40 @@ func (pos *Position) countMoves() int {
 		}
 	}
 	return movesCount
+}
+
+func (pos *Position) countNormalKingMoves(currentKing square, currColorBit piece) int {
+	// king moves
+	movesCount := 0
+	for _, dir := range kingDirections {
+		to := currentKing + square(dir)
+		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
+			if pos.isLegal(NewMove(currentKing, to)) {
+				movesCount++
+			}
+		}
+	}
+	return movesCount
+}
+
+// Counts moves (captures and interpositions) that can be made to protect king from single attacker. Does not count the moves of king itself
+func (pos *Position) countKingProtectingMoves(attackedKing square, attacker square, defendingPieces []square, pinnerColorBit piece) int {
+	piece := pos.board[attacker] & ColorlessPiece
+	switch piece {
+	case Pawn, Knight:
+		capturesCount := pos.countLegalChecksOn(defendingPieces, pinnerColorBit, attacker, attackedKing, false)
+		return capturesCount
+	case Bishop, Rook, Queen:
+		capturesCount := pos.countLegalChecksOn(defendingPieces, pinnerColorBit, attacker, attackedKing, false)
+
+		interpositions := 0
+		direction := directionTable[moveIndex(attacker, attackedKing)]
+		for interposingSquare := attacker + square(direction); interposingSquare != attackedKing; interposingSquare += square(direction) {
+			interpositions += pos.countLegalChecksOn(defendingPieces, pinnerColorBit, interposingSquare, attackedKing, true)
+		}
+		return capturesCount + interpositions
+	}
+	panic(fmt.Sprintf("No attacker found on %v; piece: piece '%v'; pos: %v", attacker, piece, pos))
 }
 
 func (pos *Position) countPawnMoves(from, to square, promotionRank rank) int {

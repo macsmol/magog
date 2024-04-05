@@ -37,6 +37,8 @@ func NewPromotionMove(from, to square, promoteTo piece) Move {
 	return Move{from, to, promoteTo, InvalidSquare}
 }
 
+var bishopDirections = []Direction{DirNE, DirSE, DirNW, DirSW}
+var rookDirections = []Direction{DirN, DirS, DirE, DirW}
 var kingDirections = []Direction{DirN, DirS, DirE, DirW, DirNE, DirNW, DirSW, DirSE}
 
 func (move Move) String() string {
@@ -142,7 +144,7 @@ func (gen *Generator) Perftd(depth int) {
 	}
 	for _, move := range gen.GenerateMoves() {
 		gen.PushMove(move)
-		fmt.Printf("%v: %d\n", move, gen.Perft(depth-1))
+		fmt.Printf("%v %d\n", move, gen.Perft(depth-1))
 		gen.PopMove()
 	}
 }
@@ -153,7 +155,6 @@ func (gen *Generator) Perftdd(depth int) {
 	}
 	for _, move := range gen.GenerateMoves() {
 		gen.PushMove(move)
-		fmt.Printf("Pushed %v: \n", move)
 
 		var sumOfPerft2LevsDown int64 = 0
 		if depth <= 1 {
@@ -161,7 +162,6 @@ func (gen *Generator) Perftdd(depth int) {
 		}
 		for _, movePrime := range gen.GenerateMoves() {
 			gen.PushMove(movePrime)
-			fmt.Printf("\tPushed %v: \n", movePrime)
 			perft2 := gen.Perft(depth - 2)
 			sumOfPerft2LevsDown += perft2
 			fmt.Printf("\t%v: %d\n", movePrime, perft2)
@@ -216,11 +216,9 @@ func (gen *Generator) generatePseudoLegalMoves() {
 				}
 			}
 		case WBishop, BBishop:
-			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, bishopDirections, outputMoves)
 		case WRook, BRook:
-			dirs := []Direction{DirN, DirS, DirE, DirW}
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, rookDirections, outputMoves)
 		case WQueen, BQueen:
 			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, outputMoves)
 		default:

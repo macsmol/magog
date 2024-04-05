@@ -25,3 +25,10 @@ some superfluous legality tests:
 -now I have one legality test for all 4 promotions
 -no need to do legality test after castling
 Another minor optimization: appending four promotions at once
+Perft results after these: ~23,9s
+
+28.03.2024
+Movegen with checking for doublechecks: ~23,2s
+
+05.04.2024
+Movegen with specialized movegen in leaf nodes (doublechecks, captures, interpo)
