@@ -302,11 +302,11 @@ func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSq
 
 // Counts checks on destSquare. The second returned value is location of the attacker (useful if theres only one attacker).
 // This does not count checks by enemy king. Ignores absolute pins (includes checks by pinned pieces)
-func (pos *Position) countPseudolegalChecksOn(attackingPieces []square, destSquare square) (numOfChecks int, checkerSquare square) {
+func (pos *Position) countPseudolegalChecksOn(attackingPieces []square, destSquare square) int {
 	var moveIdx int16
 	var checksCount int = 0
-	checkerSquare = InvalidSquare
 
+	outer:
 	for _, attackFrom := range attackingPieces {
 		moveIdx = moveIndex(attackFrom, destSquare)
 		switch pos.board[attackFrom] {
@@ -315,14 +315,18 @@ func (pos *Position) countPseudolegalChecksOn(attackingPieces []square, destSqua
 				continue
 			}
 			checksCount++
-			checkerSquare = attackFrom
+			if checksCount > 1 {
+				break outer
+			}
 		case WBishop, BBishop:
 			if attackTable[moveIdx]&BishopAttacks == 0 {
 				continue
 			}
 			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
 				checksCount++
-				checkerSquare = attackFrom
+				if checksCount > 1 {
+					break outer
+				}
 			}
 		case WRook, BRook:
 			if attackTable[moveIdx]&RookAttacks == 0 {
@@ -330,7 +334,9 @@ func (pos *Position) countPseudolegalChecksOn(attackingPieces []square, destSqua
 			}
 			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
 				checksCount++
-				checkerSquare = attackFrom
+				if checksCount > 1 {
+					break outer
+				}
 			}
 		case WQueen, BQueen:
 			if attackTable[moveIdx]&QueenAttacks == 0 {
@@ -338,279 +344,29 @@ func (pos *Position) countPseudolegalChecksOn(attackingPieces []square, destSqua
 			}
 			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
 				checksCount++
-				checkerSquare = attackFrom
+				if checksCount > 1 {
+					break outer
+				}
 			}
 		case WPawn:
 			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
 				continue
 			}
 			checksCount++
-			checkerSquare = attackFrom
+			if checksCount > 1 {
+				break outer
+			}
 		case BPawn:
 			if attackTable[moveIdx]&BlackPawnAttacks == 0 {
 				continue
 			}
 			checksCount++
-			checkerSquare = attackFrom
+			if checksCount > 1 {
+				break outer
+			}
 		}
-	}
-	return checksCount, checkerSquare
-}
-
-// Counts legal checks on a destSquare by checkingPieces. Considers absolute pins to king by pinningPieces.
-// pushesNotCaptures - is set to true when generating interpositions rather than checks (in such case we generate pawn pushes; not captures)
-func (pos *Position) countLegalChecksOn(checkingPieces []square, pinnerColorBit piece, destSquare square, king square, pushesNotCaptures bool) int {
-	var checksCount int = 0
-
-	var pinnedPieces uint16 = pos.findIndexesOfPinnedPieces(checkingPieces, pinnerColorBit, king)
-	for _, attackFrom := range checkingPieces {
-		checksCount += pos.countLegalChecksByPiece(attackFrom, destSquare, pinnedPieces&1 != 0, pushesNotCaptures)
-		// var moveIdx = moveIndex(attackFrom, destSquare)
-		// switch pos.board[attackFrom] {
-		// case WKnight, BKnight:
-		// 	if attackTable[moveIdx]&KnightAttacks == 0 {
-		// 		pinnedPieces >>= 1
-		// 		continue
-		// 	}
-		// 	if pinnedPieces&1 == 0 {
-		// 		checksCount++
-		// 	}
-		// case WBishop, BBishop:
-		// 	if attackTable[moveIdx]&BishopAttacks == 0 || pinnedPieces&1 != 0 {
-		// 		pinnedPieces >>= 1
-		// 		continue
-		// 	}
-		// 	if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-		// 		checksCount++
-		// 	}
-		// case WRook, BRook:
-		// 	if attackTable[moveIdx]&RookAttacks == 0 || pinnedPieces&1 != 0 {
-		// 		pinnedPieces >>= 1
-		// 		continue
-		// 	}
-		// 	if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-		// 		checksCount++
-		// 	}
-		// case WQueen, BQueen:
-		// 	if attackTable[moveIdx]&QueenAttacks == 0 || pinnedPieces&1 != 0 {
-		// 		pinnedPieces >>= 1
-		// 		continue
-		// 	}
-		// 	if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-		// 		checksCount++
-		// 	}
-		// case WPawn:
-		// 	if pushesNotCaptures {
-		// 		//on same file
-		// 		if attackFrom.getFile() == destSquare.getFile() && (
-		// 		//within push
-		// 		attackFrom.getRank()+UnitRank == destSquare.getRank() ||
-		// 			//within double push and we're on starting rank
-		// 			attackFrom.getRank()+2*UnitRank == destSquare.getRank() && attackFrom.getRank() == Rank2) {
-		// 			if pinnedPieces&1 == 0 {
-		// 				if destSquare.getRank() == Rank8 {
-		// 					checksCount += 4
-		// 				} else {
-		// 					checksCount++
-		// 				}
-		// 			}
-		// 		}
-		// 	} else {
-		// 		if attackTable[moveIdx]&WhitePawnAttacks == 0 {
-		// 			pinnedPieces >>= 1
-		// 			continue
-		// 		}
-		// 		if pinnedPieces&1 == 0 {
-		// 			if destSquare.getRank() == Rank8 {
-		// 				checksCount += 4
-		// 			} else {
-		// 				checksCount++
-		// 			}
-		// 		}
-		// 	}
-		// case BPawn:
-		// 	if pushesNotCaptures {
-		// 		//on same file
-		// 		if attackFrom.getFile() == destSquare.getFile() && (
-		// 		//within push
-		// 		attackFrom.getRank()-UnitRank == destSquare.getRank() ||
-		// 			//within double push and we're on starting rank
-		// 			attackFrom.getRank()-2*UnitRank == destSquare.getRank() && attackFrom.getRank() == Rank7) {
-		// 			if pinnedPieces&1 == 0 {
-		// 				if destSquare.getRank() == Rank1 {
-		// 					checksCount += 4
-		// 				} else {
-		// 					checksCount++
-		// 				}
-		// 			}
-		// 		}
-		// 	} else {
-		// 		if attackTable[moveIdx]&BlackPawnAttacks == 0 {
-		// 			pinnedPieces >>= 1
-		// 			continue
-		// 		}
-		// 		if pinnedPieces&1 == 0 {
-		// 			if destSquare.getRank() == Rank1 {
-		// 				checksCount += 4
-		// 			} else {
-		// 				checksCount++
-		// 			}
-		// 		}
-		// 	}
-		// }
-		pinnedPieces >>= 1
 	}
 	return checksCount
-}
-
-func (pos *Position) countLegalChecksByPiece(attackFrom, destSquare square, pinned, pushesNotCaptures bool) int {
-	var moveIdx = moveIndex(attackFrom, destSquare)
-	switch pos.board[attackFrom] {
-	case WKnight, BKnight:
-		if attackTable[moveIdx]&KnightAttacks == 0 {
-			return 0
-		}
-		if !pinned {
-			return 1
-		}
-	case WBishop, BBishop:
-		if attackTable[moveIdx]&BishopAttacks == 0 || pinned {
-			return 0
-		}
-		if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-			return 1
-		}
-	case WRook, BRook:
-		if attackTable[moveIdx]&RookAttacks == 0 || pinned {
-			return 0
-		}
-		if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-			return 1
-		}
-	case WQueen, BQueen:
-		if attackTable[moveIdx]&QueenAttacks == 0 || pinned {
-			return 0
-		}
-		if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-			return 1
-		}
-	case WPawn:
-		if pushesNotCaptures {
-			//on same file
-			if attackFrom.getFile() == destSquare.getFile() && (
-			//within push
-			attackFrom.getRank()+UnitRank == destSquare.getRank() ||
-				//within double push and we're on starting rank
-				attackFrom.getRank()+2*UnitRank == destSquare.getRank() && attackFrom.getRank() == Rank2 &&
-				//and double push not obstructed
-				 pos.board[attackFrom+square(UnitRank)] == NullPiece) {
-				if !pinned {
-					if destSquare.getRank() == Rank8 {
-						return 4
-					} else {
-						return 1
-					}
-				}
-			}
-		} else {
-			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
-				return 0
-			}
-			if !pinned {
-				if destSquare.getRank() == Rank8 {
-					return 4
-				} else {
-					return 1
-				}
-			}
-		}
-	case BPawn:
-		if pushesNotCaptures {
-			//on same file
-			if attackFrom.getFile() == destSquare.getFile() && (
-			//within push
-			attackFrom.getRank()-UnitRank == destSquare.getRank() ||
-				//within double push and we're on starting rank
-				attackFrom.getRank()-2*UnitRank == destSquare.getRank() && attackFrom.getRank() == Rank7 &&
-				//and double push not obstructed
-				pos.board[attackFrom-square(UnitRank)] == NullPiece) {
-				if !pinned {
-					if destSquare.getRank() == Rank1 {
-						return 4
-					} else {
-						return 1
-					}
-				}
-			}
-		} else {
-			if attackTable[moveIdx]&BlackPawnAttacks == 0 {
-				return 0
-			}
-			if !pinned {
-				if destSquare.getRank() == Rank1 {
-					return 4
-				} else {
-					return 1
-				}
-			}
-		}
-	}
-	return 0
-}
-
-// Returns indexes into pinnedPieces[] square slice that contained absolutely pinned pieces.
-// Could return them as a slice of ints but since we know that that there are never more
-// than 16 pieces per side we can just use bit positions in int16. LSB means i==0;
-func (pos *Position) findIndexesOfPinnedPieces(pinnedPieces []square, pinnerColorBit piece, king square) uint16 {
-	var indexesOfPinnedPieces uint16 = 0
-	for i, maybePinned := range pinnedPieces {
-		if pos.isAbsolutelyPinned(maybePinned, pinnerColorBit, king) {
-			indexesOfPinnedPieces |= 1 << i
-			continue
-		}
-	}
-	return indexesOfPinnedPieces
-}
-
-func (pos *Position) isAbsolutelyPinned(maybePinned square, pinnerColorBit piece, king square) bool {
-	moveIdxToKing := moveIndex(maybePinned, king)
-	directionToKing := directionTable[moveIdxToKing]
-	// has king on one side
-	if directionToKing == 0 || !pos.checkedAlongRay(maybePinned, king, directionToKing) {
-		return false
-	}
-	oppositeDirection := -directionToKing
-	// has relevant enemy sliding piece on other side
-	for sq := maybePinned + square(oppositeDirection); sq&InvalidSquare == 0; sq += square(oppositeDirection) {
-		somePiece := pos.board[sq]
-		if somePiece == NullPiece {
-			continue
-		}
-		if somePiece&pinnerColorBit == NullPiece {
-			return false
-		}
-		switch somePiece & ColorlessPiece {
-		case Bishop:
-			return contains(bishopDirections, oppositeDirection)
-		case Rook:
-			return contains(rookDirections, oppositeDirection)
-		case Queen:
-			return contains(kingDirections, oppositeDirection)
-		default:
-			return false
-		}
-
-	}
-	return false
-}
-
-func contains(directions []Direction, testedDiretion Direction) bool {
-	for _, dir := range directions {
-		if dir == testedDiretion {
-			return true
-		}
-	}
-	return false
 }
 
 func (pos *Position) checkedBySlidingPiece(slidingPieceSquare, destSquare square, moveIndex int16) bool {

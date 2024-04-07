@@ -62,13 +62,13 @@ func (pos *Position) countMoves() int {
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
 
-	attackersCount, attackerSquare := pos.countPseudolegalChecksOn(enemyPieces, currentKing)
+	attackersCount := pos.countPseudolegalChecksOn(enemyPieces, currentKing)
 	if attackersCount >= 2 {
 		return pos.countNormalKingMoves(currentKing, currColorBit)
 	}
-	if attackersCount == 1 {
-		return pos.countNormalKingMoves(currentKing, currColorBit) + pos.countKingProtectingMoves(currentKing, attackerSquare, currentPieces, enemyColorBit)
-	}
+	// if attackersCount == 1 && pos.board[attackerSquare]&ColorlessPiece == Knight{
+	// 	return pos.countNormalKingMoves(currentKing, currColorBit) + pos.countLegalChecksOn(currentPieces, enemyColorBit, attackerSquare, currentKing)
+	// }
 	for _, from := range currentPieces {
 		piece := pos.board[from]
 		//IDEA table of functions indexed by piece? Benchmark it
@@ -160,26 +160,6 @@ func (pos *Position) countNormalKingMoves(currentKing square, currColorBit piece
 		}
 	}
 	return movesCount
-}
-
-// Counts moves (captures and interpositions) that can be made to protect king from single attacker. Does not count the moves of king itself
-func (pos *Position) countKingProtectingMoves(attackedKing square, attacker square, defendingPieces []square, pinnerColorBit piece) int {
-	piece := pos.board[attacker] & ColorlessPiece
-	switch piece {
-	case Pawn, Knight:
-		capturesCount := pos.countLegalChecksOn(defendingPieces, pinnerColorBit, attacker, attackedKing, false)
-		return capturesCount
-	case Bishop, Rook, Queen:
-		capturesCount := pos.countLegalChecksOn(defendingPieces, pinnerColorBit, attacker, attackedKing, false)
-
-		interpositions := 0
-		direction := directionTable[moveIndex(attacker, attackedKing)]
-		for interposingSquare := attacker + square(direction); interposingSquare != attackedKing; interposingSquare += square(direction) {
-			interpositions += pos.countLegalChecksOn(defendingPieces, pinnerColorBit, interposingSquare, attackedKing, true)
-		}
-		return capturesCount + interpositions
-	}
-	panic(fmt.Sprintf("No attacker found on %v; piece: piece '%v'; pos: %v", attacker, piece, pos))
 }
 
 func (pos *Position) countPawnMoves(from, to square, promotionRank rank) int {
