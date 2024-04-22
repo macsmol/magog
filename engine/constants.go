@@ -6,7 +6,6 @@ import (
 
 type rank int8
 
-
 const (
 	UnitRank rank = 0x10
 )
@@ -59,6 +58,7 @@ const (
 	A7, B7, C7, D7, E7, F7, G7, H7
 	A8, B8, C8, D8, E8, F8, G8, H8
 	InvalidSquare square = 0x88
+	MetaboardOffset = 0x08 // for accessing meta info stored at 'invalid' Indexes
 )
 
 func (s square) getRank() rank {
@@ -138,6 +138,16 @@ func (dir Direction) String() string {
 	}
 	panic(fmt.Sprintf("Uknnown direction: %x", byte(dir)))
 }
+
+type Pin byte
+
+const (
+	NullPin             Pin = iota
+	FilePin             // |
+	RankPin             // -
+	DiagonalPin         // /  - from A1 to H8
+	AntidiagonalPin     // \  - from A8 to H1
+)
 
 type piece byte
 

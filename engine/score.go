@@ -62,11 +62,11 @@ func (pos *Position) countMoves() int {
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
 
-	attackersCount := pos.countPseudolegalChecksOn(enemyPieces, currentKing)
-	if attackersCount >= 2 {
+	attacksCount := pos.countChecksAndInitPins(enemyPieces, currentKing, currColorBit)
+	if attacksCount >= 2 {
 		return pos.countNormalKingMoves(currentKing, currColorBit)
 	}
-	// if attackersCount == 1 && pos.board[attackerSquare]&ColorlessPiece == Knight{
+	// if attackersCount == 1 && pos.board[attackerSquare]&ColorlessPiece == Knight {
 	// 	return pos.countNormalKingMoves(currentKing, currColorBit) + pos.countLegalChecksOn(currentPieces, enemyColorBit, attackerSquare, currentKing)
 	// }
 	for _, from := range currentPieces {
@@ -77,17 +77,17 @@ func (pos *Position) countMoves() int {
 		case WPawn, BPawn:
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
-			if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare) {
+			if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare) && pos.freeFromPin(from, to) {
 				movesCount += pos.countPawnMoves(from, to, promotionRank)
 			}
 			// kingside take
 			to = from + square(pawnAdvanceDirection) + 1
-			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
+			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare && pos.freeFromPin(from, to) {
 				movesCount += pos.countPawnMoves(from, to, promotionRank)
 			}
 			//pushes
 			to = from + square(pawnAdvanceDirection)
-			if pos.board[to] == NullPiece {
+			if pos.board[to] == NullPiece && pos.freeFromPin(from, to) {
 				movesCount += pos.countPawnMoves(from, to, promotionRank)
 				enPassantSquare := to
 				to = to + square(pawnAdvanceDirection)
@@ -98,8 +98,10 @@ func (pos *Position) countMoves() int {
 				}
 			}
 		case WKnight, BKnight:
-			dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
-			for _, dir := range dirs {
+			if Pin(pos.board[from + MetaboardOffset]) != NullPin  {
+				break
+			}
+			for _, dir := range knightDirections {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
 					if pos.isLegal(NewMove(from, to)) {
@@ -176,6 +178,9 @@ func (pos *Position) countPawnMoves(from, to square, promotionRank rank) int {
 func (pos *Position) countSlidingPieceMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction) int {
 	movesCount := 0
 	for _, dir := range dirs {
+		if !pos.directionFreeFromPin(from, dir) {
+			continue
+		}
 		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
 			toContent := pos.board[to]
 			if toContent&currColorBit != 0 {

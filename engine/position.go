@@ -16,6 +16,7 @@ type Position struct {
 	whiteKing    square
 	flags        byte
 	enPassSquare square
+	pins 		 []square
 }
 
 // used for position.flags
@@ -302,68 +303,57 @@ func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSq
 
 // Counts checks on destSquare. The second returned value is location of the attacker (useful if theres only one attacker).
 // This does not count checks by enemy king. Ignores absolute pins (includes checks by pinned pieces)
-func (pos *Position) countPseudolegalChecksOn(attackingPieces []square, destSquare square) int {
+func (pos *Position) countChecksAndInitPins(attackingPieces[]square, kingSquare square, defendingColorBit piece) int {
 	var moveIdx int16
 	var checksCount int = 0
+	
+	//clear pins
+	for _, sq := range pos.pins {
+		sqOnMetaboard := sq + MetaboardOffset
+		pos.board[sqOnMetaboard] = piece(NullPin)
+	}
+	pos.pins = pos.pins[:0]
 
-	outer:
+
 	for _, attackFrom := range attackingPieces {
-		moveIdx = moveIndex(attackFrom, destSquare)
+		moveIdx = moveIndex(attackFrom, kingSquare)
 		switch pos.board[attackFrom] {
 		case WKnight, BKnight:
 			if attackTable[moveIdx]&KnightAttacks == 0 {
 				continue
-			}
+			 }
 			checksCount++
-			if checksCount > 1 {
-				break outer
-			}
 		case WBishop, BBishop:
 			if attackTable[moveIdx]&BishopAttacks == 0 {
 				continue
 			}
-			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
+			if pos.checkedOrPinnedBySlidingPiece(attackFrom, kingSquare, defendingColorBit, moveIdx) {
 				checksCount++
-				if checksCount > 1 {
-					break outer
-				}
 			}
 		case WRook, BRook:
 			if attackTable[moveIdx]&RookAttacks == 0 {
 				continue
 			}
-			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
+			if pos.checkedOrPinnedBySlidingPiece(attackFrom, kingSquare, defendingColorBit, moveIdx) {
 				checksCount++
-				if checksCount > 1 {
-					break outer
-				}
 			}
 		case WQueen, BQueen:
 			if attackTable[moveIdx]&QueenAttacks == 0 {
 				continue
 			}
-			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
+			if pos.checkedOrPinnedBySlidingPiece(attackFrom, kingSquare, defendingColorBit, moveIdx) {
 				checksCount++
-				if checksCount > 1 {
-					break outer
-				}
 			}
 		case WPawn:
 			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
 				continue
 			}
 			checksCount++
-			if checksCount > 1 {
-				break outer
-			}
 		case BPawn:
 			if attackTable[moveIdx]&BlackPawnAttacks == 0 {
 				continue
 			}
 			checksCount++
-			if checksCount > 1 {
-				break outer
-			}
 		}
 	}
 	return checksCount
@@ -374,6 +364,32 @@ func (pos *Position) checkedBySlidingPiece(slidingPieceSquare, destSquare square
 	return pos.checkedAlongRay(slidingPieceSquare, destSquare, direction)
 }
 
+func (pos *Position) checkedOrPinnedBySlidingPiece(slidingPieceSquare, kingSquare square, defendingPieceBit piece, moveIndex int16) bool {
+	direction := directionTable[moveIndex]
+	checked := true
+	pinnedSquare := InvalidSquare
+	for sq := slidingPieceSquare + square(direction); sq != kingSquare; sq += square(direction) {
+		if pos.board[sq] != NullPiece {
+			// enemy piece obstructing ray
+			if pos.board[sq]&defendingPieceBit == NullPiece {
+				return false
+			} 
+			// defending piece obstructing ray - maybe it's pinned?
+			// so now we know that there is no check. 
+			if !checked  {
+				// We found second piece obstructing ray. No pin possible - return early
+				return false
+			}
+			checked = false
+			pinnedSquare = sq
+		}
+	}
+	if pinnedSquare != InvalidSquare {
+		pos.encodePin(pinnedSquare, direction)
+	}
+	return checked
+}
+
 func (pos *Position) checkedAlongRay(slidingPieceSquare, destSquare square, direction Direction) bool {
 	for sq := slidingPieceSquare + square(direction); sq != destSquare; sq += square(direction) {
 		if pos.board[sq] != NullPiece {
@@ -381,6 +397,43 @@ func (pos *Position) checkedAlongRay(slidingPieceSquare, destSquare square, dire
 		}
 	}
 	return true
+}
+
+func (pos *Position) encodePin(pinnedSquare square, attackDirection Direction) {
+	//store it on 'unphysical' part of board (store it on some 'invalid' indexes). Cast to piece looks kind of hacky but whatever
+	pos.board[pinnedSquare+MetaboardOffset] = piece(directionToPin(attackDirection))
+	pos.pins = append(pos.pins, pinnedSquare)
+}
+
+func (pos *Position) freeFromPin(from, to square) bool {
+	pin := Pin(pos.board[from + MetaboardOffset])
+	if pin == NullPin {
+		return true
+	}
+	return directionToPin(directionTable[moveIndex(from, to)]) == pin
+}
+
+func (pos *Position) directionFreeFromPin(from square, dir Direction) bool {
+	pin := Pin(pos.board[from + MetaboardOffset])
+	if pin == NullPin {
+		return true
+	}
+	return directionToPin(dir) == pin
+}
+
+func directionToPin(dir Direction) Pin {
+	switch dir {
+	case DirN, DirS:
+		return FilePin
+	case DirE, DirW:
+		return RankPin
+	case DirNE, DirSW:
+		return AntidiagonalPin
+	case DirNW, DirSE:
+		return DiagonalPin
+	default:
+		return NullPin
+	}
 }
 
 func killPiece(enemyPieces []square, killSquare square) []square {

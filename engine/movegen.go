@@ -40,6 +40,8 @@ func NewPromotionMove(from, to square, promoteTo piece) Move {
 var bishopDirections = []Direction{DirNE, DirSE, DirNW, DirSW}
 var rookDirections = []Direction{DirN, DirS, DirE, DirW}
 var kingDirections = []Direction{DirN, DirS, DirE, DirW, DirNE, DirNW, DirSW, DirSE}
+var knightDirections = [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
+
 
 func (move Move) String() string {
 	if move.promoteTo != NullPiece {
@@ -208,7 +210,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 				}
 			}
 		case WKnight, BKnight:
-			dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
+			dirs := knightDirections
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
