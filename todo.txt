@@ -1,0 +1,15 @@
+critical:
+-alpha-beta search
+-quiescence search
+-UCI
+    -iterative deepening/timemanagement
+    -PV search
+-better evaluation
+    -square-piece weights
+    -pawn structure
+
+promising:
+-0x88 board with padding for faster sliders movegen: https://www.talkchess.com/forum/viewtopic.php?t=62279&sid=c7b5a5b1b3297382937208ab995ba79d
+
+rathole:
+-faster/specialized (when in check, in doublecheck, pinned) movegen

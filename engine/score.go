@@ -5,20 +5,20 @@ import (
 )
 
 const (
-	MaterialPawn   = 100
-	MaterialKnight = 300
-	MaterialBishop = 300
-	MaterialRook   = 500
-	MaterialQueen  = 900
-)
-const (
-	MobilityFactor = 5
+	Infinity      = 100_000_000
+	MinusInfinity = -Infinity
 )
 
-func AlphaBeta() int {
-	fmt.Println("AlfaBeta")
-	return 1
-}
+const (
+	MaterialPawnScore   = 100
+	MaterialKnightScore = 300
+	MaterialBishopScore = 300
+	MaterialRookScore   = 500
+	MaterialQueenScore  = 900
+)
+const (
+	MobilityScoreFactor = 5
+)
 
 // Returns static evaluation score for Position pos. It's given relative to the currently playing side (negamax score)
 func Evaluate(pos *Position) int {
@@ -35,9 +35,9 @@ func Evaluate(pos *Position) int {
 }
 
 func (pos *Position) mobilityScore() int {
-	currentMobilityScore := pos.countMoves() * MobilityFactor
+	currentMobilityScore := pos.countMoves() * MobilityScoreFactor
 	pos.flags = pos.flags ^ FlagWhiteTurn
-	enemyMobilityScore := pos.countMoves() * MobilityFactor
+	enemyMobilityScore := pos.countMoves() * MobilityScoreFactor
 	pos.flags = pos.flags ^ FlagWhiteTurn
 	fmt.Println("Current mobility: ", currentMobilityScore, " enemy mobility: ", enemyMobilityScore)
 	return currentMobilityScore - enemyMobilityScore
@@ -62,8 +62,6 @@ func (pos *Position) countMoves() int {
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
 	for _, from := range currentPieces {
 		piece := pos.board[from]
-		//IDEA table of functions indexed by piece? Benchmark it
-		//IDEA No piece lists? just iterate over all fields. Perhaps add list once material gone
 		switch piece {
 		case WPawn, BPawn:
 			// queenside take
@@ -190,15 +188,15 @@ func materialScore(pieces []square, board *[128]piece) int {
 		//Is it faster to just switch over pairs of cases?
 		switch board[square] & ColorlessPiece {
 		case Pawn:
-			score += MaterialPawn
+			score += MaterialPawnScore
 		case Knight:
-			score += MaterialKnight
+			score += MaterialKnightScore
 		case Bishop:
-			score += MaterialBishop
+			score += MaterialBishopScore
 		case Rook:
-			score += MaterialRook
+			score += MaterialRookScore
 		case Queen:
-			score += MaterialQueen
+			score += MaterialQueenScore
 		}
 	}
 	return score
