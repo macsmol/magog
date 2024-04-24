@@ -66,12 +66,16 @@ func (pos *Position) countMoves() int {
 		case WPawn, BPawn:
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
-			if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare) {
+			if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || (to == pos.enPassSquare && 
+				// fix for bug where friendly ep-square take is possible while calculating mobility
+				from.getRank() != pawnStartRank)) {
 				movesCount += pos.countPawnMoves(from, to, promotionRank)
 			}
 			// kingside take
 			to = from + square(pawnAdvanceDirection) + 1
-			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
+			if pos.board[to]&enemyColorBit != 0 || (to == pos.enPassSquare && 
+				// fix for bug where friendly ep-square take is possible while calculating mobility
+				from.getRank() != pawnStartRank)  {
 				movesCount += pos.countPawnMoves(from, to, promotionRank)
 			}
 			//pushes
