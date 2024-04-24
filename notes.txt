@@ -35,3 +35,8 @@ Movegen with specialized movegen in leaf nodes (doublechecks, captures, interpo)
 23.04.2024
 Couldn't get movegen any faster really. Version with pin checking is way slower. Would like to investigate later. All the intermediate work is left at 
 specialized_movegen branch.
+
+24.04.2024
+Testing search and evaluate/score functions. Found an interesting bug while calculating mobility score. When calculating mobility of enemy pieces (the ones that are not moving).
+The piece tries to take its own pawn because the enPassant square is set. So simply making a null-move does not guarrantee calculating correct mobility of enemy pieces. Luckily
+this caused panic and rather than falfifying mobility score. So clean crash rather than elusive bug. Probably Machess engine has the same bug that went undetected!
