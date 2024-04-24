@@ -1,28 +1,20 @@
 package engine
 
-
-func startAlphaBeta(posGen *Generator, depth int, ) int {
-
-	alpha := MinusInfinity
-	beta := Infinity
-	return AlphaBeta(posGen, depth, alpha, beta)
-}
-
 func AlphaBeta(posGen *Generator, targetDepth, depth, alpha, beta int) int {
-	if depth == 0 {
+	if targetDepth == depth {
 		return Evaluate(posGen.pos)
 	}
 
 	moves := posGen.GenerateMoves()
 
- 	if len(moves) == 0 {
-		terminalNodeScore(posGen.pos)
+	if len(moves) == 0 {
+		terminalNodeScore(posGen.pos, depth)
 	}
 
 	for _, move := range moves {
-		
+
 		posGen.PushMove(move)
-		currScore := -AlphaBeta(posGen, depth-1, -beta, -alpha)
+		currScore := -AlphaBeta(posGen, targetDepth, depth+1, -beta, -alpha)
 		posGen.PopMove()
 
 		if currScore > beta {
@@ -34,6 +26,13 @@ func AlphaBeta(posGen *Generator, targetDepth, depth, alpha, beta int) int {
 	}
 
 	return alpha
+}
+
+func terminalNodeScore(position *Position, depth int) int {
+	if position.isCurrentKingUnderCheck() {
+		return LostScore + depth
+	}
+	return DrawScore
 }
 
 // func quiescence(posGen Generator, alpha, beta, )

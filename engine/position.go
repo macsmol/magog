@@ -251,6 +251,21 @@ func (pos *Position) AssertConsistency(prefix string) {
 	}
 }
 
+func (pos * Position)isCurrentKingUnderCheck() bool {
+	var currentKing, enemyKing square
+	var enemyPieces []square
+	if(pos.flags&FlagWhiteTurn == 0) {
+		currentKing = pos.blackKing
+		enemyKing = pos.whiteKing
+		enemyPieces = pos.whitePieces
+	} else {
+		currentKing = pos.whiteKing
+		enemyKing = pos.blackKing
+		enemyPieces = pos.blackPieces
+	}
+	return pos.isUnderCheck(enemyPieces, enemyKing, currentKing)
+}
+
 // Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on enemyKing square.
 func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSquare square) bool {
 	var moveIdx int16

@@ -5,8 +5,10 @@ import (
 )
 
 const (
-	Infinity      = 100_000_000
-	MinusInfinity = -Infinity
+	InfinityScore      = 100_000_000
+	MinusInfinityScore = -InfinityScore
+	LostScore = -100_000
+	DrawScore = 0
 )
 
 const (
