@@ -13,3 +13,63 @@ promising:
 
 rathole:
 -faster/specialized (when in check, in doublecheck, pinned) movegen
+
+
+bug:
+after:
+position startpos
+go depth 3
+
+I get panic:
+    panic: Didn't find square: e8 on enemyPieces: [f7 h8 b7 d8 f8 h7 g7 c8 c7 a8 b8 g8 a7 e7 d5]
+
+    goroutine 1 [running]:
+    macsmol/magog/engine.killPiece({0xc00000a100?, 0xc00000a100?, 0x3b1253?}, 0xc0?)
+            C:/Users/Maciej/workspaces/go/magog/engine/position.go:335 +0xc8
+    macsmol/magog/engine.(*Position).MakeMove(0xc0000000c0, {0xc0?, 0x0?, 0x0?, 0x0?})
+            C:/Users/Maciej/workspaces/go/magog/engine/position.go:179 +0x338
+    macsmol/magog/engine.(*Position).isLegal(0x3b2db8?, {0xc0?, 0x0?, 0x0?, 0x0?})
+            C:/Users/Maciej/workspaces/go/magog/engine/score.go:181 +0x18
+    macsmol/magog/engine.(*Position).countSlidingPieceMoves(0xc0000000c0, 0x41, 0x10, 0x8, {0xc000075a3c, 0x4, 0x0?})
+            C:/Users/Maciej/workspaces/go/magog/engine/score.go:169 +0xfa
+    macsmol/magog/engine.(*Position).countMoves(0xc0000000c0)
+            C:/Users/Maciej/workspaces/go/magog/engine/score.go:105 +0x4ad
+    macsmol/magog/engine.(*Position).mobilityScore(0xc0000000c0)
+            C:/Users/Maciej/workspaces/go/magog/engine/score.go:41 +0x3a
+    macsmol/magog/engine.Evaluate(0x1f5305410088e700?)
+            C:/Users/Maciej/workspaces/go/magog/engine/score.go:32 +0x14b
+    macsmol/magog/engine.AlphaBeta(0xc0000240f0?, 0x7?, 0xc0000000c0?, 0x66460056004612b8?, 0xc000000160?)
+            C:/Users/Maciej/workspaces/go/magog/engine/search.go:10 +0x6f
+    macsmol/magog/engine.AlphaBeta(0xc0000240f0, 0x3, 0x2, 0xfffffffffa0a1f00, 0x4b)
+            C:/Users/Maciej/workspaces/go/magog/engine/search.go:22 +0x105
+    macsmol/magog/engine.AlphaBeta(0xc0000240f0, 0x3, 0x1, 0xfffffffffa0a1f00, 0x5f5e100)
+            C:/Users/Maciej/workspaces/go/magog/engine/search.go:22 +0x105
+    macsmol/magog/engine.AlphaBeta(0xc0000240f0, 0x3, 0x0, 0xfffffffffa0a1f00, 0x5f5e100)
+            C:/Users/Maciej/workspaces/go/magog/engine/search.go:22 +0x105
+    macsmol/magog/engine.doGo({0xc00000a4d7, 0x7})
+            C:/Users/Maciej/workspaces/go/magog/engine/uci.go:112 +0x425
+    macsmol/magog/engine.ParseInputLine({0xc00000a4d4?, 0xc000076039?})
+            C:/Users/Maciej/workspaces/go/magog/engine/uci.go:49 +0x325
+    main.main()
+            C:/Users/Maciej/workspaces/go/magog/main.go:13 +0x7b
+    exit status 2
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

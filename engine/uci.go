@@ -2,20 +2,36 @@ package engine
 
 import (
 	"fmt"
+	"math"
 	"os"
+	"strconv"
 	"strings"
 )
 
 const (
-	UCI_POSITION string = "position"
-	UCI_MOVES    string = "moves"
-	UCI_STARTPOS string = "startpos"
+	VERSION_STRING string = "0.1"
+)
+
+const (
+	uUci      string = "uci"
+	uIsReady  string = "isready"
+	uPosition string = "position"
+	uStartpos string = "startpos"
+	uMoves    string = "moves"
+
+	uGo       string = "go"
+	uWtime    string = "wtime"
+	uBtime    string = "btime"
+	uWinc     string = "winc"
+	uBinc     string = "binc"
+	uDepth    string = "depth"
+	uInfinite string = "infinite"
 )
 
 var posGen *Generator
 
 func ParseInputLine(inputLine string) {
-	if inputLine == "isready" {
+	if inputLine == uIsReady {
 		fmt.Println("readyok")
 	} else if inputLine == "eval" {
 		fmt.Println(Evaluate(NewPosition()))
@@ -23,30 +39,81 @@ func ParseInputLine(inputLine string) {
 		fmt.Printf("%v\n", posGen)
 	} else if inputLine == "quit" {
 		os.Exit(0)
-	} else if strings.HasPrefix(inputLine, UCI_POSITION) {
-		setPosition(strings.TrimSpace(strings.TrimPrefix(inputLine, UCI_POSITION)))
-	} else if inputLine == "go" {
-		fmt.Println("we go?")
-		if posGen != nil {
-			targetDepth := 1
-			fmt.Println(AlphaBeta(posGen, targetDepth, 0, MinusInfinityScore, InfinityScore))
-		}
+	} else if strings.HasPrefix(inputLine, uPosition) {
+		doPosition(strings.TrimSpace(strings.TrimPrefix(inputLine, uPosition)))
+	} else if inputLine == uUci {
+		fmt.Println("id name Magog " + VERSION_STRING)
+		fmt.Println("id author Maciej Smolczewski")
+		fmt.Println("uciok")
+	} else if strings.HasPrefix(inputLine, uGo) {
+		doGo(strings.TrimSpace(strings.TrimPrefix(inputLine, uGo)))
 	}
 }
 
-func setPosition(positionCommand string) {
-	movesIdx := strings.Index(positionCommand, UCI_MOVES)
+func doPosition(positionCommand string) {
+	movesIdx := strings.Index(positionCommand, uMoves)
 	if movesIdx == -1 {
 		parsePosition(positionCommand)
 	} else {
 		parsePosition(strings.TrimSpace(positionCommand[:movesIdx]))
 
-		movesString := strings.TrimSpace(positionCommand[movesIdx+len(UCI_MOVES):])
+		movesString := strings.TrimSpace(positionCommand[movesIdx+len(uMoves):])
 		moveStrings := strings.Split(movesString, " ")
 		for _, moveStr := range moveStrings {
 			posGen.PushMove(parseMoveString(moveStr))
 		}
 	}
+}
+
+func doGo(goCommand string) {
+	fmt.Println("we go?")
+	if posGen == nil {
+		return
+	}
+
+	tokens := strings.Split(goCommand, " ")
+
+	blackMillisLeft      := math.MaxInt32
+	whiteMillisLeft      := math.MaxInt32
+	blackMillisIncrement := 0
+	whiteMillisIncrement := 0
+
+	var err error
+
+	for i, token := range tokens {
+		switch token {
+		case uWtime:
+			whiteMillisLeft, err = strconv.Atoi(tokens[i+1])
+			if err != nil {
+				return
+			}
+		case uBtime:
+			blackMillisLeft, err = strconv.Atoi(tokens[i+1])
+			if err != nil {
+				return
+			}
+		case uWinc:
+			whiteMillisIncrement, err = strconv.Atoi(tokens[i+1])
+			if err != nil {
+				return
+			}
+		case uBinc:
+			blackMillisIncrement, err = strconv.Atoi(tokens[i+1])
+			if err != nil {
+				return
+			}
+		case uDepth:
+			targetDepth, err := strconv.Atoi(tokens[i+1])
+			if err != nil {
+				return
+			}
+			fmt.Println("target depth", targetDepth)
+			// TODO move to goroutine
+			fmt.Println("info", AlphaBeta(posGen, targetDepth, 0, MinusInfinityScore, InfinityScore))
+		}
+		fmt.Printf("btime: %d; binc: %d; wtime: %d; winc: %d\n", blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement)
+	}
+
 }
 
 func parseMoveString(moveStr string) Move {
@@ -72,12 +139,12 @@ func parseMoveString(moveStr string) Move {
 }
 
 func parsePosition(positionWithoutMoves string) {
-	if strings.HasPrefix(positionWithoutMoves, UCI_STARTPOS) {
+	if strings.HasPrefix(positionWithoutMoves, uStartpos) {
 		posGen = NewGenerator()
 	} else {
 		pos, err := NewGeneratorFromFen(positionWithoutMoves)
 		if err != nil {
-			fmt.Println("errorr", err)
+			fmt.Println("invalid FEN: ", err)
 		} else {
 			posGen = pos
 		}

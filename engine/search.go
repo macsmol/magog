@@ -1,5 +1,10 @@
 package engine
 
+
+// func doIterativeDeepening(posGen *Generator, finishTime) {
+
+// }
+
 func AlphaBeta(posGen *Generator, targetDepth, depth, alpha, beta int) int {
 	if targetDepth == depth {
 		return Evaluate(posGen.pos)

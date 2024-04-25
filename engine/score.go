@@ -28,7 +28,6 @@ func Evaluate(pos *Position) int {
 
 	currMaterial := materialScore(currentPieces, &pos.board)
 	enemyMaterial := materialScore(enemyPieces, &pos.board)
-	fmt.Println("currMaterial: ", currMaterial, " enemyMaterial: ", enemyMaterial)
 	materialScore := currMaterial - enemyMaterial
 	mobilityScore := pos.mobilityScore()
 
@@ -41,7 +40,6 @@ func (pos *Position) mobilityScore() int {
 	pos.flags = pos.flags ^ FlagWhiteTurn
 	enemyMobilityScore := pos.countMoves() * MobilityScoreFactor
 	pos.flags = pos.flags ^ FlagWhiteTurn
-	fmt.Println("Current mobility: ", currentMobilityScore, " enemy mobility: ", enemyMobilityScore)
 	return currentMobilityScore - enemyMobilityScore
 }
 
