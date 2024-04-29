@@ -130,7 +130,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	currPieces, enemyPieces, currKing, enemyKing,
 		currCastleRank, currKingSideCastleFlag, currQueenSideCastleFlag,
 		enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
-		currColorBit := pos.getCurrentMakeMoveContext()
+		currColorBit, enemyColorBit := pos.getCurrentMakeMoveContext()
 
 	undo = backtrackInfo{
 		move:          mov,
@@ -176,7 +176,11 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 
 	if pos.board[mov.to] != NullPiece {
 		undo.takenPiece = pos.board[mov.to]
-		*enemyPieces = killPiece(*enemyPieces, mov.to)
+		// when calculating enemy mobility it is possible to kill enemy king. 
+		// Kings are not on piece lists so we don't modify piece lists in MakeMove() and UnmakeMove()
+		if pos.board[mov.to] != King|enemyColorBit {
+			*enemyPieces = killPiece(*enemyPieces, mov.to)
+		}
 	}
 	if mov.promoteTo == NullPiece {
 		pos.board[mov.to] = pos.board[mov.from]
@@ -251,10 +255,10 @@ func (pos *Position) AssertConsistency(prefix string) {
 	}
 }
 
-func (pos * Position)isCurrentKingUnderCheck() bool {
+func (pos *Position) isCurrentKingUnderCheck() bool {
 	var currentKing, enemyKing square
 	var enemyPieces []square
-	if(pos.flags&FlagWhiteTurn == 0) {
+	if pos.flags&FlagWhiteTurn == 0 {
 		currentKing = pos.blackKing
 		enemyKing = pos.whiteKing
 		enemyPieces = pos.whitePieces
@@ -369,14 +373,16 @@ func (pos *Position) UnmakeMove(undo backtrackInfo) {
 	pos.board[mov.to] = NullPiece
 
 	if undo.takenPiece != NullPiece {
-		var killSquare square
-		//mov was an en passant take
-		if undo.lastEnPassant == mov.to && pos.board[mov.from] == Pawn|unmadeColorBit {
-			killSquare = square(mov.to.getFile()) + square(enPassantUnkillRank)
-		} else {
-			killSquare = mov.to
+		var killSquare square = mov.to
+		// when calculating enemy mobility it is possible to kill enemy king. 
+		// Kings are not on piece lists so we don't modify piece lists in MakeMove() and UnmakeMove()
+		if undo.takenPiece&ColorlessPiece != King {
+			//mov was an en passant take
+			if undo.lastEnPassant == mov.to && pos.board[mov.from] == Pawn|unmadeColorBit {
+				killSquare = square(mov.to.getFile()) + square(enPassantUnkillRank)
+			}
+			*unkilledPieces = append(*unkilledPieces, killSquare)
 		}
-		*unkilledPieces = append(*unkilledPieces, killSquare)
 		pos.board[killSquare] = undo.takenPiece
 	}
 	pos.enPassSquare = undo.lastEnPassant
@@ -402,20 +408,20 @@ func (pos *Position) getCurrentMakeMoveContext() (
 	enemyKing square,
 	currCastleRank rank, currKingSideCastleFlag, currQueenSideCastleFlag byte,
 	enemyCastleRank rank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag byte,
-	currColorBit piece,
+	currColorBit, enemyColorBit piece,
 ) {
 	if pos.flags&FlagWhiteTurn == 0 {
 		return pos.blackPieces, &pos.whitePieces,
 			&pos.blackKing, pos.whiteKing,
 			Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
 			Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
-			BlackPieceBit
+			BlackPieceBit, WhitePieceBit
 	}
 	return pos.whitePieces, &pos.blackPieces,
 		&pos.whiteKing, pos.blackKing,
 		Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
 		Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
-		WhitePieceBit
+		WhitePieceBit, BlackPieceBit
 }
 
 // inverse of GetCurrentMakeMoveContext()

@@ -66,7 +66,6 @@ func doPosition(positionCommand string) {
 }
 
 func doGo(goCommand string) {
-	fmt.Println("we go?")
 	if posGen == nil {
 		return
 	}
