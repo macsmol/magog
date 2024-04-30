@@ -34,7 +34,7 @@ func ParseInputLine(inputLine string) {
 	if inputLine == uIsReady {
 		fmt.Println("readyok")
 	} else if inputLine == "eval" {
-		fmt.Println(Evaluate(NewPosition()))
+		fmt.Println(Evaluate(posGen.pos, true))
 	} else if inputLine == "tostr" {
 		fmt.Printf("%v\n", posGen)
 	} else if inputLine == "quit" {
@@ -109,9 +109,11 @@ func doGo(goCommand string) {
 			fmt.Println("target depth", targetDepth)
 			// TODO move to goroutine
 			fmt.Println("info", AlphaBeta(posGen, targetDepth, 0, MinusInfinityScore, InfinityScore))
+			
+			fmt.Println("info pv ", posGen.bestLine[:int(posGen.plyIdx)+targetDepth])
 		}
-		fmt.Printf("btime: %d; binc: %d; wtime: %d; winc: %d\n", blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement)
 	}
+	fmt.Printf("btime: %d; binc: %d; wtime: %d; winc: %d\n", blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement)
 
 }
 
