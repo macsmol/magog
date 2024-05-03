@@ -1,9 +1,7 @@
 critical:
--alpha-beta search
 -quiescence search
 -UCI
     -iterative deepening/timemanagement
-    -PV search
 -better evaluation
     -square-piece weights
     -pawn structure
