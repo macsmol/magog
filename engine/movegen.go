@@ -24,10 +24,15 @@ type PlyContext struct {
 }
 
 type Generator struct {
-	pos    *Position
-	plies  []PlyContext
-	plyIdx int16
+	pos   *Position
+	plies []PlyContext
+	plyIdx   int16
 }
+
+const (
+	plyBufferCapacity  int = 200
+	moveBufferCapacity int = 60
+)
 
 func NewMove(from, to square) Move {
 	return Move{from, to, NullPiece, InvalidSquare}
@@ -48,9 +53,9 @@ func (move Move) String() string {
 
 func NewGenerator() *Generator {
 	return &Generator{
-		pos:    NewPosition(),
-		plies:  newPlies(),
-		plyIdx: 0,
+		pos:   NewPosition(),
+		plies: newPlies(),
+		plyIdx:   0,
 	}
 }
 
@@ -68,8 +73,6 @@ func NewGeneratorFromFen(fen string) (*Generator, error) {
 }
 
 func newPlies() []PlyContext {
-	const plyBufferCapacity int = 50
-	const moveBufferCapacity int = 60
 
 	// IDEA probably will experiment with something that does not realloc whole
 	// thing when exceeding max

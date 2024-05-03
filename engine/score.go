@@ -23,24 +23,30 @@ const (
 )
 
 // Returns static evaluation score for Position pos. It's given relative to the currently playing side (negamax score)
-func Evaluate(pos *Position) int {
+func Evaluate(pos *Position, depth int, debug ...bool) int {
 	currentPieces, enemyPieces := pos.evaluationContext()
 
 	currMaterial := materialScore(currentPieces, &pos.board)
 	enemyMaterial := materialScore(enemyPieces, &pos.board)
 	materialScore := currMaterial - enemyMaterial
-	mobilityScore := pos.mobilityScore()
 
-	var score int = materialScore + mobilityScore
-	return score
-}
-
-func (pos *Position) mobilityScore() int {
+	// mobility
 	currentMobilityScore := pos.countMoves() * MobilityScoreFactor
+	if (currentMobilityScore == 0) {
+		return terminalNodeScore(pos, depth)
+	}
 	pos.flags = pos.flags ^ FlagWhiteTurn
 	enemyMobilityScore := pos.countMoves() * MobilityScoreFactor
 	pos.flags = pos.flags ^ FlagWhiteTurn
-	return currentMobilityScore - enemyMobilityScore
+	mobilityScore := currentMobilityScore - enemyMobilityScore
+
+	if len(debug)>0 {
+		fmt.Println("currMaterial: ", currMaterial, "; enemyMaterial:", enemyMaterial)
+		fmt.Println("currMobility: ", currentMobilityScore, "; enemyMobility: ", enemyMobilityScore)
+	}
+
+	var score int = materialScore + mobilityScore
+	return score
 }
 
 func (pos *Position) evaluationContext() (currPieces, enemyPieces []square) {
