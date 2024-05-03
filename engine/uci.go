@@ -29,12 +29,14 @@ const (
 )
 
 var posGen *Generator
+var pv *Search
 
 func ParseInputLine(inputLine string) {
 	if inputLine == uIsReady {
+		pv = NewPV()
 		fmt.Println("readyok")
 	} else if inputLine == "eval" {
-		fmt.Println(Evaluate(posGen.pos, true))
+		fmt.Println(Evaluate(posGen.pos, 0, true))
 	} else if inputLine == "tostr" {
 		fmt.Printf("%v\n", posGen)
 	} else if inputLine == "quit" {
@@ -69,11 +71,14 @@ func doGo(goCommand string) {
 	if posGen == nil {
 		return
 	}
+	if pv == nil {
+		return
+	}
 
 	tokens := strings.Split(goCommand, " ")
 
-	blackMillisLeft      := math.MaxInt32
-	whiteMillisLeft      := math.MaxInt32
+	blackMillisLeft := math.MaxInt32
+	whiteMillisLeft := math.MaxInt32
 	blackMillisIncrement := 0
 	whiteMillisIncrement := 0
 
@@ -108,9 +113,8 @@ func doGo(goCommand string) {
 			}
 			fmt.Println("target depth", targetDepth)
 			// TODO move to goroutine
-			fmt.Println("info", AlphaBeta(posGen, targetDepth, 0, MinusInfinityScore, InfinityScore))
-			
-			fmt.Println("info pv ", posGen.bestLine[:int(posGen.plyIdx)+targetDepth])
+			fmt.Println("info", pv.StartAlphaBeta(targetDepth))
+			fmt.Printf("info pv %s\n", pv.PVString())
 		}
 	}
 	fmt.Printf("btime: %d; binc: %d; wtime: %d; winc: %d\n", blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement)

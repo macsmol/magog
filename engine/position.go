@@ -65,7 +65,6 @@ func (pos *Position) String() string {
 			sb.WriteString(fmt.Sprintf(" %v│", p))
 		}
 		sb.WriteRune('\n')
-		// sb.WriteString("\n──╂───┼───┼───┼───┼───┼───┼───┼───┤\n")
 	}
 	appendFlagsString(&sb,
 		pos.flags&FlagBlackCanCastleQside != 0,

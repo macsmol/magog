@@ -26,23 +26,6 @@ type PlyContext struct {
 type Generator struct {
 	pos   *Position
 	plies []PlyContext
-	////
-	// to jest po prostu zła struktura danych -
-	// potrzebuję czegoś co maleje w miarę z zagłębianiem się w kolejne wołania alphabeta
-	// a na starcie ma długość target depth
-	// przykładowo dla target depth 5
-	// [depth] -> linia
-	// [0]     ->  mov01 mov02 mov03 mov04 mov05
-	// [1]     ->  mov11 mov12 mov13 mov14
-	// [2]     ->  mov21 mov22 mov23
-	// [3]     ->  mov31 mov32
-	// [4]     ->  mov41
-	// [5]	   -> pusta linia - Evaluate()
-	// I to co potrzebuję powinno nie być indexowane plyIdx tylko depth właśnie.
-	// I powinno leżeć w searchu!
-	//
-	////
-	bestLine []Move
 	plyIdx   int16
 }
 
@@ -72,9 +55,6 @@ func NewGenerator() *Generator {
 	return &Generator{
 		pos:   NewPosition(),
 		plies: newPlies(),
-		// place to store best line obtained by the search (principal variation).
-		//Indexed by plyIdx (so best line from given position in this generator starts at plyIdx).
-		bestLine: make([]Move, 0, plyBufferCapacity),
 		plyIdx:   0,
 	}
 }
