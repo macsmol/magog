@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -19,13 +20,14 @@ const (
 	uStartpos string = "startpos"
 	uMoves    string = "moves"
 
-	uGo       string = "go"
-	uWtime    string = "wtime"
-	uBtime    string = "btime"
-	uWinc     string = "winc"
-	uBinc     string = "binc"
-	uDepth    string = "depth"
-	uInfinite string = "infinite"
+	uGo        string = "go"
+	uWtime     string = "wtime"
+	uBtime     string = "btime"
+	uWinc      string = "winc"
+	uBinc      string = "binc"
+	uMovesToGo string = "movestogo"
+	uDepth     string = "depth"
+	uInfinite  string = "infinite"
 )
 
 var posGen *Generator
@@ -33,7 +35,7 @@ var pv *Search
 
 func ParseInputLine(inputLine string) {
 	if inputLine == uIsReady {
-		pv = NewPV()
+		pv = NewSearch()
 		fmt.Println("readyok")
 	} else if inputLine == "eval" {
 		fmt.Println(Evaluate(posGen.pos, 0, true))
@@ -49,7 +51,12 @@ func ParseInputLine(inputLine string) {
 		fmt.Println("uciok")
 	} else if strings.HasPrefix(inputLine, uGo) {
 		doGo(strings.TrimSpace(strings.TrimPrefix(inputLine, uGo)))
-	}
+	} //else if inputLine == "stop" {
+	// 	if pv != nil {
+	// 		pv.stop <- true
+	// 	}
+
+	// }
 }
 
 func doPosition(positionCommand string) {
@@ -81,6 +88,7 @@ func doGo(goCommand string) {
 	whiteMillisLeft := math.MaxInt32
 	blackMillisIncrement := 0
 	whiteMillisIncrement := 0
+	fullMovesToGo := ExpectedFullMovesToBePlayed
 
 	var err error
 
@@ -106,18 +114,65 @@ func doGo(goCommand string) {
 			if err != nil {
 				return
 			}
+		case uMovesToGo:
+			fullMovesToGo, err = strconv.Atoi(tokens[i+1])
+			if err != nil {
+				return
+			}
 		case uDepth:
 			targetDepth, err := strconv.Atoi(tokens[i+1])
 			if err != nil {
 				return
 			}
 			fmt.Println("target depth", targetDepth)
-			// TODO move to goroutine
-			fmt.Println("info", pv.StartAlphaBeta(targetDepth))
-			fmt.Printf("info pv %s\n", pv.PVString())
+
+			fmt.Println("info", pv.StartAlphaBeta(targetDepth, time.Now().Add(time.Hour*10)))
+			fmt.Println("info pv", pv.PVString())
+			fmt.Println("bestmove", pv.getBestMove())
+			return
 		}
 	}
-	fmt.Printf("btime: %d; binc: %d; wtime: %d; winc: %d\n", blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement)
+
+	// TODO move to goroutine and use time control
+	endtime := calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, fullMovesToGo)
+	startTimeControlledSearch(endtime)
+
+}
+
+func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, givenMovesToGo int) time.Time {
+	isBlackTurn := posGen.pos.flags&FlagWhiteTurn == 0
+	var millisForMove int
+	if isBlackTurn {
+		millisForMove = blackMillisLeft / givenMovesToGo
+	} else {
+		millisForMove = whiteMillisLeft / givenMovesToGo
+	}
+	now := time.Now()
+	endtime := now.Add(time.Millisecond * time.Duration(millisForMove))
+	return endtime
+}
+
+func startTimeControlledSearch(endtime time.Time) {
+	//go func() {
+		var score int
+		var candidateLine *Line = &Line{}
+		for currDepth := 1; currDepth < MaxSearchDepth; currDepth++ {
+			////
+			pv.done = false
+			score = pv.alphaBeta(posGen, currDepth, 0, MinusInfinityScore, InfinityScore, &pv.bestLineAtDepth[0], candidateLine, endtime)
+			pv.updateBestLine(candidateLine)
+			////
+
+			fmt.Println("info score", score, "pv", pv.PVString(), "depth", currDepth)
+			if time.Now().After(endtime) {
+				break
+			}
+		}
+	//}()
+	//<-pv.stop
+
+	fmt.Println("info pv", pv.PVString(), "score", score)
+	fmt.Println("bestmove", pv.getBestMove())
 
 }
 

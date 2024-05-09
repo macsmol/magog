@@ -40,3 +40,50 @@ specialized_movegen branch.
 Testing search and evaluate/score functions. Found an interesting bug while calculating mobility score. When calculating mobility of enemy pieces (the ones that are not moving).
 The piece tries to take its own pawn because the enPassant square is set. So simply making a null-move does not guarrantee calculating correct mobility of enemy pieces. Luckily
 this caused panic and rather than falfifying mobility score. So clean crash rather than elusive bug. Probably Machess engine has the same bug that went undetected!
+
+09.05.2024
+About iterative deepening under time control.
+Just finished one of the first games against engine. I added a timeout condition in the search loop. This way engine does not spend too much time searching exhaustively at 
+depth reached (which makes it loose on time).
+However we cannot simply break out from the search loop in arbitrary moment because this will cause engine to miss obvious moves. Specifically we must not quit right after descending
+on depth deeper. Here a relevant log from Arena with my comments added:
+
+    2024-05-06 19:56:02,164-->1:position startpos moves e2e4 c7c5 g1f3 d8c7 f1c4 e7e6 b1c3 d7d6 d2d3 c7d8 c1e3 g7g6 d1d2 b8c6 e3g5  // black to move, black queen at d8 is hanging
+    2024-05-06 19:56:02,164-->1:go wtime 239171 btime 236628 winc 0 binc 0
+    2024-05-06 19:56:02,165<--1:info score 305 pv d8g5 depth 1
+    2024-05-06 19:56:02,171<--1:info score -180 pv d8a5 c4e6 depth 2
+    2024-05-06 19:56:02,332<--1:info score 65 pv d8a5 b2b4 c5b4 depth 3
+    2024-05-06 19:56:08,700<--1:info score -190 pv f8e7 c4b5 e7g5 b5c6 depth 4                                                      // completed search at depth 4 - found reasonable continuation
+    2024-05-06 19:56:10,052<--1:timeout!                                                                                            // timeout reached while searching at depth 5 - starting to return from recursive calls
+    2024-05-06 19:56:10,052<--1:timeout!
+    2024-05-06 19:56:10,053<--1:timeout!
+    2024-05-06 19:56:10,053<--1:timeout!
+    2024-05-06 19:56:10,053<--1:timeout!    
+    2024-05-06 19:56:10,053<--1:info score -10 pv f8g7 c3b5 g7c3 d2c3 d8g5 depth 5                                                  // what is returned is a search partially completed searched at depth 5 - it didn't even see that queen is hanging, 
+    2024-05-06 19:56:10,055<--1:info pv f8g7 c3b5 g7c3 d2c3 d8g5
+    2024-05-06 19:56:10,055<--1:bestmove f8g7                                                                                       // engine hangs a queen
+
+09.05.2024 - 2
+Got it working but still got the following situation where it hangs the queen. But this blunder can be attributed to lack of quiescence search 
+(obviously it thinks it captured a piece at the end of the line). Log below:
+
+    position startpos moves e2e4 e7e6 f1c4 d8f6 b1c3 f6d4 g1f3 d4c4 d2d3
+    go wtime 332611 btime 261957 winc 0 binc 0 
+    info pv  b8a6 score 315
+    info pv  b8c6 score 335
+    info pv  c4c3 score 780
+    info score 780 pv c4c3 depth 1
+    info pv  c4c3 b2c3 score -320
+    info pv  c4c5 c1g5 score 280
+    info pv  c4b4 c1g5 score 305
+    info score 305 pv c4b4 c1g5 depth 2
+    info pv  c4b4 e1e2 b4c3 score 645
+    info score 645 pv c4b4 e1e2 b4c3 depth 3
+    info pv  c4b4 f3g5 b8c6 g5f7 score 230
+    info score 230 pv c4b4 f3g5 b8c6 g5f7 depth 4
+    info pv  c4b4 a2a3 b4c5 c3e2 c5f2 score 585                          // at depth 5 started of with line similar from depth 4
+    info pv  f8d6 f3g5 c4b4 c1d2 b4c3 score 655                          // but falsely found "sth even better" - end of this sequence hangs a queen
+    info score 655 pv f8d6 f3g5 c4b4 c1d2 b4c3 depth 5
+    info pv f8d6 f3g5 c4b4 c1d2 b4c3 score 655
+    bestmove f8d6
+

@@ -1,7 +1,9 @@
 critical:
 -quiescence search
+    -tactical moves generation
 -UCI
     -iterative deepening/timemanagement
+    -make it react to 'stop' command - move searc to go routine
 -better evaluation
     -square-piece weights
     -pawn structure
