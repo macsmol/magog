@@ -87,3 +87,9 @@ Got it working but still got the following situation where it hangs the queen. B
     info pv f8d6 f3g5 c4b4 c1d2 b4c3 score 655
     bestmove f8d6
 
+17.05.2024
+Completed quiescence search. Dode a 10 round tournament against Machess (5 openings as both black and white). Results are kind of disappointing :).
+It lost all 10 out of 10 rounds! :)
+Looks like it is simply slower. In scandinavian defense machess took 6 seconds to find the e4e5. Magog took 6s for the same move.
+Time to investigate - probably it is due to bad move ordering (machess searches captures first (and also has separate piece list per piece type)
+but it could also be a problem with small NPS.. (simply slow raw movegen and evaluation function)

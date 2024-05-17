@@ -57,7 +57,7 @@ func (pos *Position) evaluationContext() (currPieces, enemyPieces []square) {
 	}
 }
 
-// GenerateMoves returns legal moves from position that this generator is currently holding
+// Counts all possible moves from pos position
 func (pos *Position) countMoves() int {
 	var movesCount int = 0
 	currentPieces, enemyPieces,
@@ -176,6 +176,23 @@ func (pos *Position) countSlidingPieceMoves(from square, currColorBit, enemyColo
 				movesCount++
 			}
 			if toContent&enemyColorBit != 0 {
+				break
+			}
+		}
+	}
+	return movesCount
+}
+
+func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction) int {
+	movesCount := 0
+	for _, dir := range dirs {
+		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
+			toContent := pos.board[to]
+			if toContent&currColorBit != 0 {
+				break
+			}
+			if toContent&enemyColorBit != 0 && pos.isLegal(NewMove(from, to)) {
+				movesCount++
 				break
 			}
 		}

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestPerftOnReferencePositions(t *testing.T) {
+func TestPerftAllMoves(t *testing.T) {
 	var tests = []struct {
 		fenStr     string
 		moveCounts []int64
@@ -139,7 +139,7 @@ func TestPerftOnReferencePositions(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(fmt.Sprintf("FEN:%v",test.fenStr), func(t *testing.T) {
+		t.Run(fmt.Sprintf("FEN:%v", test.fenStr), func(t *testing.T) {
 			gen, err := NewGeneratorFromFen(test.fenStr)
 			if err != nil {
 				t.Fatalf("Could not parse FEN: %v due to: %v", test.fenStr, err)
@@ -158,4 +158,41 @@ func TestPerftOnReferencePositions(t *testing.T) {
 		})
 	}
 
+}
+
+func TestPerftTacticalMoves(t *testing.T) {
+	var tests = []struct {
+		fenStr     string
+		moveCounts []int64
+	}{
+		// simplest promotion case
+		{"4k3/P7/8/8/8/8/8/4K3 w - - 0 1", []int64{4, 0, 100}},
+		{"4k3/8/8/8/8/8/p7/4K3 b - - 0 1", []int64{4, 0, 100}},
+		//simple capture-promotion case
+		{"1n2k3/P7/8/8/8/8/8/4K3 w - - 0 1", []int64{8, 0, 271}},
+		{"4k3/8/8/8/8/8/p7/1N2K3 b - - 0 1", []int64{8, 0, 271}},
+		//newgame
+		{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", []int64{0, 0, 34, 1576, 82719, 2812008}},
+	}
+
+	for _, test := range tests {
+		t.Run(fmt.Sprintf("FEN:%v", test.fenStr), func(t *testing.T) {
+			gen, err := NewGeneratorFromFen(test.fenStr)
+			if err != nil {
+				t.Fatalf("Could not parse FEN: %v due to: %v", test.fenStr, err)
+			}
+
+			for i, expectedMoves := range test.moveCounts {
+				depth := i + 1
+				fmt.Printf("Perft(%d).. ", depth)
+				actualPerft := gen.PerftTactical(depth)
+				if actualPerft != expectedMoves {
+					t.Fatalf("expected %v but was %v", expectedMoves, actualPerft)
+				}
+				fmt.Print("ok;         ")
+			}
+			fmt.Println()
+
+		})
+	}
 }

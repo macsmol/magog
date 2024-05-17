@@ -24,9 +24,9 @@ type PlyContext struct {
 }
 
 type Generator struct {
-	pos   *Position
-	plies []PlyContext
-	plyIdx   int16
+	pos    *Position
+	plies  []PlyContext
+	plyIdx int16
 }
 
 const (
@@ -53,9 +53,9 @@ func (move Move) String() string {
 
 func NewGenerator() *Generator {
 	return &Generator{
-		pos:   NewPosition(),
-		plies: newPlies(),
-		plyIdx:   0,
+		pos:    NewPosition(),
+		plies:  newPlies(),
+		plyIdx: 0,
 	}
 }
 
@@ -99,9 +99,18 @@ func (gen *Generator) PopMove() {
 	gen.pos.UnmakeMove(gen.plies[gen.plyIdx].undo)
 }
 
-// GenerateMoves returns legal moves from position that this generator is currently holding
+// From position that gen generator is currently holding returns all legal moves.
 func (gen *Generator) GenerateMoves() []Move {
-	gen.generatePseudoLegalMoves()
+	return gen.generateLegalMoves(gen.generatePseudoLegalMoves)
+}
+
+// From position that gen generator is currently holding returns all legal moves that change material (captures and promotions)
+func (gen *Generator) GenerateTacticalMoves() []Move {
+	return gen.generateLegalMoves(gen.generatePseudoLegalTacticalMoves)
+}
+
+func (gen *Generator)generateLegalMoves(generateSthPseudolegal func()) []Move {
+	generateSthPseudolegal()
 	plyContext := &gen.plies[gen.plyIdx]
 	i := 0
 	for _, pseudoMove := range plyContext.moves {
@@ -134,6 +143,23 @@ func (gen *Generator) Perft(depth int) int64 {
 	for _, move := range moves {
 		gen.PushMove(move)
 		movesCount += gen.Perft(depth - 1)
+		gen.PopMove()
+	}
+	return movesCount
+}
+
+func (gen *Generator) PerftTactical(depth int) int64 {
+
+	var movesCount int64 = 0
+	if depth <= 1 {
+		//TODO implement method that only counts the moves
+		return int64(gen.pos.countTacticalMoves())
+	}
+
+	moves := gen.GenerateMoves()
+	for _, move := range moves {
+		gen.PushMove(move)
+		movesCount += gen.PerftTactical(depth - 1)
 		gen.PopMove()
 	}
 	return movesCount
@@ -233,7 +259,8 @@ func (gen *Generator) generatePseudoLegalMoves() {
 	// king moves
 	for _, dir := range kingDirections {
 		to := currentKing + square(dir)
-		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
+		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 &&
+		!pos.isUnderCheck(enemyPieces,enemyKing, to) {
 			*outputMoves = append(*outputMoves, NewMove(currentKing, to))
 		}
 	}
@@ -262,6 +289,123 @@ func (gen *Generator) generatePseudoLegalMoves() {
 	}
 }
 
+func (gen *Generator) generatePseudoLegalTacticalMoves() {
+	pos := gen.pos
+	var outputMoves *[]Move = &gen.plies[gen.plyIdx].moves
+	*outputMoves = (*outputMoves)[:0]
+
+	currentPieces, enemyPieces,
+		currentKing, enemyKing,
+		pawnAdvanceDirection,
+		currColorBit, enemyColorBit,
+		promotionRank := pos.GetCurrentTacticalMoveContext()
+	for _, from := range currentPieces {
+		piece := pos.board[from]
+		switch piece {
+		case WPawn, BPawn:
+			// queenside take
+			to := from + square(pawnAdvanceDirection) - 1
+			if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
+				appendPawnMoves(from, to, promotionRank, outputMoves)
+			}
+			// kingside take
+			to = from + square(pawnAdvanceDirection) + 1
+			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
+				appendPawnMoves(from, to, promotionRank, outputMoves)
+			}
+			// promoting pushes
+			to = from + square(pawnAdvanceDirection)
+			if pos.board[to] == NullPiece && to.getRank() == promotionRank {
+				appendPawnMoves(from, to, promotionRank, outputMoves)
+			}
+		case WKnight, BKnight:
+			dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
+			for _, dir := range dirs {
+				to := from + square(dir)
+				if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
+					*outputMoves = append(*outputMoves, NewMove(from, to))
+				}
+			}
+		case WBishop, BBishop:
+			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
+			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+		case WRook, BRook:
+			dirs := []Direction{DirN, DirS, DirE, DirW}
+			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+		case WQueen, BQueen:
+			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, kingDirections, outputMoves)
+		default:
+			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
+		}
+	}
+	// king moves
+	for _, dir := range kingDirections {
+		to := currentKing + square(dir)
+		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 && !pos.isUnderCheck(enemyPieces, enemyKing, to) {
+			*outputMoves = append(*outputMoves, NewMove(currentKing, to))
+		}
+	}
+}
+
+// Counts all tactical moves possible from pos position
+func (pos *Position) countTacticalMoves() int {
+	var movesCount int = 0
+	currentPieces, enemyPieces,
+		currentKing, enemyKing,
+		pawnAdvanceDirection,
+		currColorBit, enemyColorBit,
+		promotionRank := pos.GetCurrentTacticalMoveContext()
+	for _, from := range currentPieces {
+		piece := pos.board[from]
+		switch piece {
+		case WPawn, BPawn:
+			// queenside take
+			to := from + square(pawnAdvanceDirection) - 1
+			if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare) {
+				movesCount += pos.countPawnMoves(from, to, promotionRank)
+			}
+			// kingside take
+			to = from + square(pawnAdvanceDirection) + 1
+			if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
+				movesCount += pos.countPawnMoves(from, to, promotionRank)
+			}
+			//pushes
+			to = from + square(pawnAdvanceDirection)
+			if pos.board[to] == NullPiece && to.getRank() == promotionRank{
+				movesCount += pos.countPawnMoves(from, to, promotionRank)
+			}
+		case WKnight, BKnight:
+			dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
+			for _, dir := range dirs {
+				to := from + square(dir)
+				if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
+					if pos.isLegal(NewMove(from, to)) {
+						movesCount++
+					}
+				}
+			}
+		case WBishop, BBishop:
+			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
+			movesCount += pos.countSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs)
+		case WRook, BRook:
+			dirs := []Direction{DirN, DirS, DirE, DirW}
+			movesCount += pos.countSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs)
+		case WQueen, BQueen:
+			movesCount += pos.countSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, kingDirections)
+		default:
+			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
+		}
+	}
+	// king moves
+	for _, dir := range kingDirections {
+		to := currentKing + square(dir)
+		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 && !pos.isUnderCheck(enemyPieces, enemyKing, to) {
+			movesCount++
+		}
+	}
+	return movesCount
+}
+
 func (gen *Generator) String() string {
 	return gen.pos.String()
 }
@@ -288,6 +432,21 @@ func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyCol
 			}
 			*outputMoves = append(*outputMoves, NewMove(from, to))
 			if toContent&enemyColorBit != 0 {
+				break
+			}
+		}
+	}
+}
+
+func (pos *Position) appendSlidingPieceTacticalMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction, outputMoves *[]Move) {
+	for _, dir := range dirs {
+		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
+			toContent := pos.board[to]
+			if toContent&currColorBit != 0 {
+				break
+			}
+			if toContent&enemyColorBit != 0 {
+				*outputMoves = append(*outputMoves, NewMove(from, to))
 				break
 			}
 		}

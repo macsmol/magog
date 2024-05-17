@@ -119,6 +119,24 @@ func (pos *Position) GetCurrentContext() (
 		Rank2, Rank8
 }
 
+func (pos *Position) GetCurrentTacticalMoveContext() (
+	currPieces []square, enemyPieces []square,
+	currKing square, enemyKing square,
+	pawnAdvance Direction,
+	currColorBit piece, enemyColorBit piece,
+	promotionRank rank) {
+	if pos.flags&FlagWhiteTurn == 0 {
+		return pos.blackPieces, pos.whitePieces,
+			pos.blackKing, pos.whiteKing,
+			DirS, BlackPieceBit, WhitePieceBit,
+			Rank1
+	}
+	return pos.whitePieces, pos.blackPieces,
+		pos.whiteKing, pos.blackKing,
+		DirN, WhitePieceBit, BlackPieceBit,
+		Rank8
+}
+
 // MakeMove applies mov to a position pos. Returns a backtrackInfo that can be used to revert pos back
 // to it's original state. In case where applying a mov would result in an illegal Position (i.e. capturing
 // a king is possible), pos is left unchanged and backtrackInfo returned is all zeroes.

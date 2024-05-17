@@ -2,7 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -10,7 +9,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.1"
+	VERSION_STRING string = "0.2"
 )
 
 const (
@@ -31,11 +30,11 @@ const (
 )
 
 var posGen *Generator
-var pv *Search
+var search *Search
 
 func ParseInputLine(inputLine string) {
 	if inputLine == uIsReady {
-		pv = NewSearch()
+		search = NewSearch()
 		fmt.Println("readyok")
 	} else if inputLine == "eval" {
 		fmt.Println(Evaluate(posGen.pos, 0, true))
@@ -51,12 +50,11 @@ func ParseInputLine(inputLine string) {
 		fmt.Println("uciok")
 	} else if strings.HasPrefix(inputLine, uGo) {
 		doGo(strings.TrimSpace(strings.TrimPrefix(inputLine, uGo)))
-	} //else if inputLine == "stop" {
-	// 	if pv != nil {
-	// 		pv.stop <- true
-	// 	}
-
-	// }
+	} else if inputLine == "stop" {
+		if search != nil {
+			search.stop <- true
+		}
+	}
 }
 
 func doPosition(positionCommand string) {
@@ -78,17 +76,18 @@ func doGo(goCommand string) {
 	if posGen == nil {
 		return
 	}
-	if pv == nil {
+	if search == nil {
 		return
 	}
 
 	tokens := strings.Split(goCommand, " ")
 
-	blackMillisLeft := math.MaxInt32
-	whiteMillisLeft := math.MaxInt32
+	blackMillisLeft := 100_000_000_000
+	whiteMillisLeft := 100_000_000_000
 	blackMillisIncrement := 0
 	whiteMillisIncrement := 0
 	fullMovesToGo := ExpectedFullMovesToBePlayed
+	targetDepth := MaxSearchDepth
 
 	var err error
 
@@ -120,23 +119,14 @@ func doGo(goCommand string) {
 				return
 			}
 		case uDepth:
-			targetDepth, err := strconv.Atoi(tokens[i+1])
+			targetDepth, err = strconv.Atoi(tokens[i+1])
 			if err != nil {
 				return
 			}
-			fmt.Println("target depth", targetDepth)
-
-			fmt.Println("info", pv.StartAlphaBeta(targetDepth, time.Now().Add(time.Hour*10)))
-			fmt.Println("info pv", pv.PVString())
-			fmt.Println("bestmove", pv.getBestMove())
-			return
 		}
 	}
-
-	// TODO move to goroutine and use time control
 	endtime := calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, fullMovesToGo)
-	startTimeControlledSearch(endtime)
-
+	go search.StartIterativeDeepening(endtime, targetDepth)
 }
 
 func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, givenMovesToGo int) time.Time {
@@ -152,27 +142,9 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 	return endtime
 }
 
-func startTimeControlledSearch(endtime time.Time) {
-	//go func() {
-		var score int
-		var candidateLine *Line = &Line{}
-		for currDepth := 1; currDepth < MaxSearchDepth; currDepth++ {
-			////
-			pv.done = false
-			score = pv.alphaBeta(posGen, currDepth, 0, MinusInfinityScore, InfinityScore, &pv.bestLineAtDepth[0], candidateLine, endtime)
-			pv.updateBestLine(candidateLine)
-			////
-
-			fmt.Println("info score", score, "pv", pv.PVString(), "depth", currDepth)
-			if time.Now().After(endtime) {
-				break
-			}
-		}
-	//}()
-	//<-pv.stop
-
-	fmt.Println("info pv", pv.PVString(), "score", score)
-	fmt.Println("bestmove", pv.getBestMove())
+func printInfo(score, depth int, bestLine []Move) {
+	line := Line{moves: bestLine}
+	fmt.Println("info pv", line.String(), "score", score, "depth", depth)
 
 }
 

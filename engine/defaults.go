@@ -6,4 +6,3 @@ const MaxSearchDepth = 40
 
 // Used in calculation of time dedicated to the next move in time-controlled games
 const ExpectedFullMovesToBePlayed = 30
-
