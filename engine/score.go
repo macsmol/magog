@@ -9,6 +9,7 @@ const (
 	MinusInfinityScore = -InfinityScore
 	LostScore = -100_000
 	DrawScore = 0
+	ScoreCloseToMate = 2 * (9 * MaterialQueenScore +  2 * MaterialRookScore + 2 * MaterialBishopScore + 2 * MaterialKnightScore);
 )
 
 const (

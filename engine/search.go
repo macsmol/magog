@@ -23,7 +23,7 @@ import (
 type Search struct {
 	bestLineAtDepth [MaxSearchDepth][]Move
 	stop            chan bool
-	done            bool
+	interrupted     bool
 }
 
 func NewSearch() *Search {
@@ -37,25 +37,30 @@ func NewSearch() *Search {
 
 func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 	var score, currDepth int
+	var oneLegalMove bool
 	var bestLine *Line = &Line{}
-	search.done = false
+	search.interrupted = false
 	starttime := time.Now()
 	for currDepth = 1; currDepth <= maxDepth; currDepth++ {
-		score = search.alphaBeta(posGen, currDepth, 0, MinusInfinityScore, InfinityScore, &search.bestLineAtDepth[0], bestLine, starttime, endtime)
+		score, oneLegalMove = search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0], bestLine, starttime, endtime)
 		search.updateBestLine(bestLine)
 
-		//uncomment for less clutter right at the beginning of the search
-		//if  time.Now().After(starttime.Add(time.Millisecond * time.Duration(200))) {
-		printInfo(score, currDepth, bestLine.moves)
-		//}
 		if time.Now().After(endtime) {
 			break
 		}
-		if search.done {
+		if search.interrupted {
 			break
 		}
+		// shortest mating line found - no need to go deeper
+		if pliesToMate(score) == currDepth {
+			break
+		}
+		// skip deeper searches when only one move is possible
+		if oneLegalMove {
+			break
+		}
+
 	}
-	printInfo(score, currDepth-1, bestLine.moves)
 	fmt.Println("bestmove", search.getBestMove())
 }
 
@@ -101,7 +106,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 
 	reorderMoves(moves, candidateLine, depth)
 	for _, move := range moves {
-		if search.done {
+		if search.interrupted {
 			break
 		}
 		posGen.PushMove(move)
@@ -114,28 +119,77 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 		if currScore > alpha {
 			updateBestLine(currBestLine, bestSubline, move)
 			alpha = currScore
-
-			if depth == 0 {
-			//less noisy alternative 
-			//if depth == 0 && time.Now().After(starttime.Add(time.Millisecond*time.Duration(200))) {
-				printInfo(alpha, targetDepth, search.getBestLine())
-			}
 		}
 		if time.Now().After(endtime) && searchedEnoughAtThisDepth() {
 			break
 		}
-		if search.done {
+		if search.interrupted {
 			break
 		}
 
 		select {
 		case <-search.stop:
-			search.done = true
+			search.interrupted = true
 		default:
 		}
 	}
 
 	return alpha
+}
+
+func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBestLine *[]Move, candidateLine *Line, starttime, endtime time.Time) (score int, oneLegalMove bool) {
+	bestSubline := search.bestLineAtDepth[1]
+
+	moves := posGen.GenerateMoves()
+	alpha := MinusInfinityScore
+	beta := InfinityScore
+
+	if len(moves) == 0 {
+		*currBestLine = (*currBestLine)[:0]
+		terminalNodeScore(posGen.pos, 0)
+	}
+
+	reorderMoves(moves, candidateLine, 0)
+	for _, move := range moves {
+		if search.interrupted {
+			break
+		}
+		posGen.PushMove(move)
+		currScore := -search.alphaBeta(posGen, targetDepth, 1, -beta, -alpha, &bestSubline, candidateLine, starttime, endtime)
+		posGen.PopMove()
+
+		if currScore > alpha {
+			updateBestLine(currBestLine, bestSubline, move)
+			alpha = currScore
+
+			//less noisy alternative
+			//if depth == 0 && time.Now().After(starttime.Add(time.Millisecond*time.Duration(200))) {
+			printInfo(alpha, targetDepth, search.getBestLine())
+			//}
+		}
+		if time.Now().After(endtime) && searchedEnoughAtThisDepth() {
+			break
+		}
+		if search.interrupted {
+			break
+		}
+		if nextMoveWins(currScore) {
+			break
+		}
+
+		select {
+		case <-search.stop:
+			search.interrupted = true
+		default:
+		}
+	}
+
+	return alpha, len(moves) == 1
+}
+
+func nextMoveWins(score int) bool {
+	onePly := 1
+	return score == -LostScore-onePly
 }
 
 func reorderMoves(moves []Move, candidateLine *Line, depth int) {
@@ -170,7 +224,7 @@ func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move)
 	copy((*currBestLine)[1:], betterSubline)
 }
 
-func (search *Search)quiescence(posGen *Generator, alpha, beta, depth int, currBestLine *[]Move) int {
+func (search *Search) quiescence(posGen *Generator, alpha, beta, depth int, currBestLine *[]Move) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
 	score := Evaluate(posGen.pos, depth)
 
@@ -184,9 +238,9 @@ func (search *Search)quiescence(posGen *Generator, alpha, beta, depth int, currB
 	tacticalMoves := posGen.GenerateTacticalMoves()
 	for _, mov := range tacticalMoves {
 		posGen.PushMove(mov)
-		score = -search.quiescence(posGen, -beta, -alpha,depth+1, &bestSubline)
+		score = -search.quiescence(posGen, -beta, -alpha, depth+1, &bestSubline)
 		posGen.PopMove()
-		
+
 		if score >= beta {
 			return beta
 		}

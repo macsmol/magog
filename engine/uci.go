@@ -120,7 +120,7 @@ func doGo(goCommand string) {
 			}
 		case uDepth:
 			targetDepth, err = strconv.Atoi(tokens[i+1])
-			if err != nil {
+			if err != nil || targetDepth < 1 {
 				return
 			}
 		}
@@ -144,8 +144,44 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 
 func printInfo(score, depth int, bestLine []Move) {
 	line := Line{moves: bestLine}
-	fmt.Println("info pv", line.String(), "score", score, "depth", depth)
+	fmt.Println("info pv", line.String(), "score", formatScore(score), "depth", depth)
 
+}
+
+func formatScore(score int) string {
+	if closeToMate(score) {
+			return fmt.Sprintf("mate %d", fullMovesToMate(score))
+	}
+	return fmt.Sprintf("cp %d", score)
+}
+
+func closeToMate(score int) bool {
+	if score < 0 {
+		score = -score
+	}
+	return score > ScoreCloseToMate 
+}
+
+func fullMovesToMate(score int) int {
+	var sign int
+	if score < 0 {
+		sign = -1
+		score = -score
+	} else {
+		sign = 1
+	}
+	pliesToMate := -LostScore - score
+
+	return sign * (pliesToMate + 1) /2
+}
+
+func pliesToMate(score int) int {
+	if score < 0 {
+		score = -score
+	}
+	pliesToMate := -LostScore - score
+
+	return pliesToMate
 }
 
 func parseMoveString(moveStr string) Move {
