@@ -125,11 +125,13 @@ func doGo(goCommand string) {
 			}
 		}
 	}
-	endtime := calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, fullMovesToGo)
+	endtime := calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, 
+		fullMovesToGo)
 	go search.StartIterativeDeepening(endtime, targetDepth)
 }
 
-func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, givenMovesToGo int) time.Time {
+func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, 
+	givenMovesToGo int) time.Time {
 	isBlackTurn := posGen.pos.flags&FlagWhiteTurn == 0
 	var millisForMove int
 	if isBlackTurn {
@@ -142,15 +144,16 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 	return endtime
 }
 
-func printInfo(score, depth int, bestLine []Move) {
+func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration) {
 	line := Line{moves: bestLine}
-	fmt.Println("info pv", line.String(), "score", formatScore(score), "depth", depth)
-
+	fmt.Println("info pv", line.String(), "score", formatScore(score), "depth", depth,
+	"nodes", evaluatedNodes, "time", timeElapsed.Milliseconds())
+	
 }
 
 func formatScore(score int) string {
 	if closeToMate(score) {
-			return fmt.Sprintf("mate %d", fullMovesToMate(score))
+		return fmt.Sprintf("mate %d", fullMovesToMate(score))
 	}
 	return fmt.Sprintf("cp %d", score)
 }

@@ -9,7 +9,8 @@ const (
 	MinusInfinityScore = -InfinityScore
 	LostScore = -100_000
 	DrawScore = 0
-	ScoreCloseToMate = 2 * (9 * MaterialQueenScore +  2 * MaterialRookScore + 2 * MaterialBishopScore + 2 * MaterialKnightScore);
+	ScoreCloseToMate = 2 * (9 * MaterialQueenScore +  2 * MaterialRookScore + 2 * 
+		MaterialBishopScore + 2 * MaterialKnightScore);
 )
 
 const (
@@ -23,7 +24,8 @@ const (
 	MobilityScoreFactor = 5
 )
 
-// Returns static evaluation score for Position pos. It's given relative to the currently playing side (negamax score)
+// Returns static evaluation score for Position pos. It's given relative to the currently playing side 
+//(negamax score)
 func Evaluate(pos *Position, depth int, debug ...bool) int {
 	currentPieces, enemyPieces := pos.evaluationContext()
 
@@ -47,7 +49,16 @@ func Evaluate(pos *Position, depth int, debug ...bool) int {
 	}
 
 	var score int = materialScore + mobilityScore
+	evaluatedNodes++
 	return score
+}
+
+func terminalNodeScore(position *Position, depth int) int {
+	evaluatedNodes++
+	if position.isCurrentKingUnderCheck() {
+		return LostScore + depth
+	}
+	return DrawScore
 }
 
 func (pos *Position) evaluationContext() (currPieces, enemyPieces []square) {
@@ -73,7 +84,8 @@ func (pos *Position) countMoves() int {
 		case WPawn, BPawn:
 			// queenside take
 			to := from + square(pawnAdvanceDirection) - 1
-			if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || (to == pos.enPassSquare && 
+			if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || 
+				(to == pos.enPassSquare &&
 				// fix for bug where friendly ep-square take is possible while calculating mobility
 				from.getRank() != pawnStartRank)) {
 				movesCount += pos.countPawnMoves(from, to, promotionRank)
@@ -114,7 +126,8 @@ func (pos *Position) countMoves() int {
 			dirs := []Direction{DirN, DirS, DirE, DirW}
 			movesCount += pos.countSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs)
 		case WQueen, BQueen:
-			movesCount += pos.countSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections)
+			movesCount += pos.countSlidingPieceMoves(from, currColorBit, enemyColorBit, 
+				kingDirections)
 		default:
 			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
 		}
@@ -165,7 +178,8 @@ func (pos *Position) countPawnMoves(from, to square, promotionRank rank) int {
 	}
 }
 
-func (pos *Position) countSlidingPieceMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction) int {
+func (pos *Position) countSlidingPieceMoves(from square, currColorBit, enemyColorBit piece, 
+	dirs []Direction) int {
 	movesCount := 0
 	for _, dir := range dirs {
 		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
@@ -184,7 +198,8 @@ func (pos *Position) countSlidingPieceMoves(from square, currColorBit, enemyColo
 	return movesCount
 }
 
-func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction) int {
+func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, enemyColorBit piece,
+	dirs []Direction) int {
 	movesCount := 0
 	for _, dir := range dirs {
 		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {

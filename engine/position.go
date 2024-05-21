@@ -287,7 +287,8 @@ func (pos *Position) isCurrentKingUnderCheck() bool {
 	return pos.isUnderCheck(enemyPieces, enemyKing, currentKing)
 }
 
-// Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on enemyKing square.
+// Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on
+// enemyKing square.
 func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSquare square) bool {
 	var moveIdx int16
 	for _, attackFrom := range enemyPieces {
