@@ -193,7 +193,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 
 	if pos.board[mov.to] != NullPiece {
 		undo.takenPiece = pos.board[mov.to]
-		// when calculating enemy mobility it is possible to kill enemy king. 
+		// when calculating enemy mobility it is possible to kill enemy king.
 		// Kings are not on piece lists so we don't modify piece lists in MakeMove() and UnmakeMove()
 		if pos.board[mov.to] != King|enemyColorBit {
 			*enemyPieces = killPiece(*enemyPieces, mov.to)
@@ -287,60 +287,67 @@ func (pos *Position) isCurrentKingUnderCheck() bool {
 	return pos.isUnderCheck(enemyPieces, enemyKing, currentKing)
 }
 
+// func (gen *Generator)generateLegalMoves(generateSthPseudolegal func()) []Move {
+type isUnderCheckBySthFunc func(attackFrom, destSquare square, moveIdx int16,
+	board *[128]piece) bool
+
+var checkFunctionsLUT [5]isUnderCheckBySthFunc
+
+func checkedByPawn(attackFrom, destSquare square, moveIdx int16, board *[128]piece) bool {
+	if board[attackFrom] == BPawn {
+		return attackTable[moveIdx]&BlackPawnAttacks != 0
+	}
+	return attackTable[moveIdx]&WhitePawnAttacks != 0
+}
+
+func checkedByKnight(attackFrom, destSquare square, moveIdx int16, board *[128]piece) bool {
+	return attackTable[moveIdx]&KnightAttacks != 0
+}
+
+func checkedByBishop(attackFrom, destSquare square, moveIdx int16, board *[128]piece) bool {
+	return attackTable[moveIdx]&BishopAttacks != 0 &&
+		checkedBySlidingPiece(attackFrom, destSquare, moveIdx, board)
+}
+
+func checkedByRook(attackFrom, destSquare square, moveIdx int16, board *[128]piece) bool {
+	return attackTable[moveIdx]&RookAttacks != 0 &&
+		checkedBySlidingPiece(attackFrom, destSquare, moveIdx, board)
+}
+
+func checkedByQueen(attackFrom, destSquare square, moveIdx int16, board *[128]piece) bool {
+	return attackTable[moveIdx]&QueenAttacks != 0 &&
+		checkedBySlidingPiece(attackFrom, destSquare, moveIdx, board)
+}
+
+func init() {
+	checkFunctionsLUT[0] = checkedByPawn
+	checkFunctionsLUT[1] = checkedByKnight
+	checkFunctionsLUT[2] = checkedByBishop
+	checkFunctionsLUT[3] = checkedByRook
+	checkFunctionsLUT[4] = checkedByQueen
+}
+
 // Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on
 // enemyKing square.
 func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSquare square) bool {
 	var moveIdx int16
 	for _, attackFrom := range enemyPieces {
 		moveIdx = moveIndex(attackFrom, destSquare)
-		switch pos.board[attackFrom] {
-		case WKnight, BKnight:
-			if attackTable[moveIdx]&KnightAttacks == 0 {
-				continue
-			}
-			return true
-		case WBishop, BBishop:
-			if attackTable[moveIdx]&BishopAttacks == 0 {
-				continue
-			}
-			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-				return true
-			}
-		case WRook, BRook:
-			if attackTable[moveIdx]&RookAttacks == 0 {
-				continue
-			}
-			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-				return true
-			}
-		case WQueen, BQueen:
-			if attackTable[moveIdx]&QueenAttacks == 0 {
-				continue
-			}
-			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-				return true
-			}
-		case WPawn:
-			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
-				continue
-			}
-			return true
-		case BPawn:
-			if attackTable[moveIdx]&BlackPawnAttacks == 0 {
-				continue
-			}
+		lutIdx := pos.board[attackFrom] & ColorlessPiece - 1
+		if checkFunctionsLUT[lutIdx](attackFrom, destSquare, moveIdx, &pos.board) {
 			return true
 		}
 	}
+
 	moveIdx = moveIndex(enemyKing, destSquare)
 	kingAttack := attackTable[moveIdx]&KingAttacks != 0
 	return kingAttack
 }
 
-func (pos *Position) checkedBySlidingPiece(slidingPieceSquare, destSquare square, moveIndex int16) bool {
+func checkedBySlidingPiece(slidingPieceSquare, destSquare square, moveIndex int16, board *[128]piece) bool {
 	direction := directionTable[moveIndex]
 	for sq := slidingPieceSquare + square(direction); sq != destSquare; sq += square(direction) {
-		if pos.board[sq] != NullPiece {
+		if board[sq] != NullPiece {
 			return false
 		}
 	}
@@ -392,7 +399,7 @@ func (pos *Position) UnmakeMove(undo backtrackInfo) {
 
 	if undo.takenPiece != NullPiece {
 		var killSquare square = mov.to
-		// when calculating enemy mobility it is possible to kill enemy king. 
+		// when calculating enemy mobility it is possible to kill enemy king.
 		// Kings are not on piece lists so we don't modify piece lists in MakeMove() and UnmakeMove()
 		if undo.takenPiece&ColorlessPiece != King {
 			//mov was an en passant take
