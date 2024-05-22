@@ -90,6 +90,57 @@ Got it working but still got the following situation where it hangs the queen. B
 17.05.2024
 Completed quiescence search. Dode a 10 round tournament against Machess (5 openings as both black and white). Results are kind of disappointing :).
 It lost all 10 out of 10 rounds! :)
-Looks like it is simply slower. In scandinavian defense machess took 6 seconds to find the e4e5. Magog took 6s for the same move.
-Time to investigate - probably it is due to bad move ordering (machess searches captures first (and also has separate piece list per piece type)
+Looks like it is simply slower. In scandinavian defense machess took 6 seconds to find the e4e5. 
+Magog took 6s for the same move.
+Time to investigate - probably it is due to bad move ordering machess searches captures first 
+(and also has separate piece list per piece type)
 but it could also be a problem with small NPS.. (simply slow raw movegen and evaluation function)
+
+22.05.2024
+Yup the engine has 200k less nps than Machess (~500k vs ~300k). Did some profiling with go pprof and found out that 
+isUnderCheckMethod appears quite high on the list.
+To be more specific switch in that method is quite hot.
+
+Here's a pprof list (note that it's not exactly from the commited version - this is a color-blind of the switch cases - see lines: 296, 297, 302.. anyway the results are on par)
+
+    (pprof) list isUnderCheck
+    Total: 28.55s
+    ROUTINE ======================== macsmol/magog/engine.(*Position).isUnderCheck in C:\Users\Maciej\workspaces\go\magog\engine\position.go
+        3.47s      3.73s (flat, cum) 13.06% of Total
+        60ms       60ms    292:func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSquare square) bool {
+            .          .    293:   var moveIdx int16
+        300ms      300ms    294:   for _, attackFrom := range enemyPieces {
+        60ms      260ms    295:           moveIdx = moveIndex(attackFrom, destSquare)
+        1.17s      1.17s    296:           switch pos.board[attackFrom]&ColorlessPiece {       
+            .          .    297:           case Knight:
+        170ms      170ms    298:                   if attackTable[moveIdx]&KnightAttacks == 0 {
+            .          .    299:                           continue
+            .          .    300:                   }
+            .          .    301:                   return true
+
+So I thought that maybe the switch in Golang is kindof slow (a premonition I have ever since I 
+debugged a switch statement in Golang - for some reason you never jump directly to the desired case, you have to step over few times. This never happened in Java).
+Following that lead I've made a version that uses a LUT with isCheckedByXX function containing
+functions for each piece. This worked much slower (~200k nps). 
+Here's the relevant listing:
+
+    (pprof) list Check
+    Total: 36.26s
+    ROUTINE ======================== macsmol/magog/engine.(*Position).isUnderCheck in C:\Users\Maciej\workspaces\go\magog\engine\position.go
+        3.63s      7.63s (flat, cum) 21.04% of Total
+        140ms      140ms    332:func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSquare square) bool {
+            .          .    333:   var moveIdx int16
+        760ms      760ms    334:   for _, attackFrom := range enemyPieces {
+        10ms      2.24s    335:           moveIdx = moveIndex(attackFrom, destSquare)
+        480ms      480ms    336:           lutIdx := pos.board[attackFrom] & ColorlessPiece - 1
+        2.18s      3.92s    337:           if checkFunctionsLUT[lutIdx](attackFrom, destSquare, moveIdx, &pos.board) {
+            .          .    338:                   return true
+            .          .    339:           }
+            .          .    340:   }
+            .          .    341:
+            .       30ms    342:   moveIdx = moveIndex(enemyKing, destSquare)
+        40ms       40ms    343:   kingAttack := attackTable[moveIdx]&KingAttacks != 0
+        20ms       20ms    344:   return kingAttack
+            .          .    345:}
+            .          .    346:
+            .          .    347:func checkedBySlidingPiece(slidingPieceSquare, destSquare square, moveIndex int16, board *[128]piece) bool {
