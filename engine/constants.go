@@ -143,7 +143,8 @@ const (
 	ColorlessPiece piece = 0x07
 )
 
-// 0b000w_bppp
+// bit layout 
+// 000w_bppp
 const (
 	NullPiece          piece = iota
 	Pawn, BPawn, WPawn       = iota, iota + BlackPieceBit, iota + WhitePieceBit

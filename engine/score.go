@@ -24,8 +24,8 @@ const (
 	MobilityScoreFactor = 5
 )
 
-// Returns static evaluation score for Position pos. It's given relative to the currently playing side 
-//(negamax score)
+// Returns static evaluation score for Position pos. It's given relative to the currently playing
+// side (negamax score)
 func Evaluate(pos *Position, depth int, debug ...bool) int {
 	currentPieces, enemyPieces := pos.evaluationContext()
 

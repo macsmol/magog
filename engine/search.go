@@ -11,8 +11,8 @@ import (
 // }
 
 // structure for keeping best line (Search) found and retrieving it at the end of the search.
-// Two dimensional array accumulates shorter lines from greater depth into longer line towards the 
-//lower depth (towards starting position)
+// Two dimensional array accumulates shorter lines from greater depth into longer line towards the
+// lower depth (towards starting position)
 // [depth]  -> line
 // [0]     ->  mov01 mov02 mov03 mov04 mov05
 // [1]     ->  mov11 mov12 mov13 mov14
@@ -20,13 +20,14 @@ import (
 // [3]     ->  mov31 mov32
 // [4]     ->  mov41
 // [5]	   -> empty line - call Evaluate()
-// The algorithm for collecting PV is based on the one described here: 
-//https://web.archive.org/web/20070808093935/http://www.brucemo.com/compchess/programming/pv.htm
+// The algorithm for collecting PV is based on the one described here:
+// https://web.archive.org/web/20070808093935/http://www.brucemo.com/compchess/programming/pv.htm
 type Search struct {
 	bestLineAtDepth [MaxSearchDepth][]Move
 	stop            chan bool
 	interrupted     bool
 }
+
 var evaluatedNodes int
 
 func NewSearch() *Search {
@@ -41,13 +42,15 @@ func NewSearch() *Search {
 func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 	var bestLine *Line = &Line{}
 	search.interrupted = false
-	starttime := time.Now()
+	startTime := time.Now()
 	evaluatedNodes = 0
 
 	for currDepth := 1; currDepth <= maxDepth; currDepth++ {
 		score, oneLegalMove := search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0],
-			bestLine, starttime, endtime)
+			bestLine, startTime, endtime)
 		search.updateBestLine(bestLine)
+
+		printInfo(score,currDepth,search.getBestLine(),time.Since(startTime))
 
 		if time.Now().After(endtime) {
 			break
@@ -63,10 +66,7 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 		if oneLegalMove {
 			break
 		}
-		fmt.Println("info nodes", evaluatedNodes)
-		
 	}
-	fmt.Println("info nodes", evaluatedNodes)
 	fmt.Println("bestmove", search.getBestMove())
 }
 
@@ -94,16 +94,16 @@ func (pv *Search) getBestLine() []Move {
 	return pv.bestLineAtDepth[0]
 }
 
-// Searches for best move at target depth and returns it's score. Best line found by this 
-//function is stored currBestLine.
+// Searches for best move at target depth and returns it's score. Best line found by this
+// function is stored currBestLine.
 // Param candidateLine stores line that should be evaluated first by the search
-// (TODO - make candidateLine a list of candidate lines - so far it seems to be duplicating 
+// (TODO - make candidateLine a list of candidate lines - so far it seems to be duplicating
 // work of currBestLine
-func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, beta int, 
-	currBestLine *[]Move, candidateLine *Line, starttime, endtime time.Time) int {
+func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, beta int,
+	currBestLine *[]Move, candidateLine *Line, startTime, endtime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
 	if targetDepth == depth {
-		return search.quiescence(posGen, alpha, beta, depth, currBestLine)
+		return search.quiescence(posGen, alpha, beta, depth, currBestLine, startTime)
 	}
 
 	moves := posGen.GenerateMoves()
@@ -120,7 +120,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 		}
 		posGen.PushMove(move)
 		currScore := -search.alphaBeta(posGen, targetDepth, depth+1, -beta, -alpha, &bestSubline,
-			 candidateLine, starttime, endtime)
+			candidateLine, startTime, endtime)
 		posGen.PopMove()
 
 		if currScore > beta {
@@ -148,7 +148,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 }
 
 func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBestLine *[]Move,
-	 candidateLine *Line, starttime, endtime time.Time) (score int, oneLegalMove bool) {
+	candidateLine *Line, starttime, endtime time.Time) (score int, oneLegalMove bool) {
 	bestSubline := search.bestLineAtDepth[1]
 	moves := posGen.GenerateMoves()
 	alpha := MinusInfinityScore
@@ -165,7 +165,7 @@ func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBes
 			break
 		}
 		posGen.PushMove(move)
-		currScore := -search.alphaBeta(posGen, targetDepth, 1, -beta, -alpha, &bestSubline, 
+		currScore := -search.alphaBeta(posGen, targetDepth, 1, -beta, -alpha, &bestSubline,
 			candidateLine, starttime, endtime)
 		posGen.PopMove()
 
@@ -214,9 +214,9 @@ func reorderMoves(moves []Move, candidateLine *Line, depth int) {
 	}
 }
 
-// When doing iterative deepening we don't want to allow engine to stop thinking right after 
+// When doing iterative deepening we don't want to allow engine to stop thinking right after
 // descending one depth deeper because these results will be bad (uninitialized)
-// We should only stop searching after at least some variations have been evaluated. For example 
+// We should only stop searching after at least some variations have been evaluated. For example
 // these that seemed best by search at previous depth.
 // See notest.txt entry from 09.05.2024 for an example.
 func searchedEnoughAtThisDepth() bool {
@@ -230,10 +230,18 @@ func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move)
 	copy((*currBestLine)[1:], betterSubline)
 }
 
-func (search *Search) quiescence(posGen *Generator, alpha, beta, depth int, 
-	currBestLine *[]Move) int {
+func (search *Search) quiescence(posGen *Generator, alpha, beta, depth int,
+	currBestLine *[]Move, startTime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
 	score := Evaluate(posGen.pos, depth)
+
+	if evaluatedNodes%LogEveryNNodes == 0 {
+		timeElapsed := time.Since(startTime)
+		fmt.Println("info",
+			"nodes", evaluatedNodes,
+			"time", timeElapsed.Milliseconds(),
+			"nps", nps(evaluatedNodes, timeElapsed))
+	}
 
 	if score >= beta {
 		return beta
@@ -245,7 +253,7 @@ func (search *Search) quiescence(posGen *Generator, alpha, beta, depth int,
 	tacticalMoves := posGen.GenerateTacticalMoves()
 	for _, mov := range tacticalMoves {
 		posGen.PushMove(mov)
-		score = -search.quiescence(posGen, -beta, -alpha, depth+1, &bestSubline)
+		score = -search.quiescence(posGen, -beta, -alpha, depth+1, &bestSubline, startTime)
 		posGen.PopMove()
 
 		if score >= beta {

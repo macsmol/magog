@@ -2,7 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +30,7 @@ const (
 
 var posGen *Generator
 var search *Search
+var Quit bool
 
 func ParseInputLine(inputLine string) {
 	if inputLine == uIsReady {
@@ -41,7 +41,7 @@ func ParseInputLine(inputLine string) {
 	} else if inputLine == "tostr" {
 		fmt.Printf("%v\n", posGen)
 	} else if inputLine == "quit" {
-		os.Exit(0)
+		Quit = true
 	} else if strings.HasPrefix(inputLine, uPosition) {
 		doPosition(strings.TrimSpace(strings.TrimPrefix(inputLine, uPosition)))
 	} else if inputLine == uUci {
@@ -145,10 +145,20 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 }
 
 func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration) {
+	if timeElapsed < 300 * time.Millisecond {
+		return
+	}
 	line := Line{moves: bestLine}
-	fmt.Println("info pv", line.String(), "score", formatScore(score), "depth", depth,
-	"nodes", evaluatedNodes, "time", timeElapsed.Milliseconds())
-	
+	fmt.Println("info pv", line.String(), 
+	"score", formatScore(score), 
+	"depth", depth,
+	"nodes", evaluatedNodes, 
+	"time", timeElapsed.Milliseconds(), 
+	"nps", nps(evaluatedNodes, timeElapsed))
+}
+
+func nps(evaluatedNodes int, timeElapsed time.Duration) int {
+	return int(int64(evaluatedNodes) * 1000_000 / int64(timeElapsed.Microseconds()+1))
 }
 
 func formatScore(score int) string {
