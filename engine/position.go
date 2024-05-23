@@ -193,7 +193,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 
 	if pos.board[mov.to] != NullPiece {
 		undo.takenPiece = pos.board[mov.to]
-		// when calculating enemy mobility it is possible to kill enemy king. 
+		// when calculating enemy mobility it is possible to kill enemy king.
 		// Kings are not on piece lists so we don't modify piece lists in MakeMove() and UnmakeMove()
 		if pos.board[mov.to] != King|enemyColorBit {
 			*enemyPieces = killPiece(*enemyPieces, mov.to)
@@ -293,47 +293,28 @@ func (pos *Position) isUnderCheck(enemyPieces []square, enemyKing square, destSq
 	var moveIdx int16
 	for _, attackFrom := range enemyPieces {
 		moveIdx = moveIndex(attackFrom, destSquare)
-		switch pos.board[attackFrom] {
-		case WKnight, BKnight:
-			if attackTable[moveIdx]&KnightAttacks == 0 {
-				continue
+		attacker := pos.board[attackFrom] & ColorlessPiece
+		
+		if attacker == Pawn {
+			if pos.board[attackFrom] == WPawn && attackTable[moveIdx] & WPawnAttacks != 0{
+				return true
+			} else if pos.board[attackFrom] == BPawn && attackTable[moveIdx] & BPawnAttacks != 0 {
+				return true
 			}
-			return true
-		case WBishop, BBishop:
-			if attackTable[moveIdx]&BishopAttacks == 0 {
-				continue
+			continue
+		}
+
+		if attackTable[moveIdx] & byte(attacker) != 0 {
+			if attacker & Knight != 0 {
+				return true
 			}
 			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
 				return true
 			}
-		case WRook, BRook:
-			if attackTable[moveIdx]&RookAttacks == 0 {
-				continue
-			}
-			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-				return true
-			}
-		case WQueen, BQueen:
-			if attackTable[moveIdx]&QueenAttacks == 0 {
-				continue
-			}
-			if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
-				return true
-			}
-		case WPawn:
-			if attackTable[moveIdx]&WhitePawnAttacks == 0 {
-				continue
-			}
-			return true
-		case BPawn:
-			if attackTable[moveIdx]&BlackPawnAttacks == 0 {
-				continue
-			}
-			return true
 		}
 	}
 	moveIdx = moveIndex(enemyKing, destSquare)
-	kingAttack := attackTable[moveIdx]&KingAttacks != 0
+	kingAttack := attackTable[moveIdx]& KingAttacks != 0
 	return kingAttack
 }
 
@@ -392,7 +373,7 @@ func (pos *Position) UnmakeMove(undo backtrackInfo) {
 
 	if undo.takenPiece != NullPiece {
 		var killSquare square = mov.to
-		// when calculating enemy mobility it is possible to kill enemy king. 
+		// when calculating enemy mobility it is possible to kill enemy king.
 		// Kings are not on piece lists so we don't modify piece lists in MakeMove() and UnmakeMove()
 		if undo.takenPiece&ColorlessPiece != King {
 			//mov was an en passant take

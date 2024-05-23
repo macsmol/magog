@@ -171,7 +171,7 @@ func (gen *Generator) Perftd(depth int) {
 	}
 	for _, move := range gen.GenerateMoves() {
 		gen.PushMove(move)
-		fmt.Printf("%v: %d\n", move, gen.Perft(depth-1))
+		fmt.Printf("%v %d\n", move, gen.Perft(depth-1))
 		gen.PopMove()
 	}
 }

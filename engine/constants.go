@@ -138,21 +138,21 @@ func (dir Direction) String() string {
 type piece byte
 
 const (
-	BlackPieceBit  piece = 0x08
-	WhitePieceBit  piece = 0x10
-	ColorlessPiece piece = 0x07
+	BlackPieceBit  piece = 0x40
+	WhitePieceBit  piece = 0x80
+	ColorlessPiece piece = 0x3F
 )
 
 // bit layout 
-// 000w_bppp
+// wbpp_pppp
 const (
-	NullPiece          piece = iota
-	Pawn, BPawn, WPawn       = iota, iota + BlackPieceBit, iota + WhitePieceBit
+	NullPiece          piece = 0
+	Pawn,   BPawn, WPawn       = 1 << (iota-1), 1 << (iota-1) | BlackPieceBit, 1 << (iota-1) | WhitePieceBit
 	Knight, BKnight, WKnight
 	Bishop, BBishop, WBishop
-	Rook, BRook, WRook
-	Queen, BQueen, WQueen
-	King, BKing, WKing
+	Rook,   BRook, WRook
+	Queen,  BQueen, WQueen
+	King,   BKing, WKing
 )
 
 func (p piece) String() string {

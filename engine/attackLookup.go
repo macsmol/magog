@@ -1,18 +1,18 @@
 package engine
 
 const (
-	_ byte = 1 << iota
-	RookAttacks
-	BishopAttacks
-	QueenAttacks
-	KnightAttacks
-	KingAttacks
-	WhitePawnAttacks
-	BlackPawnAttacks
+	BPawnAttacks   = byte(Pawn)
+	KnightAttacks = byte(Knight)
+	BishopAttacks = byte(Bishop)
+	RookAttacks   = byte(Rook)
+	QueenAttacks  = byte(Queen)
+	KingAttacks    = byte(King)
+	WPawnAttacks   = 64
 )
 
 const lastValidSquare = int16(H8)
 
+// explained well here https://web.archive.org/web/20070716111804/http://www.brucemo.com/compchess/programming/0x88.htm
 var attackTable [239]byte
 var directionTable [239]Direction
 
@@ -32,10 +32,10 @@ func initAttackTable() {
 	attackTable[lastValidSquare+int16(DirNWW)] |= KnightAttacks
 	attackTable[lastValidSquare+int16(DirSEE)] |= KnightAttacks
 	//pawns
-	attackTable[lastValidSquare+int16(DirNE)] |= WhitePawnAttacks
-	attackTable[lastValidSquare+int16(DirNW)] |= WhitePawnAttacks
-	attackTable[lastValidSquare+int16(DirSE)] |= BlackPawnAttacks
-	attackTable[lastValidSquare+int16(DirSW)] |= BlackPawnAttacks
+	attackTable[lastValidSquare+int16(DirNE)] |= WPawnAttacks
+	attackTable[lastValidSquare+int16(DirNW)] |= WPawnAttacks
+	attackTable[lastValidSquare+int16(DirSE)] |= BPawnAttacks
+	attackTable[lastValidSquare+int16(DirSW)] |= BPawnAttacks
 	//king
 	attackTable[lastValidSquare+int16(DirN)] |= KingAttacks
 	attackTable[lastValidSquare+int16(DirNE)] |= KingAttacks
@@ -73,6 +73,7 @@ func initAttackTable() {
 	attackTable[moveIndex(A1, F6)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(A1, G7)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(A1, H8)] |= BishopAttacks | QueenAttacks
+
 	//bishop and queen moving SW
 	attackTable[moveIndex(H8, G7)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(H8, F6)] |= BishopAttacks | QueenAttacks
@@ -81,6 +82,7 @@ func initAttackTable() {
 	attackTable[moveIndex(H8, C3)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(H8, B2)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(H8, A1)] |= BishopAttacks | QueenAttacks
+
 	//bishop and queen moving NW
 	attackTable[moveIndex(H1, G2)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(H1, F3)] |= BishopAttacks | QueenAttacks
@@ -89,6 +91,7 @@ func initAttackTable() {
 	attackTable[moveIndex(H1, C6)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(H1, B7)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(H1, A8)] |= BishopAttacks | QueenAttacks
+
 	//bishop and queen moving SE
 	attackTable[moveIndex(A8, B7)] |= BishopAttacks | QueenAttacks
 	attackTable[moveIndex(A8, C6)] |= BishopAttacks | QueenAttacks
