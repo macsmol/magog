@@ -2,7 +2,6 @@ package engine
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 )
 
@@ -445,11 +444,12 @@ func killPiece(enemyPieces []square, killSquare square) []square {
 }
 
 func killPieceOrdered(pieceList []square, killSquare square) []square {
-	killIdx, found := slices.BinarySearch(pieceList, killSquare)
-	if !found {
-		panic(fmt.Sprintf("Didn't find a piece to kill on: %v", killSquare))
+	for i := range pieceList {
+		if killSquare == pieceList[i] {
+			return removeOrdered(pieceList, i)
+		}
 	}
-	return removeOrdered(pieceList, killIdx)
+	panic(fmt.Sprintf("Didn't find a piece to kill on: %v", killSquare))
 }
 
 func (pos *Position) UnmakeMove(undo backtrackInfo) {

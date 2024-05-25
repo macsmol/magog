@@ -1,3 +1,4 @@
 *.exe
 *.code-workspace
 /arena logs/
+*/prof
