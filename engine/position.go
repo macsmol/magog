@@ -156,7 +156,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
 		currColorBit, enemyColorBit,
 		bubbleFunc := pos.getCurrentMakeMoveContext()
-	// pos.AssertConsistency(mov.String())
+	// pos.AssertConsistency("make" + mov.String())
 	undo = backtrackInfo{
 		move:          mov,
 		lastFlags:     pos.flags,
@@ -208,7 +208,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 			}
 		}
 	}
-	
+
 	if mov.from.getFile() == A && mov.from.getRank() == currCastleRank {
 		pos.flags &= ^currQueenSideCastleFlag
 	}
@@ -390,16 +390,20 @@ func (pos *Position) isCurrentKingUnderCheck() bool {
 
 // Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on
 // enemyKing square.
-func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKing square, destSquare square) bool {
+func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKingPos square, destSquare square) bool {
 	var moveIdx int16
-//TODO
-// -use the sorting
+	//TODO
+	// -use the sorting
+	var PawnAttackFlag byte
+	if pos.board[enemyKingPos]&BlackPieceBit == 0 {
+		PawnAttackFlag = WPawnAttacks
+	} else {
+		PawnAttackFlag = BPawnAttacks
+	}
 
 	for _, attackFrom := range enemyPawns {
 		moveIdx = moveIndex(attackFrom, destSquare)
-		if pos.board[attackFrom] == WPawn && attackTable[moveIdx]&WPawnAttacks != 0 {
-			return true
-		} else if pos.board[attackFrom] == BPawn && attackTable[moveIdx]&BPawnAttacks != 0 {
+		if attackTable[moveIdx]&PawnAttackFlag != 0 {
 			return true
 		}
 	}
@@ -418,7 +422,7 @@ func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKing sq
 			return true
 		}
 	}
-	moveIdx = moveIndex(enemyKing, destSquare)
+	moveIdx = moveIndex(enemyKingPos, destSquare)
 	kingAttack := attackTable[moveIdx]&KingAttacks != 0
 	return kingAttack
 }
@@ -456,7 +460,7 @@ func (pos *Position) UnmakeMove(undo backtrackInfo) {
 	unmadePieces, unmadePawnsPtr, unkilledPieces, unkilledPawns,
 		unmadeKing, unmadeColorBit, castleRank, enPassantUnkillRank,
 		bubbleFunc := pos.getUnmakeMoveContext()
-	// pos.AssertConsistency("undo " + undo.move.String())
+	// pos.AssertConsistency("unmk " + undo.move.String())
 	mov := undo.move
 	if mov.to == *unmadeKing {
 		*unmadeKing = mov.from

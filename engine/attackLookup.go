@@ -7,7 +7,7 @@ const (
 	RookAttacks   = byte(Rook)
 	QueenAttacks  = byte(Queen)
 	KingAttacks    = byte(King)
-	WPawnAttacks   = 64
+	WPawnAttacks   = byte(64)
 )
 
 const lastValidSquare = int16(H8)
