@@ -154,8 +154,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		enemyPieces, enemyPawns, enemyKing,
 		currCastleRank, currKingSideCastleFlag, currQueenSideCastleFlag,
 		enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
-		currColorBit, enemyColorBit,
-		bubbleFunc := pos.getCurrentMakeMoveContext()
+		currColorBit, enemyColorBit := pos.getCurrentMakeMoveContext()
 	// pos.AssertConsistency("make" + mov.String())
 	undo = backtrackInfo{
 		move:          mov,
@@ -172,7 +171,6 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 				if mov.from == currPawns[i] {
 					currPawns[i] = mov.to
 					// keep sorted
-					bubbleFunc(i, currPawns)
 					break
 				}
 			}
@@ -262,25 +260,25 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	return undo
 }
 
-// like bubbleSort but moves only one entry up to a correct place in an otherwise sorted list
-func bubbleUp(i int, pawns []square) {
-	for ; i < len(pawns)-1; i++ {
-		if pawns[i] <= pawns[i+1] {
-			break
-		}
-		pawns[i], pawns[i+1] = pawns[i+1], pawns[i]
-	}
-}
+// // like bubbleSort but moves only one entry up to a correct place in an otherwise sorted list
+// func bubbleUp(i int, pawns []square) {
+// 	for ; i < len(pawns)-1; i++ {
+// 		if pawns[i] <= pawns[i+1] {
+// 			break
+// 		}
+// 		pawns[i], pawns[i+1] = pawns[i+1], pawns[i]
+// 	}
+// }
 
-// like bubbleSort but moves only one entry down to a correct place in an otherwise sorted list
-func bubbleDown(i int, pawns []square) {
-	for ; i > 0; i-- {
-		if pawns[i-1] <= pawns[i] {
-			break
-		}
-		pawns[i], pawns[i-1] = pawns[i-1], pawns[i]
-	}
-}
+// // like bubbleSort but moves only one entry down to a correct place in an otherwise sorted list
+// func bubbleDown(i int, pawns []square) {
+// 	for ; i > 0; i-- {
+// 		if pawns[i-1] <= pawns[i] {
+// 			break
+// 		}
+// 		pawns[i], pawns[i-1] = pawns[i-1], pawns[i]
+// 	}
+// }
 
 // removes element from the slice while preserving order. We want to keep pawn lists ordered
 func removeOrdered(pieceList []square, idxToRemove int) []square {
@@ -490,8 +488,7 @@ func killPieceOrdered(pieceList []square, killSquare square) []square {
 
 func (pos *Position) UnmakeMove(undo backtrackInfo) {
 	unmadePieces, unmadePawnsPtr, unkilledPieces, unkilledPawns,
-		unmadeKing, unmadeColorBit, castleRank, enPassantUnkillRank,
-		bubbleFunc := pos.getUnmakeMoveContext()
+		unmadeKing, unmadeColorBit, castleRank, enPassantUnkillRank := pos.getUnmakeMoveContext()
 	// pos.AssertConsistency("unmk " + undo.move.String())
 	mov := undo.move
 	if mov.to == *unmadeKing {
@@ -520,12 +517,11 @@ func (pos *Position) UnmakeMove(undo backtrackInfo) {
 		}
 		*unmadePawnsPtr = append((*unmadePawnsPtr), mov.from)
 		// keep sorted
-		bubbleDown(len(*unmadePawnsPtr)-1, (*unmadePawnsPtr))
+		// bubbleDown(len(*unmadePawnsPtr)-1, (*unmadePawnsPtr))
 	} else if pos.board[mov.to] == Pawn|unmadeColorBit {
 		for i := range *unmadePawnsPtr {
 			if mov.to == (*unmadePawnsPtr)[i] {
 				(*unmadePawnsPtr)[i] = mov.from
-				bubbleFunc(i, (*unmadePawnsPtr))
 				break
 			}
 		}
@@ -554,10 +550,10 @@ func (pos *Position) UnmakeMove(undo backtrackInfo) {
 			if undo.lastEnPassant == mov.to && pos.board[mov.from] == Pawn|unmadeColorBit {
 				killSquare = square(mov.to.getFile()) + square(enPassantUnkillRank)
 				*unkilledPawns = append(*unkilledPawns, killSquare)
-				bubbleDown(len(*unkilledPawns)-1, *unkilledPawns)
+				// bubbleDown(len(*unkilledPawns)-1, *unkilledPawns)
 			} else if undo.takenPiece&ColorlessPiece == Pawn {
 				*unkilledPawns = append(*unkilledPawns, killSquare)
-				bubbleDown(len(*unkilledPawns)-1, *unkilledPawns)
+				// bubbleDown(len(*unkilledPawns)-1, *unkilledPawns)
 			} else {
 				*unkilledPieces = append(*unkilledPieces, killSquare)
 			}
@@ -586,22 +582,19 @@ func (pos *Position) getCurrentMakeMoveContext() (
 	currCastleRank rank, currKingSideCastleFlag, currQueenSideCastleFlag byte,
 	enemyCastleRank rank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag byte,
 	currColorBit, enemyColorBit piece,
-	bubbleFunc func(int, []square),
 ) {
 	if pos.flags&FlagWhiteTurn == 0 {
 		return &pos.blackPieces, &pos.blackPawns, &pos.blackKing,
 			&pos.whitePieces, &pos.whitePawns, pos.whiteKing,
 			Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
 			Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
-			BlackPieceBit, WhitePieceBit,
-			bubbleDown
+			BlackPieceBit, WhitePieceBit
 	}
 	return &pos.whitePieces, &pos.whitePawns, &pos.whiteKing,
 		&pos.blackPieces, &pos.blackPawns, pos.blackKing,
 		Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
 		Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
-		WhitePieceBit, BlackPieceBit,
-		bubbleUp
+		WhitePieceBit, BlackPieceBit
 }
 
 // inverse of GetCurrentMakeMoveContext()
@@ -612,14 +605,13 @@ func (pos *Position) getUnmakeMoveContext() (
 	unmadeColorBit piece,
 	castleRank rank,
 	enPassantUnkillRank rank,
-	bubbleFunc func(int, []square),
 ) {
 	if pos.flags&FlagWhiteTurn != 0 {
 		return &pos.blackPieces, &pos.blackPawns, &pos.whitePieces, &pos.whitePawns, &pos.blackKing,
-			BlackPieceBit, Rank8, Rank4, bubbleUp
+			BlackPieceBit, Rank8, Rank4
 	}
 	return &pos.whitePieces, &pos.whitePawns, &pos.blackPieces, &pos.blackPawns, &pos.whiteKing,
-		WhitePieceBit, Rank1, Rank5, bubbleDown
+		WhitePieceBit, Rank1, Rank5
 }
 
 func (pos *Position) GetAtSquare(s square) piece {
