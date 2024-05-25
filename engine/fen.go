@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -42,9 +43,17 @@ func NewPositionFromFen(fen string) (*Position, error) {
 			} else if piece == WKing {
 				pos.whiteKing = sq
 			} else if piece&WhitePieceBit == 0 {
-				pos.blackPieces = append(pos.blackPieces, sq)
+				if piece == BPawn {
+					pos.blackPawns = append(pos.blackPawns, sq)
+				} else {
+					pos.blackPieces = append(pos.blackPieces, sq)
+				}
 			} else {
-				pos.whitePieces = append(pos.whitePieces, sq)
+				if piece == WPawn {
+					pos.whitePawns = append(pos.whitePawns, sq)
+				} else {
+					pos.whitePieces = append(pos.whitePieces, sq)
+				}
 			}
 			f++
 		}
@@ -87,10 +96,13 @@ func NewPositionFromFen(fen string) (*Position, error) {
 		rank := (rankChar - '1') << 4
 		pos.enPassSquare = square(file) + square(rank)
 	}
+
+	slices.Sort(pos.blackPawns)
+	slices.Sort(pos.whitePawns)
+
 	//TODO read rest of the fields
 	// halfmoveClockStr := fields[4]
 	// halfmoveClockStr := fields[5]
-
 	return pos, nil
 }
 

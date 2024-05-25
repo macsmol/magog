@@ -7,10 +7,10 @@ import (
 const (
 	InfinityScore      = 100_000_000
 	MinusInfinityScore = -InfinityScore
-	LostScore = -100_000
-	DrawScore = 0
-	ScoreCloseToMate = 2 * (9 * MaterialQueenScore +  2 * MaterialRookScore + 2 * 
-		MaterialBishopScore + 2 * MaterialKnightScore);
+	LostScore          = -100_000
+	DrawScore          = 0
+	ScoreCloseToMate   = 2 * (9*MaterialQueenScore + 2*MaterialRookScore + 2*
+		MaterialBishopScore + 2*MaterialKnightScore)
 )
 
 const (
@@ -27,15 +27,16 @@ const (
 // Returns static evaluation score for Position pos. It's given relative to the currently playing
 // side (negamax score)
 func Evaluate(pos *Position, depth int, debug ...bool) int {
-	currentPieces, enemyPieces := pos.evaluationContext()
+	currentPieces, currentPawns,
+	enemyPieces, enemyPawns := pos.evaluationContext()
 
-	currMaterial := materialScore(currentPieces, &pos.board)
-	enemyMaterial := materialScore(enemyPieces, &pos.board)
+	currMaterial := materialScore(currentPieces, currentPawns, &pos.board)
+	enemyMaterial := materialScore(enemyPieces, enemyPawns, &pos.board)
 	materialScore := currMaterial - enemyMaterial
 
 	// mobility
 	currentMobilityScore := pos.countMoves() * MobilityScoreFactor
-	if (currentMobilityScore == 0) {
+	if currentMobilityScore == 0 {
 		return terminalNodeScore(pos, depth)
 	}
 	pos.flags = pos.flags ^ FlagWhiteTurn
@@ -43,7 +44,7 @@ func Evaluate(pos *Position, depth int, debug ...bool) int {
 	pos.flags = pos.flags ^ FlagWhiteTurn
 	mobilityScore := currentMobilityScore - enemyMobilityScore
 
-	if len(debug)>0 {
+	if len(debug) > 0 {
 		fmt.Println("currMaterial: ", currMaterial, "; enemyMaterial:", enemyMaterial)
 		fmt.Println("currMobility: ", currentMobilityScore, "; enemyMobility: ", enemyMobilityScore)
 	}
@@ -61,11 +62,13 @@ func terminalNodeScore(position *Position, depth int) int {
 	return DrawScore
 }
 
-func (pos *Position) evaluationContext() (currPieces, enemyPieces []square) {
-	if pos.flags&FlagWhiteTurn != 0 {
-		return pos.whitePieces, pos.blackPieces
+func (pos *Position) evaluationContext() (
+	currPieces, currentPawns,
+	 enemyPieces, enemyPawns []square) {
+	if pos.flags&FlagWhiteTurn == 0 {
+		return pos.blackPieces, pos.blackPawns, pos.whitePieces, pos.whitePawns
 	} else {
-		return pos.blackPieces, pos.whitePieces
+		return pos.whitePieces, pos.whitePawns, pos.blackPieces, pos.blackPawns
 	}
 }
 
@@ -73,42 +76,44 @@ func (pos *Position) evaluationContext() (currPieces, enemyPieces []square) {
 func (pos *Position) countMoves() int {
 	var movesCount int = 0
 	currentPieces, enemyPieces,
+		currentPawns, enemyPawns,
 		currentKing, enemyKing,
 		pawnAdvanceDirection,
 		currColorBit, enemyColorBit,
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
+	for _, from := range currentPawns {
+		// queenside take
+		to := from + square(pawnAdvanceDirection) - 1
+		if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 ||
+			(to == pos.enPassSquare &&
+				// fix for bug where friendly ep-square take is possible while calculating mobility
+				from.getRank() != pawnStartRank)) {
+			movesCount += pos.countPawnMoves(from, to, promotionRank)
+		}
+		// kingside take
+		to = from + square(pawnAdvanceDirection) + 1
+		if pos.board[to]&enemyColorBit != 0 || (to == pos.enPassSquare &&
+			// fix for bug where friendly ep-square take is possible while calculating mobility
+			from.getRank() != pawnStartRank) {
+			movesCount += pos.countPawnMoves(from, to, promotionRank)
+		}
+		//pushes
+		to = from + square(pawnAdvanceDirection)
+		if pos.board[to] == NullPiece {
+			movesCount += pos.countPawnMoves(from, to, promotionRank)
+			enPassantSquare := to
+			to = to + square(pawnAdvanceDirection)
+			if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
+				if pos.isLegal(Move{from, to, NullPiece, enPassantSquare}) {
+					movesCount++
+				}
+			}
+		}
+	}
 	for _, from := range currentPieces {
 		piece := pos.board[from]
 		switch piece {
-		case WPawn, BPawn:
-			// queenside take
-			to := from + square(pawnAdvanceDirection) - 1
-			if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || 
-				(to == pos.enPassSquare &&
-				// fix for bug where friendly ep-square take is possible while calculating mobility
-				from.getRank() != pawnStartRank)) {
-				movesCount += pos.countPawnMoves(from, to, promotionRank)
-			}
-			// kingside take
-			to = from + square(pawnAdvanceDirection) + 1
-			if pos.board[to]&enemyColorBit != 0 || (to == pos.enPassSquare && 
-				// fix for bug where friendly ep-square take is possible while calculating mobility
-				from.getRank() != pawnStartRank)  {
-				movesCount += pos.countPawnMoves(from, to, promotionRank)
-			}
-			//pushes
-			to = from + square(pawnAdvanceDirection)
-			if pos.board[to] == NullPiece {
-				movesCount += pos.countPawnMoves(from, to, promotionRank)
-				enPassantSquare := to
-				to = to + square(pawnAdvanceDirection)
-				if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
-					if pos.isLegal(Move{from, to, NullPiece, enPassantSquare}) {
-						movesCount++
-					}
-				}
-			}
 		case WKnight, BKnight:
 			dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
 			for _, dir := range dirs {
@@ -126,7 +131,7 @@ func (pos *Position) countMoves() int {
 			dirs := []Direction{DirN, DirS, DirE, DirW}
 			movesCount += pos.countSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs)
 		case WQueen, BQueen:
-			movesCount += pos.countSlidingPieceMoves(from, currColorBit, enemyColorBit, 
+			movesCount += pos.countSlidingPieceMoves(from, currColorBit, enemyColorBit,
 				kingDirections)
 		default:
 			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
@@ -148,9 +153,9 @@ func (pos *Position) countMoves() int {
 		if pos.board[kingAsByte+dirAsByte] == NullPiece &&
 			pos.board[kingDest] == NullPiece &&
 			pos.board[kingAsByte+dirAsByte*3] == NullPiece &&
-			!pos.isUnderCheck(enemyPieces, enemyKing, currentKing) &&
-			!pos.isUnderCheck(enemyPieces, enemyKing, square(kingAsByte+dirAsByte)) &&
-			!pos.isUnderCheck(enemyPieces, enemyKing, square(kingDest)) {
+			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, currentKing) &&
+			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, square(kingAsByte+dirAsByte)) &&
+			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, square(kingDest)) {
 			movesCount++
 		}
 	}
@@ -158,9 +163,9 @@ func (pos *Position) countMoves() int {
 		var kingAsByte, dirAsByte int8 = int8(currentKing), int8(DirE)
 		kingDest := kingAsByte + dirAsByte*2
 		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece &&
-			!pos.isUnderCheck(enemyPieces, enemyKing, currentKing) &&
-			!pos.isUnderCheck(enemyPieces, enemyKing, square(kingAsByte+dirAsByte)) &&
-			!pos.isUnderCheck(enemyPieces, enemyKing, square(kingDest)) {
+			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, currentKing) &&
+			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, square(kingAsByte+dirAsByte)) &&
+			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, square(kingDest)) {
 			movesCount++
 		}
 	}
@@ -178,7 +183,7 @@ func (pos *Position) countPawnMoves(from, to square, promotionRank rank) int {
 	}
 }
 
-func (pos *Position) countSlidingPieceMoves(from square, currColorBit, enemyColorBit piece, 
+func (pos *Position) countSlidingPieceMoves(from square, currColorBit, enemyColorBit piece,
 	dirs []Direction) int {
 	movesCount := 0
 	for _, dir := range dirs {
@@ -225,13 +230,11 @@ func (pos *Position) isLegal(pseudolegal Move) bool {
 	return toReturn
 }
 
-func materialScore(pieces []square, board *[128]piece) int {
+func materialScore(pieces, pawns []square, board *[128]piece) int {
 	score := 0
 	for _, square := range pieces {
 		//Is it faster to just switch over pairs of cases?
 		switch board[square] & ColorlessPiece {
-		case Pawn:
-			score += MaterialPawnScore
 		case Knight:
 			score += MaterialKnightScore
 		case Bishop:
@@ -242,5 +245,6 @@ func materialScore(pieces []square, board *[128]piece) int {
 			score += MaterialQueenScore
 		}
 	}
+	score += len(pawns) * MaterialPawnScore
 	return score
 }
