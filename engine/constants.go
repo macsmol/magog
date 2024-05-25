@@ -15,6 +15,8 @@ const (
 	Rank6
 	Rank7
 	Rank8
+	
+	UnitRank rank = 0x10
 )
 
 func (r rank) String() string {

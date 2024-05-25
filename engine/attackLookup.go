@@ -104,12 +104,12 @@ func initAttackTable() {
 
 func initDirectionsTable() {
 	//rook and queen moving north
-	for rankChange := int16(Rank2); rankChange <= int16(Rank8); rankChange += 0x10 {
+	for rankChange := int16(Rank2); rankChange <= int16(Rank8); rankChange += int16(UnitRank) {
 		directionTable[lastValidSquare+int16(rankChange)] = DirN
 	}
 	//rook and queen moving south
 	startingRank := Rank8
-	for destinationRank := Rank7; destinationRank >= Rank1; destinationRank -= 0x10 {
+	for destinationRank := Rank7; destinationRank >= Rank1; destinationRank -= UnitRank {
 		rankChange := destinationRank - startingRank
 		directionTable[lastValidSquare+int16(rankChange)] = DirS
 	}

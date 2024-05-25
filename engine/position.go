@@ -390,24 +390,56 @@ func (pos *Position) isCurrentKingUnderCheck() bool {
 
 // Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on
 // enemyKing square.
-func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKingPos square, destSquare square) bool {
+func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKingSq square, destSquare square) bool {
 	var moveIdx int16
-	//TODO
-	// -use the sorting
+	////
+	// if len(enemyPawns) != 0 {
+	// 	var PawnAttackFlag byte
+	// 	var rankFromWhichPawnMayAttack rank
+	// 	if pos.board[enemyKingSq]&BlackPieceBit == 0 {
+	// 		PawnAttackFlag = WPawnAttacks
+	// 		rankFromWhichPawnMayAttack = destSquare.getRank() - UnitRank
+	// 	} else {
+	// 		PawnAttackFlag = BPawnAttacks
+	// 		rankFromWhichPawnMayAttack = destSquare.getRank() + UnitRank
+	// 	}
+	
+	// 	middleOfList := len(enemyPawns) / 2
+	// 	for i := middleOfList; i >= 0; i-- {
+	// 		enemyPawnSq := enemyPawns[i]
+	// 		if enemyPawnSq.getRank() < rankFromWhichPawnMayAttack {
+	// 			break
+	// 		}
+	// 		moveIdx = moveIndex(enemyPawnSq, destSquare)
+	// 		if attackTable[moveIdx]&PawnAttackFlag != 0 {
+	// 			return true
+	// 		}
+	// 	}
+	// 	for i := middleOfList + 1; i < len(enemyPawns); i++ {
+	// 		enemyPawnSq := enemyPawns[i]
+	// 		if enemyPawnSq.getRank() > rankFromWhichPawnMayAttack {
+	// 			break
+	// 		}
+	// 		moveIdx = moveIndex(enemyPawnSq, destSquare)
+	// 		if attackTable[moveIdx]&PawnAttackFlag != 0 {
+	// 			return true
+	// 		}
+	// 	}
+	// }
+////
 	var PawnAttackFlag byte
-	if pos.board[enemyKingPos]&BlackPieceBit == 0 {
+	if pos.board[enemyKingSq]&BlackPieceBit == 0 {
 		PawnAttackFlag = WPawnAttacks
 	} else {
 		PawnAttackFlag = BPawnAttacks
 	}
-
 	for _, attackFrom := range enemyPawns {
 		moveIdx = moveIndex(attackFrom, destSquare)
 		if attackTable[moveIdx]&PawnAttackFlag != 0 {
 			return true
 		}
 	}
-
+////
 	for _, attackFrom := range enemyPieces {
 		moveIdx = moveIndex(attackFrom, destSquare)
 		attacker := pos.board[attackFrom] & ColorlessPiece
@@ -422,7 +454,7 @@ func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKingPos
 			return true
 		}
 	}
-	moveIdx = moveIndex(enemyKingPos, destSquare)
+	moveIdx = moveIndex(enemyKingSq, destSquare)
 	kingAttack := attackTable[moveIdx]&KingAttacks != 0
 	return kingAttack
 }
