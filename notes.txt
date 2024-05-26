@@ -144,3 +144,99 @@ Here's the relevant listing:
             .          .    345:}
             .          .    346:
             .          .    347:func checkedBySlidingPiece(slidingPieceSquare, destSquare square, moveIndex int16, board *[128]piece) bool {
+
+
+25.05.2024
+Search on depth 7 never finishes! Wait. It was for search from start pos. perft(7, startpos) has 3*10^9 nodes. So maybe not a bug. 
+
+anyway
+here's log:
+
+    go depth 7
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 278733 time 682 nps 408525
+    info nodes 500000 time 1242 nps 402389
+    info pv e2e3 e7e5 d1g4 h7h5 g4e4 score cp 60 depth 5 nodes 751466 time 1921 nps 391035
+    info nodes 1000000 time 2449 nps 408190
+    info nodes 1500000 time 3512 nps 427077
+    info nodes 2000000 time 4585 nps 436121
+    ...
+    info nodes 5500000 time 12584 nps 437040
+    info pv e2e3 e7e5 d1g4 h7h5 g4e4 score cp 60 depth 5 nodes 5515234 time 12617 nps 437105
+    info nodes 6000000 time 14202 nps 422472
+    ....
+    sinfo nodes 14000000 time 37463 nps 373698
+    top
+    info pv e2e3 e7e6 d1f3 g8h6 h2h4 f8b4 score cp 5 depth 6 nodes 14154176 time 37965 nps 372812
+    info pv e2e3 e7e6 d1f3 g8h6 h2h4 f8b4 score cp 5 depth 6 nodes 14154176 time 37965 nps 372812
+    bestmove e2e3
+    go depth 7
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 278731 time 679 nps 410017
+    info nodes 500000 time 1241 nps 402897
+    info pv e2e3 e7e5 d1g4 h7h5 g4e4 score cp 60 depth 5 nodes 751464 time 1900 nps 395341
+    info nodes 1000000 time 2423 nps 412608
+    info nodes 1500000 time 3458 nps 433652
+    info nodes 2000000 time 4519 nps 442488
+    info nodes 2500000 time 5622 nps 444664
+    info nodes 3000000 time 6849 nps 437956
+    info nodes 3500000 time 7917 nps 442047
+    info nodes 4000000 time 9040 nps 442470
+    info nodes 4500000 time 10297 nps 437014
+    info nodes 5000000 time 11450 nps 436643
+    info nodes 5500000 time 12513 nps 439512
+    info pv e2e3 e7e5 d1g4 h7h5 g4e4 score cp 60 depth 5 nodes 5515232 time 12549 nps 439467
+    info nodes 6000000 time 14121 nps 424869
+    info nodes 6500000 time 15950 nps 407519
+    info nodes 7000000 time 17591 nps 397926
+    [...]
+    info nodes 19500000 time 52613 nps 370623
+    info pv e2e3 e7e5 d1g4 h7h5 g4f5 d8f6 score cp 20 depth 6 nodes 19769425 time 53366 nps 370448
+    info nodes 20000000 time 54043 nps 370069
+    [...]
+    info nodes 214000000 time 585191 nps 365692
+    info pv e2e3 e7e5 d1g4 h7h5 g4f5 d8f6 score cp 20 depth 6 nodes 214337518 time 586065 nps 365722        
+    info nodes 214500000 time 586629 nps 365648
+    [...]
+    info nodes 681000000 time 1943027 nps 350483
+    info pv e2e3 e7e5 d1h5 d8f6 b1c3 f8b4 f1b5 score cp 
+    40 depth 7 nodes 681371532 time 1943941 nps 350510  
+    info nodes 681500000 time 1944231 nps 350524
+    [...]
+    info nodes 846000000 time 2353820 nps 359415
+    info nodes 846500000 time 2355236 nps 359411
+    stopinfo nodes 847000000 time 2356474 nps 359435
+
+    info pv e2e3 e7e5 d1h5 d8f6 b1c3 f8b4 f1b5 score cp 40 depth 7 nodes 847008416 time 2356494 nps 359435
+    bestmove e2e3
+
+
+
+Anyway started new search before leaving house. 
+perft(7,startpos can get to 3,1*10^9 nodes) so let's see if my search gets there.
+
+25.05.2024 - 2 Came back after 2 hours and perft (7, startpos) still didn't finish (~800mln nodes after 2 hours). What's worse is I've noticed a slow
+but steady degradation in nps. When I came back it dropped down to ~131k. Very strange.
+Previous run didn' have the same problem! After the same period of time it maintained the tempo.
+I thought that maybe it's int overflow but no. Didn't happen. It's a slow gradual slowdown.
+Have a log so maybe I can plot it. Or I can profile it at different time points (how?)
+
+25.05.2024 - 3 ok it's speeding back up as I type! It must have been a problem with laptop 
+energy saving mode. I guess I need to display nps based on speed since the last nps log rather than
+cumulative nps.
+
+25.05.2024 - 4 ok. it stopped after 6 hours of searching... 
+
+    info nodes 4406000000 time 21573542 nps 204231
+    info nodes 4406500000 time 21574983 nps 204241
+    info nodes 4407000000 time 21576540 nps 204249
+    info nodes 4407500000 time 21577877 nps 204260
+    info pv e2e3 e7e5 d1h5 d8f6 b1c3 f8b4 f1b5 score cp 40 depth 7 nodes 4407845429 time 21578963 nps 204265
+    bestmove e2e3
+
+The counter didn't overflow - why?
+OK. nodes number is higher because of quiescence search.. so that makes sense.
+
+26.05.2024
+I've tried to compare prof recordings after my change. I've run go tool as webserver (easiest way to display flamegraphs).
+And then I've run into another surprise. I couldn't reliably compare the data - at least the per source line list command.
+Old profiles show invalid data interposed on new sources. Basically I was seeing old profile recordings that listed methods that didn't exist at the time.
+I've tried to delete the *.exe file but the pprof still run successfully and still has shown the same garbage. I guess I need to recompile exe before running pprof or sth..
