@@ -178,7 +178,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 			// promotion move - remove from currPawns and add to currPieces
 			for i := range currPawns {
 				if mov.from == currPawns[i] {
-					(*currPawnsPtr) = removeOrdered(currPawns, i)
+					(*currPawnsPtr) = remove(currPawns, i)
 					*currPieces = append(*currPieces, mov.to)
 					break
 				}
@@ -226,7 +226,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		// Kings are not on piece lists so we don't modify piece lists in MakeMove() and UnmakeMove()
 		if pos.board[mov.to] != King|enemyColorBit {
 			if pos.board[mov.to] == Pawn|enemyColorBit {
-				*enemyPawns = killPieceOrdered(*enemyPawns, mov.to)
+				*enemyPawns = killPiece(*enemyPawns, mov.to)
 			} else {
 				*enemyPieces = killPiece(*enemyPieces, mov.to)
 			}
@@ -237,7 +237,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		//en passant take
 		if pos.enPassSquare == mov.to && pos.board[mov.from] == Pawn|currColorBit {
 			killSquare := square(mov.to.getFile() + file(mov.from.getRank()))
-			*enemyPawns = killPieceOrdered(*enemyPawns, killSquare)
+			*enemyPawns = killPiece(*enemyPawns, killSquare)
 			undo.takenPiece = pos.board[killSquare]
 			pos.board[killSquare] = NullPiece
 		}
@@ -281,9 +281,9 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 // }
 
 // removes element from the slice while preserving order. We want to keep pawn lists ordered
-func removeOrdered(pieceList []square, idxToRemove int) []square {
-	return append(pieceList[:idxToRemove], pieceList[idxToRemove+1:]...)
-}
+// func removeOrdered(pieceList []square, idxToRemove int) []square {
+// 	return append(pieceList[:idxToRemove], pieceList[idxToRemove+1:]...)
+// }
 
 // removes element from the slice without preserving order. We dont care about piece lists ordering
 func remove(pieceList []square, idxToRemove int) []square {
@@ -477,14 +477,14 @@ func killPiece(enemyPieces []square, killSquare square) []square {
 	panic(fmt.Sprintf("Didn't find square: %v on enemyPieces: %v", killSquare, enemyPieces))
 }
 
-func killPieceOrdered(pieceList []square, killSquare square) []square {
-	for i := range pieceList {
-		if killSquare == pieceList[i] {
-			return removeOrdered(pieceList, i)
-		}
-	}
-	panic(fmt.Sprintf("Didn't find a piece to kill on: %v", killSquare))
-}
+// func killPieceOrdered(pieceList []square, killSquare square) []square {
+// 	for i := range pieceList {
+// 		if killSquare == pieceList[i] {
+// 			return removeOrdered(pieceList, i)
+// 		}
+// 	}
+// 	panic(fmt.Sprintf("Didn't find a piece to kill on: %v", killSquare))
+// }
 
 func (pos *Position) UnmakeMove(undo backtrackInfo) {
 	unmadePieces, unmadePawnsPtr, unkilledPieces, unkilledPawns,
