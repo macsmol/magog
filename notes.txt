@@ -234,3 +234,9 @@ cumulative nps.
 
 The counter didn't overflow - why?
 OK. nodes number is higher because of quiescence search.. so that makes sense.
+
+26.05.2024
+I've tried to compare prof recordings after my change. I've run go tool as webserver (easiest way to display flamegraphs).
+And then I've run into another surprise. I couldn't reliably compare the data - at least the per source line list command.
+Old profiles show invalid data interposed on new sources. Basically I was seeing old profile recordings that listed methods that didn't exist at the time.
+I've tried to delete the *.exe file but the pprof still run successfully and still has shown the same garbage. I guess I need to recompile exe before running pprof or sth..
