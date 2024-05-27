@@ -218,8 +218,10 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		if pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare {
 			appendPawnMoves(from, to, promotionRank, outputMoves)
 		}
+	}
+	for _, from := range currentPawns {
 		//pushes
-		to = from + square(pawnAdvanceDirection)
+		to := from + square(pawnAdvanceDirection)
 		if pos.board[to] == NullPiece {
 			appendPawnMoves(from, to, promotionRank, outputMoves)
 			enPassantSquare := to
@@ -341,7 +343,7 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 	for _, dir := range kingDirections {
 		to := currentKing + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 &&
-		 !pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
+			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
 			*outputMoves = append(*outputMoves, NewMove(currentKing, to))
 		}
 	}
@@ -351,7 +353,7 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 func (pos *Position) countTacticalMoves() int {
 	var movesCount int = 0
 	currentPieces, enemyPieces,
-	currentPawns, enemyPawns,
+		currentPawns, enemyPawns,
 		currentKing, enemyKing,
 		pawnAdvanceDirection,
 		currColorBit, enemyColorBit,
@@ -401,8 +403,8 @@ func (pos *Position) countTacticalMoves() int {
 	// king moves
 	for _, dir := range kingDirections {
 		to := currentKing + square(dir)
-		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 && 
-		!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
+		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 &&
+			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
 			movesCount++
 		}
 	}

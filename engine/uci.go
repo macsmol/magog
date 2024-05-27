@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.2"
+	VERSION_STRING string = "0.3"
 )
 
 const (
@@ -157,8 +157,8 @@ func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration) {
 	"nps", nps(evaluatedNodes, timeElapsed))
 }
 
-func nps(evaluatedNodes int, timeElapsed time.Duration) int {
-	return int(int64(evaluatedNodes) * 1000_000 / int64(timeElapsed.Microseconds()+1))
+func nps(evaluatedNodes int64, timeElapsed time.Duration) int {
+	return int(evaluatedNodes * 1000_000 / int64(timeElapsed.Microseconds()+1))
 }
 
 func formatScore(score int) string {

@@ -240,3 +240,42 @@ I've tried to compare prof recordings after my change. I've run go tool as webse
 And then I've run into another surprise. I couldn't reliably compare the data - at least the per source line list command.
 Old profiles show invalid data interposed on new sources. Basically I was seeing old profile recordings that listed methods that didn't exist at the time.
 I've tried to delete the *.exe file but the pprof still run successfully and still has shown the same garbage. I guess I need to recompile exe before running pprof or sth..
+
+27.05.2024
+Changed mogeven to generate pawn takes first.
+Did test on startpos and search for depth=5 could barely notice any difference in number of nodes evaluated (better
+ordering should need fewer nodes evaluation due to some branches being pruned). 
+Here are 4 consecutives runs for each implementation:
+ 
+        pawn moves mixed
+    5476069
+    5499487
+    5491873
+    5486023
+        pawn takes first
+    5471470
+    5494910
+    5497865
+    5492182
+
+However when I did search depth=4 from kiwipete position  the story is different
+    pawn takes first
+    104 763 297	nodes evaluated; (nps: 289365; time: 361134)
+    pawn moves mixed 
+    info nodes 1741500000 time 5665091 nps 307408 (and counting...)
+
+I had to break  the depth=4 (actually kill the program - there's no break flag in
+ quiescence function so stop command wouldn't work). Here are results for depth=3
+
+pawn takes mixed:
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 134_495_127 time 462728 nps 290656 
+    bestmove e2a6
+pawn takes first:
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 26_948_101 time 92187 nps 292319 
+    bestmove e2a6
+
+machess for reference:
+    info nodes 31172702 pv e2a6 e6d5 c3d5 e7e5 time 142438 depth 3 nps 218849 score cp 50 nodes evaluateddd 31172702
+    bestmove e2a6
+
+Note that not only the speed but also the ordering is better here than in Machess!

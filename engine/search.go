@@ -2,6 +2,8 @@ package engine
 
 import (
 	"fmt"
+	"os"
+	"runtime/pprof"
 	"strings"
 	"time"
 )
@@ -28,7 +30,8 @@ type Search struct {
 	interrupted     bool
 }
 
-var evaluatedNodes int
+var evaluatedNodes int64
+var ProfileFile *os.File
 
 func NewSearch() *Search {
 	pv := &Search{}
@@ -40,6 +43,12 @@ func NewSearch() *Search {
 }
 
 func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
+	if ProfileFile != nil {
+		fmt.Println("starting profiling")
+
+		pprof.StartCPUProfile(ProfileFile)
+		defer stopProfiling()
+	}
 	var bestLine *Line = &Line{}
 	search.interrupted = false
 	startTime := time.Now()
@@ -50,7 +59,7 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 			bestLine, startTime, endtime)
 		search.updateBestLine(bestLine)
 
-		printInfo(score,currDepth,search.getBestLine(),time.Since(startTime))
+		printInfo(score, currDepth, search.getBestLine(), time.Since(startTime))
 
 		if time.Now().After(endtime) {
 			break
@@ -265,4 +274,9 @@ func (search *Search) quiescence(posGen *Generator, alpha, beta, depth int,
 		}
 	}
 	return alpha
+}
+
+func stopProfiling() {
+	fmt.Println("iterative deepening: stopping profiling.....")
+	pprof.StopCPUProfile()
 }
