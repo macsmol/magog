@@ -8,10 +8,6 @@ import (
 	"time"
 )
 
-// func doIterativeDeepening(posGen *Generator, finishTime) {
-
-// }
-
 // structure for keeping best line (Search) found and retrieving it at the end of the search.
 // Two dimensional array accumulates shorter lines from greater depth into longer line towards the
 // lower depth (towards starting position)
@@ -53,13 +49,12 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 	search.interrupted = false
 	startTime := time.Now()
 	evaluatedNodes = 0
+	var bestScore int
+	var depthCompleted int
 
 	for currDepth := 1; currDepth <= maxDepth; currDepth++ {
-		score, oneLegalMove := search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0],
+		scoreAtDepth, oneLegalMove := search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0],
 			bestLine, startTime, endtime)
-		search.updateBestLine(bestLine)
-
-		printInfo(score, currDepth, search.getBestLine(), time.Since(startTime))
 
 		if time.Now().After(endtime) {
 			break
@@ -67,8 +62,13 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 		if search.interrupted {
 			break
 		}
+
+		copyBestLine(bestLine, search.bestLineAtDepth[0])
+		printInfo(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
+		depthCompleted = currDepth
+
 		// shortest mating line found - no need to go deeper
-		if pliesToMate(score) == currDepth {
+		if pliesToMate(scoreAtDepth) == currDepth {
 			break
 		}
 		// skip deeper searches when only one move is possible
@@ -76,11 +76,12 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 			break
 		}
 	}
-	fmt.Println("bestmove", search.getBestMove())
+	printInfo(bestScore, depthCompleted, bestLine.moves, time.Since(startTime), "")
+	fmt.Println("bestmove", bestLine.moves[0])
 }
 
-func (pv *Search) updateBestLine(bestLine *Line) {
-	bestLine.moves = pv.bestLineAtDepth[0]
+func copyBestLine(bestLine *Line, bestLineAtDepth []Move) {
+	bestLine.moves = append(bestLine.moves[:0], bestLineAtDepth...)
 	bestLine.sublineLengthMatched = 0
 }
 
@@ -112,6 +113,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 	currBestLine *[]Move, candidateLine *Line, startTime, endtime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
 	if targetDepth == depth {
+		// Evaluate(posGen.pos, depth)
 		return search.quiescence(posGen, alpha, beta, depth, currBestLine, startTime)
 	}
 
@@ -139,7 +141,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 			updateBestLine(currBestLine, bestSubline, move)
 			alpha = currScore
 		}
-		if time.Now().After(endtime) && searchedEnoughAtThisDepth() {
+		if time.Now().After(endtime) {
 			break
 		}
 		if search.interrupted {
@@ -182,14 +184,10 @@ func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBes
 			updateBestLine(currBestLine, bestSubline, move)
 			alpha = currScore
 
-			//less noisy alternative
-			//if depth == 0 && time.Now().After(starttime.Add(time.Millisecond*time.Duration(200))) {
-			printInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)))
-			//}
+			printInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "")
+			// printInfo( alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "in startAB:")
 		}
-		if time.Now().After(endtime) && searchedEnoughAtThisDepth() {
-			break
-		}
+		
 		if search.interrupted {
 			break
 		}
@@ -221,16 +219,6 @@ func reorderMoves(moves []Move, candidateLine *Line, depth int) {
 			break
 		}
 	}
-}
-
-// When doing iterative deepening we don't want to allow engine to stop thinking right after
-// descending one depth deeper because these results will be bad (uninitialized)
-// We should only stop searching after at least some variations have been evaluated. For example
-// these that seemed best by search at previous depth.
-// See notest.txt entry from 09.05.2024 for an example.
-func searchedEnoughAtThisDepth() bool {
-	// TODO make multiline - return true after searching through several top lines
-	return true
 }
 
 func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move) {

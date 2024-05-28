@@ -8,10 +8,6 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.3"
-)
-
-const (
 	uUci      string = "uci"
 	uIsReady  string = "isready"
 	uPosition string = "position"
@@ -26,6 +22,7 @@ const (
 	uMovesToGo string = "movestogo"
 	uDepth     string = "depth"
 	uInfinite  string = "infinite"
+	uMoveTime  string = "movetime"
 )
 
 var posGen *Generator
@@ -81,7 +78,8 @@ func doGo(goCommand string) {
 	}
 
 	tokens := strings.Split(goCommand, " ")
-
+	// if specified - search exactly this numer of millis
+	moveTimeMillis := -1
 	blackMillisLeft := 100_000_000_000
 	whiteMillisLeft := 100_000_000_000
 	blackMillisIncrement := 0
@@ -93,6 +91,13 @@ func doGo(goCommand string) {
 
 	for i, token := range tokens {
 		switch token {
+		case uMoveTime:
+			moveTimeMillis, err = strconv.Atoi(tokens[i+1])
+			if err != nil {
+				return
+			}
+			//ignore rest of params
+			break
 		case uWtime:
 			whiteMillisLeft, err = strconv.Atoi(tokens[i+1])
 			if err != nil {
@@ -125,8 +130,13 @@ func doGo(goCommand string) {
 			}
 		}
 	}
-	endtime := calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, 
-		fullMovesToGo)
+	var endtime time.Time
+	if moveTimeMillis != -1 {
+		endtime = time.Now().Add(time.Duration(moveTimeMillis*int(time.Millisecond)))
+	} else  {
+		endtime = calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, 
+			fullMovesToGo)
+	}
 	go search.StartIterativeDeepening(endtime, targetDepth)
 }
 
@@ -144,17 +154,15 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 	return endtime
 }
 
-func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration) {
-	if timeElapsed < 300 * time.Millisecond {
-		return
-	}
+func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
 	line := Line{moves: bestLine}
 	fmt.Println("info pv", line.String(), 
 	"score", formatScore(score), 
 	"depth", depth,
 	"nodes", evaluatedNodes, 
 	"time", timeElapsed.Milliseconds(), 
-	"nps", nps(evaluatedNodes, timeElapsed))
+	"nps", nps(evaluatedNodes, timeElapsed),
+	debugSuffix)
 }
 
 func nps(evaluatedNodes int64, timeElapsed time.Duration) int {

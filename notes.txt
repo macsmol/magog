@@ -279,3 +279,34 @@ machess for reference:
     bestmove e2a6
 
 Note that not only the speed but also the ordering is better here than in Machess!
+
+
+28.05.2024
+Did a rematch. Getting pwnd by machess. Somethings bad with move ordering in timebased play..
+Not sure what.
+In this situation magog is very likely to miss a mate in 1.
+
+    2024-05-27 18:34:49,129-->1:position startpos moves e2e4 c7c5 f1c4 e7e5 d1h5
+    2024-05-27 18:34:49,129-->1:go wtime 285088 btime 280307 winc 0 binc 0
+    2024-05-27 18:34:49,718<--1:info pv d8f6 c4f7 f6f7 h5e5 score cp -70 depth 4 nodes 168010 time 581 nps 289162
+    2024-05-27 18:34:50,833<--1:info nodes 500000 time 1690 nps 295765
+    2024-05-27 18:34:52,566<--1:info nodes 1000000 time 3434 nps 291201
+    2024-05-27 18:34:54,259<--1:info nodes 1500000 time 5117 nps 293130
+    2024-05-27 18:34:55,983<--1:info nodes 2000000 time 6844 nps 292197
+    2024-05-27 18:34:57,689<--1:info nodes 2500000 time 8557 nps 292134
+    2024-05-27 18:34:58,486<--1:info pv g8f6 g2g4 d8b6 b1c3 f6h5 g4h5 score cp 585 depth 4 nodes 2737382 time 9347 nps 292855
+    2024-05-27 18:34:58,489<--1:info pv g8f6 g2g4 d8b6 b1c3 f6h5 g4h5 score cp 585 depth 4 nodes 2737382 time 9347 nps 292855
+    2024-05-27 18:34:58,502<--1:bestmove g8f6
+    2024-05-27 18:34:58,502*1*Found move:Ng8-f6
+
+If I let it do search to full depth it does not miss it and plays d8f6. However with the bad timing
+(quite likely as it turns out) it plays g8f6 and never reaching reply Qh5f7.
+__For some reason it does not happen in machess. I need to add extra logging to it and investigate.
+Otherwise this blunder looks like could be rectified with killer moves heuristic...
+Or trivial fix would be to never stop searching on odd depths (i.e engine's own moves)
+
+29.05.2024
+Ok. So the root cause of blunder was the same as was in Machess some years ago. I mistakenly believed that
+results from interrupted alphaBeta search at some depth can be any good. No they are not. 
+In general they're can contain horrible blunder (hanging pieces, mates in 1). If engine had alpha beta interrupted then it should just return 
+search results from previous iteration of ItDeep (even though some sourcess suggest otherwise).

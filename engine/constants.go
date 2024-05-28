@@ -4,6 +4,10 @@ import (
 	"fmt"
 )
 
+const (
+	VERSION_STRING string = "0.4"
+)
+
 type rank int8
 
 const (
@@ -15,7 +19,7 @@ const (
 	Rank6
 	Rank7
 	Rank8
-	
+
 	UnitRank rank = 0x10
 )
 
@@ -145,16 +149,16 @@ const (
 	ColorlessPiece piece = 0x3F
 )
 
-// bit layout 
+// bit layout
 // wbpp_pppp
 const (
 	NullPiece          piece = 0
-	Pawn,   BPawn, WPawn       = 1 << (iota-1), 1 << (iota-1) | BlackPieceBit, 1 << (iota-1) | WhitePieceBit
+	Pawn, BPawn, WPawn       = 1 << (iota - 1), 1<<(iota-1) | BlackPieceBit, 1<<(iota-1) | WhitePieceBit
 	Knight, BKnight, WKnight
 	Bishop, BBishop, WBishop
-	Rook,   BRook, WRook
-	Queen,  BQueen, WQueen
-	King,   BKing, WKing
+	Rook, BRook, WRook
+	Queen, BQueen, WQueen
+	King, BKing, WKing
 )
 
 func (p piece) String() string {
