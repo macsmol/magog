@@ -64,7 +64,7 @@ func doPosition(positionCommand string) {
 		movesString := strings.TrimSpace(positionCommand[movesIdx+len(uMoves):])
 		moveStrings := strings.Split(movesString, " ")
 		for _, moveStr := range moveStrings {
-			posGen.PushMove(parseMoveString(moveStr))
+			posGen.PushMoveSafely(parseMoveString(moveStr))
 		}
 	}
 }

@@ -317,3 +317,9 @@ Results after fix:
    Engine               Score          Ma         Ma    S-B
 1: Machess-1.0-SNAPSHOT 7,0/10 ·········· =1110=1=1=   21,00
 2: Magog.0.4            3,0/10 =0001=0=0= ··········   21,00
+
+29.05.2024 - 3
+Magog had a bug in parsing moves list in uci position command. It failed to recognize that double pushes make pawns vulnerable 
+to en-passant attacks. Luckily it was rather easy to find because it made the engine to make illegal moves (tried to capture 
+with a pawn that wasn't there). So 2 games were lost due to illegal games but 
+it made at least one other occasion where it made a blunder in equal position by not taking E-P. Bug fixed.

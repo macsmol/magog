@@ -93,6 +93,15 @@ func (gen *Generator) PushMove(move Move) (success bool) {
 	return true
 }
 
+func (gen *Generator) PushMoveSafely(move Move) (success bool) {
+	if gen.pos.board[move.from] & ColorlessPiece == Pawn &&
+	 (move.from.getRank() == Rank7 && move.to.getRank() == Rank5 ||
+	  move.from.getRank() == Rank2 && move.to.getRank() == Rank4) {
+		move.enPassant = (move.from + move.to) / 2
+	} 
+	return gen.PushMove(move)
+}
+
 func (gen *Generator) PopMove() {
 	gen.plyIdx--
 	gen.pos.UnmakeMove(gen.plies[gen.plyIdx].undo)
