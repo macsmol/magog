@@ -66,6 +66,7 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 		copyBestLine(bestLine, search.bestLineAtDepth[0])
 		printInfo(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
 		depthCompleted = currDepth
+		bestScore = scoreAtDepth
 
 		// shortest mating line found - no need to go deeper
 		if pliesToMate(scoreAtDepth) == currDepth {
@@ -96,9 +97,6 @@ func (pv *Search) PVString() string {
 	return sb.String()
 }
 
-func (pv *Search) getBestMove() Move {
-	return pv.bestLineAtDepth[0][0]
-}
 
 func (pv *Search) getBestLine() []Move {
 	return pv.bestLineAtDepth[0]

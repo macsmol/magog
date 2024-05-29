@@ -323,3 +323,29 @@ Magog had a bug in parsing moves list in uci position command. It failed to reco
 to en-passant attacks. Luckily it was rather easy to find because it made the engine to make illegal moves (tried to capture 
 with a pawn that wasn't there). So 2 games were lost due to illegal games but 
 it made at least one other occasion where it made a blunder in equal position by not taking E-P. Bug fixed.
+
+29.05.2024 - 4
+Results are only slightly better:
+   Engine               Score          Ma         Ma    S-B
+1: Machess-1.0-SNAPSHOT 6,5/10 ·········· =111011=0=   22,75
+2: Magog.0.5            3,5/10 =000100=1= ··········   22,75
+
+Here it strongly prefers to trade bishop for 2 pawns. Very strange as machess with the same evaluation function retreats bishop to b4d6 after finishing depth 3. 
+However it does play it after full search depth =4 so it's also an ordering/speed issue.
+
+    2024-05-29 19:45:30,790-->2:position startpos moves d2d4 e7e6 d1d3 d8h4 c1d2 b8c6 g1f3 h4g4 h2h3 g4h5 d2g5 f7f6 g2g4 h5g6 d3g6 h7g6 g5d2 d7d5 e2e3 f6f5 g4f5 g6f5 b1c3 g8f6 h1g1 c8d7 c3b5 e8d8 f3g5 d8c8 g5f7 h8h4 f2f4 d7e8 f7e5 c6b4 d2b4 f8b4 c2c3 e8b5 e5g6 h4h5 f1b5
+    2024-05-29 19:45:30,790-->2:go wtime 105073 btime 87638 winc 0 binc 0
+    2024-05-29 19:45:30,795<--2:info pv a7a6 score cp -30 depth 1 nodes 7 time 0 nps 7000000 
+    2024-05-29 19:45:30,810<--2:info pv c7c6 c3b4 c6b5 score cp -20 depth 1 nodes 17 time 0 nps 17000000 
+    2024-05-29 19:45:30,825<--2:info pv h5h3 c3b4 h3e3 score cp 10 depth 1 nodes 46 time 0 nps 46000000 
+    ... no changes in pv line
+    2024-05-29 19:45:30,905<--2:info pv h5h3 c3b4 h3e3 score cp 10 depth 3 nodes 37634 time 97 nps 387328 
+    2024-05-29 19:45:30,985<--2:info pv h5h3 c3b4 h3e3 e1d2 score cp -145 depth 4 nodes 74809 time 183 nps 408430 
+    2024-05-29 19:45:31,080<--2:info pv a7a6 c3b4 a6b5 g6e7 score cp -125 depth 4 nodes 116083 time 280 nps 413906 
+    2024-05-29 19:45:31,971<--2:info nodes 500000 time 1171 nps 426765
+    2024-05-29 19:45:32,929<--2:info pv b4d6 h3h4 c7c6 b5d3 score cp -15 depth 4 nodes 914395 time 2136 nps 427968 
+    2024-05-29 19:45:33,136<--2:info nodes 1000000 time 2337 nps 427823
+    2024-05-29 19:45:33,727<--2:info pv h5h3 c3b4 h3e3 score cp 0 depth 3 nodes 1248174 time 2921 nps 427262 
+    2024-05-29 19:45:33,743<--2:bestmove h5h3
+    2024-05-29 19:45:33,743*2*Found move:Rh5xh3
+

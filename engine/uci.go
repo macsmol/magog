@@ -64,6 +64,7 @@ func doPosition(positionCommand string) {
 		movesString := strings.TrimSpace(positionCommand[movesIdx+len(uMoves):])
 		moveStrings := strings.Split(movesString, " ")
 		for _, moveStr := range moveStrings {
+			//TODO this uses up ply buffer for long move list. Compressing that would be good.
 			posGen.PushMoveSafely(parseMoveString(moveStr))
 		}
 	}
@@ -89,6 +90,7 @@ func doGo(goCommand string) {
 
 	var err error
 
+	out:
 	for i, token := range tokens {
 		switch token {
 		case uMoveTime:
@@ -97,7 +99,7 @@ func doGo(goCommand string) {
 				return
 			}
 			//ignore rest of params
-			break
+			break out
 		case uWtime:
 			whiteMillisLeft, err = strconv.Atoi(tokens[i+1])
 			if err != nil {
@@ -132,15 +134,15 @@ func doGo(goCommand string) {
 	}
 	var endtime time.Time
 	if moveTimeMillis != -1 {
-		endtime = time.Now().Add(time.Duration(moveTimeMillis*int(time.Millisecond)))
-	} else  {
-		endtime = calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, 
+		endtime = time.Now().Add(time.Duration(moveTimeMillis * int(time.Millisecond)))
+	} else {
+		endtime = calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
 			fullMovesToGo)
 	}
 	go search.StartIterativeDeepening(endtime, targetDepth)
 }
 
-func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement, 
+func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
 	givenMovesToGo int) time.Time {
 	isBlackTurn := posGen.pos.flags&FlagWhiteTurn == 0
 	var millisForMove int
@@ -156,13 +158,13 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 
 func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
 	line := Line{moves: bestLine}
-	fmt.Println("info pv", line.String(), 
-	"score", formatScore(score), 
-	"depth", depth,
-	"nodes", evaluatedNodes, 
-	"time", timeElapsed.Milliseconds(), 
-	"nps", nps(evaluatedNodes, timeElapsed),
-	debugSuffix)
+	fmt.Println("info pv", line.String(),
+		"score", formatScore(score),
+		"depth", depth,
+		"nodes", evaluatedNodes,
+		"time", timeElapsed.Milliseconds(),
+		"nps", nps(evaluatedNodes, timeElapsed),
+		debugSuffix)
 }
 
 func nps(evaluatedNodes int64, timeElapsed time.Duration) int {
@@ -180,7 +182,7 @@ func closeToMate(score int) bool {
 	if score < 0 {
 		score = -score
 	}
-	return score > ScoreCloseToMate 
+	return score > ScoreCloseToMate
 }
 
 func fullMovesToMate(score int) int {
@@ -193,7 +195,7 @@ func fullMovesToMate(score int) int {
 	}
 	pliesToMate := -LostScore - score
 
-	return sign * (pliesToMate + 1) /2
+	return sign * (pliesToMate + 1) / 2
 }
 
 func pliesToMate(score int) int {
