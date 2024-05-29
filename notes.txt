@@ -310,3 +310,10 @@ Ok. So the root cause of blunder was the same as was in Machess some years ago. 
 results from interrupted alphaBeta search at some depth can be any good. No they are not. 
 In general they're can contain horrible blunder (hanging pieces, mates in 1). If engine had alpha beta interrupted then it should just return 
 search results from previous iteration of ItDeep (even though some sourcess suggest otherwise).
+
+29.05.2024 - 2
+Results after fix:
+
+   Engine               Score          Ma         Ma    S-B
+1: Machess-1.0-SNAPSHOT 7,0/10 ·········· =1110=1=1=   21,00
+2: Magog.0.4            3,0/10 =0001=0=0= ··········   21,00
