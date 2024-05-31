@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.5"
+	VERSION_STRING string = "0.6"
 )
 
 type rank int8

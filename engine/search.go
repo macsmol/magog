@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"runtime/pprof"
+	"slices"
 	"strings"
 	"time"
 )
@@ -97,7 +98,6 @@ func (pv *Search) PVString() string {
 	return sb.String()
 }
 
-
 func (pv *Search) getBestLine() []Move {
 	return pv.bestLineAtDepth[0]
 }
@@ -122,12 +122,13 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 		terminalNodeScore(posGen.pos, depth)
 	}
 
-	reorderMoves(moves, candidateLine, depth)
+	applyPvMoveBonus(moves, candidateLine, depth)
+	sortMoves(moves)
 	for _, move := range moves {
 		if search.interrupted {
 			break
 		}
-		posGen.PushMove(move)
+		posGen.PushMove(move.mov)
 		currScore := -search.alphaBeta(posGen, targetDepth, depth+1, -beta, -alpha, &bestSubline,
 			candidateLine, startTime, endtime)
 		posGen.PopMove()
@@ -136,7 +137,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 			return beta
 		}
 		if currScore > alpha {
-			updateBestLine(currBestLine, bestSubline, move)
+			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 		}
 		if time.Now().After(endtime) {
@@ -157,7 +158,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 }
 
 func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBestLine *[]Move,
-	candidateLine *Line, starttime, endtime time.Time) (score int, oneLegalMove bool) {
+	pvLine *Line, starttime, endtime time.Time) (score int, oneLegalMove bool) {
 	bestSubline := search.bestLineAtDepth[1]
 	moves := posGen.GenerateMoves()
 	alpha := MinusInfinityScore
@@ -168,24 +169,25 @@ func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBes
 		terminalNodeScore(posGen.pos, 0)
 	}
 
-	reorderMoves(moves, candidateLine, 0)
+	applyPvMoveBonus(moves, pvLine, 0)
+	sortMoves(moves)
 	for _, move := range moves {
 		if search.interrupted {
 			break
 		}
-		posGen.PushMove(move)
+		posGen.PushMove(move.mov)
 		currScore := -search.alphaBeta(posGen, targetDepth, 1, -beta, -alpha, &bestSubline,
-			candidateLine, starttime, endtime)
+			pvLine, starttime, endtime)
 		posGen.PopMove()
 
 		if currScore > alpha {
-			updateBestLine(currBestLine, bestSubline, move)
+			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 
 			printInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "")
 			// printInfo( alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "in startAB:")
 		}
-		
+
 		if search.interrupted {
 			break
 		}
@@ -208,15 +210,20 @@ func nextMoveWins(score int) bool {
 	return score == -LostScore-onePly
 }
 
-func reorderMoves(moves []Move, candidateLine *Line, depth int) {
+func applyPvMoveBonus(moves []rankedMove, candidateLine *Line, depth int) {
 	for i, m := range moves {
-		if candidateLine.isMoveOnLine(m, depth) {
-			tmpMove := moves[0]
-			moves[0] = moves[i]
-			moves[i] = tmpMove
+		if candidateLine.isMoveOnLine(m.mov, depth) {
+			moves[i].ranking += rankingBonusPvMove
 			break
 		}
 	}
+}
+func sortMoves(moves []rankedMove) {
+	slices.SortFunc(moves,
+		//desc sort by ranking
+		func(a, b rankedMove) int {
+			return b.ranking - a.ranking
+		})
 }
 
 func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move) {
@@ -242,12 +249,14 @@ func (search *Search) quiescence(posGen *Generator, alpha, beta, depth int,
 		return beta
 	}
 	if score > alpha {
+		//TODO should add updateBestLine() here?
 		*currBestLine = (*currBestLine)[:0]
 		alpha = score
 	}
 	tacticalMoves := posGen.GenerateTacticalMoves()
+	sortMoves(tacticalMoves)
 	for _, mov := range tacticalMoves {
-		posGen.PushMove(mov)
+		posGen.PushMove(mov.mov)
 		score = -search.quiescence(posGen, -beta, -alpha, depth+1, &bestSubline, startTime)
 		posGen.PopMove()
 
@@ -255,7 +264,7 @@ func (search *Search) quiescence(posGen *Generator, alpha, beta, depth int,
 			return beta
 		}
 		if score > alpha {
-			updateBestLine(currBestLine, bestSubline, mov)
+			updateBestLine(currBestLine, bestSubline, mov.mov)
 			alpha = score
 		}
 	}

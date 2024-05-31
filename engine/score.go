@@ -24,6 +24,26 @@ const (
 	MobilityScoreFactor = 5
 )
 
+func pieceToScore(p piece) int {
+	switch p {
+	case Pawn:
+		return MaterialPawnScore
+	case Knight:
+		return MaterialKnightScore
+	case Bishop:
+		return MaterialBishopScore
+	case Rook:
+		return MaterialRookScore
+	case Queen:
+		return MaterialQueenScore
+	case King:
+		// not sure what should return here. Lower numbers would make captures by king preferrable 
+		// as king only appears as attacker. TODO Test it
+		return 0
+	}
+	return 0
+}
+
 // Returns static evaluation score for Position pos. It's given relative to the currently playing
 // side (negamax score)
 func Evaluate(pos *Position, depth int, debug ...bool) int {

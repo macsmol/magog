@@ -150,8 +150,8 @@ func (pos *Position) GetCurrentTacticalMoveContext() (
 // -not possible in this position.
 // -not possible according to the rules of chess: a1b8
 func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
-	currPieces, currPawnsPtr, currKing,
-		enemyPieces, enemyPawns, enemyKing,
+	currPieces, currPawnsPtr, currKingSq,
+		enemyPieces, enemyPawns, enemyKingSq,
 		currCastleRank, currKingSideCastleFlag, currQueenSideCastleFlag,
 		enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
 		currColorBit, enemyColorBit := pos.getCurrentMakeMoveContext()
@@ -184,9 +184,9 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 				}
 			}
 		}
-	} else if mov.from == *currKing {
+	} else if mov.from == *currKingSq {
 		pos.flags &= ^(currKingSideCastleFlag | currQueenSideCastleFlag)
-		*currKing = mov.to
+		*currKingSq = mov.to
 		if mov.from.getFile() == E {
 			if mov.to.getFile() == C {
 				rookFrom := square(A + file(currCastleRank))
@@ -252,7 +252,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	pos.flags = pos.flags ^ FlagWhiteTurn
 
 	// everything's been moved to it's place - time to check if it's actually legal
-	if pos.isUnderCheck(*enemyPieces, *enemyPawns, enemyKing, *currKing) {
+	if pos.isUnderCheck(*enemyPieces, *enemyPawns, enemyKingSq, *currKingSq) {
 		pos.UnmakeMove(undo)
 		return backtrackInfo{}
 	}
