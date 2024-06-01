@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.6"
+	VERSION_STRING string = "0.7-knights list"
 )
 
 type rank int8

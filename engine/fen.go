@@ -45,14 +45,18 @@ func NewPositionFromFen(fen string) (*Position, error) {
 			} else if piece&WhitePieceBit == 0 {
 				if piece == BPawn {
 					pos.blackPawns = append(pos.blackPawns, sq)
+				} else if piece == BKnight {
+					pos.blackKnights = append(pos.blackKnights, sq)
 				} else {
-					pos.blackPieces = append(pos.blackPieces, sq)
+					pos.blackSliders = append(pos.blackSliders, sq)
 				}
 			} else {
 				if piece == WPawn {
 					pos.whitePawns = append(pos.whitePawns, sq)
+				} else if piece == WKnight {
+					pos.whiteKnights = append(pos.whiteKnights, sq)
 				} else {
-					pos.whitePieces = append(pos.whitePieces, sq)
+					pos.whiteSliders = append(pos.whiteSliders, sq)
 				}
 			}
 			f++

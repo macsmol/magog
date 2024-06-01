@@ -32,7 +32,7 @@ type rankedMove struct {
 
 // ranking bonud for move that is on line returned by previous iteration of iterative deepening
 const (
-	rankingBonusPvMove = 20000
+	rankingBonusPvMove  = 20000
 	rankingBonusCapture = 1000
 )
 
@@ -55,7 +55,12 @@ func NewPromotionMove(from, to square, promoteTo piece) Move {
 	return Move{from, to, promoteTo, InvalidSquare}
 }
 
-var kingDirections = []Direction{DirN, DirS, DirE, DirW, DirNE, DirNW, DirSW, DirSE}
+var (
+	bishopDirections = []Direction{DirNE, DirSE, DirNW, DirSW}
+	rookDirections   = []Direction{DirN, DirS, DirE, DirW}
+	kingDirections   = []Direction{DirN, DirS, DirE, DirW, DirNE, DirNW, DirSW, DirSE}
+	knightDirections = [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
+)
 
 func (move Move) String() string {
 	if move.promoteTo != NullPiece {
@@ -224,7 +229,8 @@ func (gen *Generator) generatePseudoLegalMoves() {
 	var outputMoves *[]rankedMove = &gen.plies[gen.plyIdx].rankedMoves
 	*outputMoves = (*outputMoves)[:0]
 
-	currentPieces, enemyPieces,
+	currentSliders, enemySliders,
+		currentKnights, enemyKnights,
 		currentPawns, enemyPawns,
 		currentKingSq, enemyKingSq,
 		pawnAdvanceDirection,
@@ -263,35 +269,36 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			}
 		}
 	}
-	for _, from := range currentPieces {
-		piece := pos.board[from]
-		switch piece {
-		case WKnight, BKnight:
-			dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
-			for _, dir := range dirs {
-				to := from + square(dir)
-				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-					gen.pos.appendRankedMove(outputMoves, from, to)
-				}
+	for _, from := range currentKnights {
+		dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
+		for _, dir := range dirs {
+			to := from + square(dir)
+			if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
+				gen.pos.appendRankedMove(outputMoves, from, to)
 			}
+		}
+	}
+	for _, from := range currentSliders {
+		piece := pos.board[from]
+		var dirs []Direction
+		switch piece {
 		case WBishop, BBishop:
-			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+			dirs = bishopDirections
 		case WRook, BRook:
-			dirs := []Direction{DirN, DirS, DirE, DirW}
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+			dirs = rookDirections
 		case WQueen, BQueen:
-			pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, kingDirections, outputMoves)
+			dirs = kingDirections
 		default:
 			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
 		}
+		pos.appendSlidingPieceMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
 	}
 	// king moves
 	for _, dir := range kingDirections {
 		to := currentKingSq + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 &&
 			// IDEA same check done later in MakeMove. Skip here?
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, to) {
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKingSq, to) {
 			gen.pos.appendRankedMove(outputMoves, currentKingSq, to)
 		}
 	}
@@ -302,10 +309,10 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		if pos.board[kingAsByte+dirAsByte] == NullPiece &&
 			pos.board[kingDest] == NullPiece &&
 			pos.board[kingAsByte+dirAsByte*3] == NullPiece &&
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, currentKingSq) &&
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKingSq, currentKingSq) &&
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
 			// IDEA same check done later in MakeMove. Skip here?
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKingSq, square(kingDest)) {
 			gen.pos.appendRankedMove(outputMoves, currentKingSq, square(kingDest))
 		}
 	}
@@ -313,10 +320,10 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		var kingAsByte, dirAsByte int8 = int8(currentKingSq), int8(DirE)
 		kingDest := kingAsByte + dirAsByte*2
 		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece &&
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, currentKingSq) &&
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKingSq, currentKingSq) &&
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
 			// IDEA same check done later in MakeMove. Skip here?
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKingSq, square(kingDest)) {
 			gen.pos.appendRankedMove(outputMoves, currentKingSq, square(kingDest))
 		}
 	}
@@ -349,7 +356,8 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 	var outputMoves *[]rankedMove = &gen.plies[gen.plyIdx].rankedMoves
 	*outputMoves = (*outputMoves)[:0]
 
-	currentPieces, enemyPieces,
+	currentSliders, enemySliders,
+		currentKnights, enemyKnights,
 		currentPawns, enemyPawns,
 		currentKingSq, enemyKing,
 		pawnAdvanceDirection,
@@ -378,34 +386,35 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 			appendPawnPushes(from, to, promotionRank, outputMoves)
 		}
 	}
-	for _, from := range currentPieces {
-		piece := pos.board[from]
-		switch piece {
-		case WKnight, BKnight:
-			dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
-			for _, dir := range dirs {
-				to := from + square(dir)
-				if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
-					appendRankedMove(outputMoves, from, to, Knight, pos.board[to]&ColorlessPiece)
-				}
+	for _, from := range currentKnights {
+		dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
+		for _, dir := range dirs {
+			to := from + square(dir)
+			if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
+				appendRankedMove(outputMoves, from, to, Knight, pos.board[to]&ColorlessPiece)
 			}
+		}
+	}
+	for _, from := range currentSliders {
+		piece := pos.board[from]
+		var dirs []Direction
+		switch piece {
 		case WBishop, BBishop:
-			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
-			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+			dirs = bishopDirections
 		case WRook, BRook:
-			dirs := []Direction{DirN, DirS, DirE, DirW}
-			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+			dirs = rookDirections
 		case WQueen, BQueen:
-			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, kingDirections, outputMoves)
+			dirs = kingDirections
 		default:
 			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
 		}
+		pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
 	}
 	// king moves
 	for _, dir := range kingDirections {
 		to := currentKingSq + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 &&
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKing, to) {
 			pos.appendRankedMove(outputMoves, currentKingSq, to)
 		}
 	}
@@ -414,7 +423,8 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 // Counts all tactical moves possible from pos position
 func (pos *Position) countTacticalMoves() int {
 	var movesCount int = 0
-	currentPieces, enemyPieces,
+	currentSliders, enemySliders,
+	currentKnights, enemyKnights,
 		currentPawns, enemyPawns,
 		currentKingSq, enemyKing,
 		pawnAdvanceDirection,
@@ -437,36 +447,36 @@ func (pos *Position) countTacticalMoves() int {
 			movesCount += pos.countPawnMoves(from, to, promotionRank)
 		}
 	}
-	for _, from := range currentPieces {
-		piece := pos.board[from]
-		switch piece {
-		case WKnight, BKnight:
-			dirs := [...]Direction{DirNNE, DirSSW, DirNNW, DirSSE, DirNEE, DirSWW, DirNWW, DirSEE}
-			for _, dir := range dirs {
-				to := from + square(dir)
-				if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
-					if pos.isLegal(NewMove(from, to)) {
-						movesCount++
-					}
+	for _, from := range currentKnights {
+		for _, dir := range knightDirections {
+			to := from + square(dir)
+			if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
+				if pos.isLegal(NewMove(from, to)) {
+					movesCount++
 				}
 			}
+		}
+	}
+	for _, from := range currentSliders {
+		piece := pos.board[from]
+		var dirs []Direction
+		switch piece {
 		case WBishop, BBishop:
-			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
-			movesCount += pos.countSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs)
+			dirs = bishopDirections
 		case WRook, BRook:
-			dirs := []Direction{DirN, DirS, DirE, DirW}
-			movesCount += pos.countSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs)
+			dirs = rookDirections
 		case WQueen, BQueen:
-			movesCount += pos.countSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, kingDirections)
+			dirs = kingDirections
 		default:
 			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
 		}
+		movesCount += pos.countSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs)
 	}
 	// king moves
 	for _, dir := range kingDirections {
 		to := currentKingSq + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 &&
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
+			!pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKing, to) {
 			movesCount++
 		}
 	}

@@ -8,14 +8,17 @@ import (
 type Position struct {
 	// 0x88 board
 	board [128]piece
-	// all but king
-	blackPieces []square
-	blackPawns  []square
-	blackKing   square
-	// all but king
-	whitePieces  []square
+
+	blackPawns   []square
+	blackKnights []square
+	blackSliders []square
+	blackKing    square
+
 	whitePawns   []square
+	whiteKnights []square
+	whiteSliders []square
 	whiteKing    square
+
 	flags        byte
 	enPassSquare square
 }
@@ -40,12 +43,15 @@ func NewPosition() *Position {
 			A7: BPawn, B7: BPawn, C7: BPawn, D7: BPawn, E7: BPawn, F7: BPawn, G7: BPawn, H7: BPawn,
 			A8: BRook, B8: BKnight, C8: BBishop, D8: BQueen, E8: BKing, F8: BBishop, G8: BKnight, H8: BRook,
 		},
-		blackPieces: []square{A8, B8, C8, D8, F8, G8, H8},
-		blackPawns:  []square{A7, B7, C7, D7, E7, F7, G7, H7},
-		blackKing:   E8,
-		whitePieces: []square{A1, B1, C1, D1, F1, G1, H1},
-		whitePawns:  []square{A2, B2, C2, D2, E2, F2, G2, H2},
-		whiteKing:   E1,
+		blackPawns:   []square{A7, B7, C7, D7, E7, F7, G7, H7},
+		blackKnights: []square{B8, G8},
+		blackSliders:  []square{A8, C8, D8, F8, H8},
+		blackKing:    E8,
+
+		whitePawns:   []square{A2, B2, C2, D2, E2, F2, G2, H2},
+		whiteKnights: []square{B1, G1},
+		whiteSliders:  []square{A1, C1, D1, F1, H1},
+		whiteKing:    E1,
 		flags: FlagWhiteTurn | FlagWhiteCanCastleKside | FlagWhiteCanCastleQside |
 			FlagBlackCanCastleKside | FlagBlackCanCastleQside,
 		enPassSquare: InvalidSquare,
@@ -70,12 +76,12 @@ func (pos *Position) String() string {
 		pos.flags&FlagBlackCanCastleQside != 0,
 		pos.flags&FlagBlackCanCastleKside != 0,
 		pos.flags&FlagWhiteTurn == 0)
-	sb.WriteString(fmt.Sprintf("BlackKing: %v; BlackPieces: %v; BlackPawns: %v\n", pos.blackKing, pos.blackPieces, pos.blackPawns))
+	sb.WriteString(fmt.Sprintf("BLACK King: %v; Sliders: %v; Knights: %v; Pawns: %v\n", pos.blackKing, pos.blackSliders, pos.blackKnights, pos.blackPawns))
 	appendFlagsString(&sb,
 		pos.flags&FlagWhiteCanCastleQside != 0,
 		pos.flags&FlagWhiteCanCastleKside != 0,
 		pos.flags&FlagWhiteTurn != 0)
-	sb.WriteString(fmt.Sprintf("WhiteKing: %v; WhitePieces: %v; WhitePawns: %v\n", pos.whiteKing, pos.whitePieces, pos.whitePawns))
+	sb.WriteString(fmt.Sprintf("WHITE King: %v; Sliders: %v; Knights: %v; Pawns: %v\n", pos.whiteKing, pos.whiteSliders, pos.whiteKnights, pos.whitePawns))
 	sb.WriteString(fmt.Sprintf("En passant square: %v", pos.enPassSquare))
 	return sb.String()
 }
@@ -99,7 +105,8 @@ func appendFlagsString(sb *strings.Builder, castleQueenside, castleKingside, myT
 }
 
 func (pos *Position) GetCurrentContext() (
-	currPieces []square, enemyPieces []square,
+	currSliders []square, enemySliders []square,
+	currKnights []square, enemyKnights []square,
 	currPawns []square, enemyPawns []square,
 	currKing square, enemyKing square,
 	pawnAdvance Direction,
@@ -107,14 +114,16 @@ func (pos *Position) GetCurrentContext() (
 	queensideCastlePossible, kingsideCastlePossible bool,
 	currPawnsStartRank, promotionRank rank) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return pos.blackPieces, pos.whitePieces,
+		return pos.blackSliders, pos.whiteSliders,
+			pos.blackKnights, pos.whiteKnights,
 			pos.blackPawns, pos.whitePawns,
 			pos.blackKing, pos.whiteKing,
 			DirS, BlackPieceBit, WhitePieceBit,
 			pos.flags&FlagBlackCanCastleQside != 0, pos.flags&FlagBlackCanCastleKside != 0,
 			Rank7, Rank1
 	}
-	return pos.whitePieces, pos.blackPieces,
+	return pos.whiteSliders, pos.blackSliders,
+		pos.whiteKnights, pos.blackKnights,
 		pos.whitePawns, pos.blackPawns,
 		pos.whiteKing, pos.blackKing,
 		DirN, WhitePieceBit, BlackPieceBit,
@@ -123,20 +132,23 @@ func (pos *Position) GetCurrentContext() (
 }
 
 func (pos *Position) GetCurrentTacticalMoveContext() (
-	currPieces []square, enemyPieces []square,
+	currSliders []square, enemySliders []square,
+	currKnights []square, enemyKnights []square,
 	currPawns []square, enemyPawns []square,
 	currKing square, enemyKing square,
 	pawnAdvance Direction,
 	currColorBit piece, enemyColorBit piece,
 	promotionRank rank) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return pos.blackPieces, pos.whitePieces,
+		return pos.blackSliders, pos.whiteSliders,
+			pos.blackKnights, pos.whiteKnights, 
 			pos.blackPawns, pos.whitePawns,
 			pos.blackKing, pos.whiteKing,
 			DirS, BlackPieceBit, WhitePieceBit,
 			Rank1
 	}
-	return pos.whitePieces, pos.blackPieces,
+	return pos.whiteSliders, pos.blackSliders,
+		pos.whiteKnights, pos.blackKnights,
 		pos.whitePawns, pos.blackPawns,
 		pos.whiteKing, pos.blackKing,
 		DirN, WhitePieceBit, BlackPieceBit,
@@ -150,8 +162,8 @@ func (pos *Position) GetCurrentTacticalMoveContext() (
 // -not possible in this position.
 // -not possible according to the rules of chess: a1b8
 func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
-	currPieces, currPawnsPtr, currKingSq,
-		enemyPieces, enemyPawns, enemyKingSq,
+	currSliders, currKnights, currPawnsPtr, currKingSq,
+		enemySliders, enemyKnights, enemyPawns, enemyKingSq,
 		currCastleRank, currKingSideCastleFlag, currQueenSideCastleFlag,
 		enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
 		currColorBit, enemyColorBit := pos.getCurrentMakeMoveContext()
@@ -161,7 +173,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		lastFlags:     pos.flags,
 		lastEnPassant: pos.enPassSquare,
 	}
-	// one of thre possibilities - pawn move, king move, other piece move
+	// one of 4 possibilities - pawn move, knight move, king move, other piece move
 	if pos.board[mov.from] == Pawn|currColorBit {
 		currPawns := (*currPawnsPtr)
 		// normal move - just update entry
@@ -179,9 +191,20 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 			for i := range currPawns {
 				if mov.from == currPawns[i] {
 					(*currPawnsPtr) = remove(currPawns, i)
-					*currPieces = append(*currPieces, mov.to)
+					if mov.promoteTo == Knight {
+						*currKnights = append(*currKnights, mov.to)
+					} else {
+						*currSliders = append(*currSliders, mov.to)
+					}
 					break
 				}
+			}
+		}
+	} else if pos.board[mov.from] == Knight|currColorBit {
+		for i := range *currKnights {
+			if mov.from == (*currKnights)[i] {
+				(*currKnights)[i] = mov.to
+				break
 			}
 		}
 	} else if mov.from == *currKingSq {
@@ -191,17 +214,17 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 			if mov.to.getFile() == C {
 				rookFrom := square(A + file(currCastleRank))
 				rookTo := square(D + file(currCastleRank))
-				pos.moveRook(rookFrom, rookTo, *currPieces, currColorBit)
+				pos.moveRook(rookFrom, rookTo, *currSliders, currColorBit)
 			} else if mov.to.getFile() == G {
 				rookFrom := square(H + file(currCastleRank))
 				rookTo := square(F + file(currCastleRank))
-				pos.moveRook(rookFrom, rookTo, *currPieces, currColorBit)
+				pos.moveRook(rookFrom, rookTo, *currSliders, currColorBit)
 			}
 		}
 	} else {
-		for i := range *currPieces {
-			if mov.from == (*currPieces)[i] {
-				(*currPieces)[i] = mov.to
+		for i := range *currSliders {
+			if mov.from == (*currSliders)[i] {
+				(*currSliders)[i] = mov.to
 				break
 			}
 		}
@@ -227,8 +250,10 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 		if pos.board[mov.to] != King|enemyColorBit {
 			if pos.board[mov.to] == Pawn|enemyColorBit {
 				*enemyPawns = killPiece(*enemyPawns, mov.to)
+			} else if pos.board[mov.to] == Knight|enemyColorBit {
+				*enemyKnights = killPiece(*enemyKnights, mov.to)
 			} else {
-				*enemyPieces = killPiece(*enemyPieces, mov.to)
+				*enemySliders = killPiece(*enemySliders, mov.to)
 			}
 		}
 	}
@@ -252,7 +277,7 @@ func (pos *Position) MakeMove(mov Move) (undo backtrackInfo) {
 	pos.flags = pos.flags ^ FlagWhiteTurn
 
 	// everything's been moved to it's place - time to check if it's actually legal
-	if pos.isUnderCheck(*enemyPieces, *enemyPawns, enemyKingSq, *currKingSq) {
+	if pos.isUnderCheck(*enemySliders, *enemyKnights, *enemyPawns, enemyKingSq, *currKingSq) {
 		pos.UnmakeMove(undo)
 		return backtrackInfo{}
 	}
@@ -293,10 +318,16 @@ func remove(pieceList []square, idxToRemove int) []square {
 
 func (pos *Position) AssertConsistency(prefix string) {
 	// piece lists to board
-	for _, pieceSquare := range pos.blackPieces {
+	for _, pieceSquare := range pos.blackSliders {
 		pieceOnBoard := pos.board[pieceSquare]
 		if pieceOnBoard&BlackPieceBit == 0 {
-			panic(fmt.Sprintf("%v Piece on board should be black but was: %v", prefix, pieceOnBoard))
+			panic(fmt.Sprintf("%v Sliding piece on board should be black but was: %v", prefix, pieceOnBoard))
+		}
+	}
+	for _, piece := range pos.blackKnights {
+		pieceOnBoard := pos.board[piece]
+		if pieceOnBoard != BKnight {
+			panic(fmt.Sprintf("%v Piece on board should be black knight but was: %v", prefix, pieceOnBoard))
 		}
 	}
 	for _, pawnSquare := range pos.blackPawns {
@@ -305,10 +336,16 @@ func (pos *Position) AssertConsistency(prefix string) {
 			panic(fmt.Sprintf("%v Black pawn should be on board but was: %v", prefix, pawnOnBoard))
 		}
 	}
-	for _, piece := range pos.whitePieces {
+	for _, piece := range pos.whiteSliders {
 		pieceOnBoard := pos.board[piece]
 		if pieceOnBoard&WhitePieceBit == 0 {
-			panic(fmt.Sprintf("%v Piece on board should be white but was: %v", prefix, pieceOnBoard))
+			panic(fmt.Sprintf("%v Sliding piece on board should be white but was: %v", prefix, pieceOnBoard))
+		}
+	}
+	for _, piece := range pos.whiteKnights {
+		pieceOnBoard := pos.board[piece]
+		if pieceOnBoard != WKnight {
+			panic(fmt.Sprintf("%v Piece on board should be white knight but was: %v", prefix, pieceOnBoard))
 		}
 	}
 	for _, pawnSquare := range pos.whitePawns {
@@ -325,8 +362,17 @@ func (pos *Position) AssertConsistency(prefix string) {
 		}
 		if piece&BlackPieceBit != 0 {
 			matchFound := false
-			for _, sq := range pos.blackPieces {
+			for _, sq := range pos.blackSliders {
 				if sq == sqOnBoard {
+					matchFound = true
+					break
+				}
+			}
+			for _, sq := range pos.blackKnights {
+				if sq == sqOnBoard {
+					if matchFound {
+						panic(fmt.Sprintf("%v Square %v appears on both blackSliders and blackKnights list. It has %v on board", prefix, sqOnBoard, piece))
+					}
 					matchFound = true
 					break
 				}
@@ -334,7 +380,7 @@ func (pos *Position) AssertConsistency(prefix string) {
 			for _, sq := range pos.blackPawns {
 				if sq == sqOnBoard {
 					if matchFound {
-						panic(fmt.Sprintf("%v Square %v appears on both whitePieces and whitePawns list. It has %v on board", prefix, sqOnBoard, piece))
+						panic(fmt.Sprintf("%v Square %v appears on multiple black piece lists. It has %v on board", prefix, sqOnBoard, piece))
 					}
 					matchFound = true
 					break
@@ -346,8 +392,17 @@ func (pos *Position) AssertConsistency(prefix string) {
 
 		} else if piece&WhitePieceBit != 0 {
 			matchFound := false
-			for _, sq := range pos.whitePieces {
+			for _, sq := range pos.whiteSliders {
 				if sq == sqOnBoard {
+					matchFound = true
+					break
+				}
+			}
+			for _, sq := range pos.whiteKnights {
+				if sq == sqOnBoard {
+					if matchFound {
+						panic(fmt.Sprintf("%v Square %v appears on both whiteSliders and whiteKnights list. It has %v on board", prefix, sqOnBoard, piece))
+					}
 					matchFound = true
 					break
 				}
@@ -355,7 +410,7 @@ func (pos *Position) AssertConsistency(prefix string) {
 			for _, sq := range pos.whitePawns {
 				if sq == sqOnBoard {
 					if matchFound {
-						panic(fmt.Sprintf("%v Square %v appears on both whitePieces and whitePawns list. It has %v on board", prefix, sqOnBoard, piece))
+						panic(fmt.Sprintf("%v Square %v appears on white piece lists. It has %v on board", prefix, sqOnBoard, piece))
 					}
 					matchFound = true
 					break
@@ -366,31 +421,33 @@ func (pos *Position) AssertConsistency(prefix string) {
 			}
 		}
 	}
-	// TODO verify that pawn list sorted
 }
 
 func (pos *Position) isCurrentKingUnderCheck() bool {
 	var currentKing, enemyKing square
-	var enemyPieces, enemyPawns []square
+	var enemySliders, enemyKnights, enemyPawns []square
 	if pos.flags&FlagWhiteTurn == 0 {
 		currentKing = pos.blackKing
 		enemyKing = pos.whiteKing
-		enemyPieces = pos.whitePieces
+		enemySliders = pos.whiteSliders
+		enemyKnights = pos.whiteKnights
 		enemyPawns = pos.whitePawns
 	} else {
 		currentKing = pos.whiteKing
 		enemyKing = pos.blackKing
-		enemyPieces = pos.blackPieces
+		enemySliders = pos.blackSliders
+		enemyKnights = pos.blackKnights
 		enemyPawns = pos.blackPawns
 	}
-	return pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, currentKing)
+	return pos.isUnderCheck(enemySliders, enemyKnights, enemyPawns, enemyKing, currentKing)
 }
 
 // Returns true if the destSquare is under check by anything on enemyPieces square or enemy king on
 // enemyKing square.
-func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKingSq square, destSquare square) bool {
+func (pos *Position) isUnderCheck(enemySliders, enemyKnights, enemyPawns []square, enemyKingSq square, destSquare square) bool {
 	var moveIdx int16
-	////
+
+	// variant with pawn list sorted
 	// if len(enemyPawns) != 0 {
 	// 	var PawnAttackFlag byte
 	// 	var rankFromWhichPawnMayAttack rank
@@ -401,7 +458,7 @@ func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKingSq 
 	// 		PawnAttackFlag = BPawnAttacks
 	// 		rankFromWhichPawnMayAttack = destSquare.getRank() + UnitRank
 	// 	}
-	
+
 	// 	middleOfList := len(enemyPawns) / 2
 	// 	for i := middleOfList; i >= 0; i-- {
 	// 		enemyPawnSq := enemyPawns[i]
@@ -424,7 +481,7 @@ func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKingSq 
 	// 		}
 	// 	}
 	// }
-////
+
 	var PawnAttackFlag byte
 	if pos.board[enemyKingSq]&BlackPieceBit == 0 {
 		PawnAttackFlag = WPawnAttacks
@@ -437,17 +494,20 @@ func (pos *Position) isUnderCheck(enemyPieces, enemyPawns []square, enemyKingSq 
 			return true
 		}
 	}
-////
-	for _, attackFrom := range enemyPieces {
+	for _, attackFrom := range enemyKnights {
+		moveIdx = moveIndex(attackFrom, destSquare)
+		if attackTable[moveIdx]&byte(Knight) != 0 {
+			return true
+		}
+	}
+	for _, attackFrom := range enemySliders {
 		moveIdx = moveIndex(attackFrom, destSquare)
 		attacker := pos.board[attackFrom] & ColorlessPiece
 
 		if attackTable[moveIdx]&byte(attacker) == 0 {
 			continue
 		}
-		if attacker&Knight != 0 {
-			return true
-		}
+		
 		if pos.checkedBySlidingPiece(attackFrom, destSquare, moveIdx) {
 			return true
 		}
@@ -487,7 +547,8 @@ func killPiece(enemyPieces []square, killSquare square) []square {
 // }
 
 func (pos *Position) UnmakeMove(undo backtrackInfo) {
-	unmadePieces, unmadePawnsPtr, unkilledPieces, unkilledPawns,
+	unmadeSliders, unmadeKnights, unmadePawns, 
+	unkilledSliders, unkilledKnights, unkilledPawns,
 		unmadeKing, unmadeColorBit, castleRank, enPassantUnkillRank := pos.getUnmakeMoveContext()
 	// pos.AssertConsistency("unmk " + undo.move.String())
 	mov := undo.move
@@ -498,37 +559,41 @@ func (pos *Position) UnmakeMove(undo backtrackInfo) {
 				rookFrom := square(A + file(castleRank))
 				rookTo := square(D + file(castleRank))
 				// just like castling the rook with To/From squares swapped
-				pos.moveRook(rookTo, rookFrom, *unmadePieces, unmadeColorBit)
+				pos.moveRook(rookTo, rookFrom, *unmadeSliders, unmadeColorBit)
 			} else if mov.to.getFile() == G {
 				rookFrom := square(H + file(castleRank))
 				rookTo := square(F + file(castleRank))
-				pos.moveRook(rookTo, rookFrom, *unmadePieces, unmadeColorBit)
+				pos.moveRook(rookTo, rookFrom, *unmadeSliders, unmadeColorBit)
 			}
 		}
 	} else if mov.promoteTo != NullPiece {
 		//remove from unmadePieces
-		// iterate from the end because that's where the promos are appended
-		for i := len(*unmadePieces) - 1; i >= 0; i-- {
-			// for i := range unmadePieces {
-			if mov.to == (*unmadePieces)[i] {
-				*unmadePieces = remove(*unmadePieces, i)
-				break
-			}
+		if mov.promoteTo == Knight{
+			unpromotePiece(unmadeKnights, mov.to)
+		} else {
+			unpromotePiece(unmadeSliders, mov.to)
 		}
-		*unmadePawnsPtr = append((*unmadePawnsPtr), mov.from)
+		*unmadePawns = append((*unmadePawns), mov.from)
 		// keep sorted
 		// bubbleDown(len(*unmadePawnsPtr)-1, (*unmadePawnsPtr))
 	} else if pos.board[mov.to] == Pawn|unmadeColorBit {
-		for i := range *unmadePawnsPtr {
-			if mov.to == (*unmadePawnsPtr)[i] {
-				(*unmadePawnsPtr)[i] = mov.from
+		for i := range *unmadePawns {
+			if mov.to == (*unmadePawns)[i] {
+				(*unmadePawns)[i] = mov.from
+				break
+			}
+		}
+	} else if pos.board[mov.to] == Knight|unmadeColorBit {
+		for i := range *unmadeKnights {
+			if mov.to == (*unmadeKnights)[i] {
+				(*unmadeKnights)[i] = mov.from
 				break
 			}
 		}
 	} else {
-		for i := range *unmadePieces {
-			if mov.to == (*unmadePieces)[i] {
-				(*unmadePieces)[i] = mov.from
+		for i := range *unmadeSliders {
+			if mov.to == (*unmadeSliders)[i] {
+				(*unmadeSliders)[i] = mov.from
 				break
 			}
 		}
@@ -554,14 +619,27 @@ func (pos *Position) UnmakeMove(undo backtrackInfo) {
 			} else if undo.takenPiece&ColorlessPiece == Pawn {
 				*unkilledPawns = append(*unkilledPawns, killSquare)
 				// bubbleDown(len(*unkilledPawns)-1, *unkilledPawns)
+			} else if undo.takenPiece&ColorlessPiece == Knight {
+				*unkilledKnights = append(*unkilledKnights, killSquare)
 			} else {
-				*unkilledPieces = append(*unkilledPieces, killSquare)
+				*unkilledSliders = append(*unkilledSliders, killSquare)
 			}
 		}
 		pos.board[killSquare] = undo.takenPiece
 	}
 	pos.enPassSquare = undo.lastEnPassant
 	pos.flags = undo.lastFlags
+}
+
+func unpromotePiece(unpromotedPieces *[]square, promoSq square) {
+	// iterate from the end because that's where the promos are appended
+	for i := len(*unpromotedPieces) - 1; i >= 0; i-- {
+		// for i := range unmadePieces {
+		if promoSq == (*unpromotedPieces)[i] {
+			*unpromotedPieces = remove(*unpromotedPieces, i)
+			break
+		}
+	}
 }
 
 // used to castle/undo castle
@@ -577,21 +655,21 @@ func (pos *Position) moveRook(rookFrom, rookTo square, pieces []square, colorBit
 }
 
 func (pos *Position) getCurrentMakeMoveContext() (
-	currPieces *[]square, currPawns *[]square, currKing *square,
-	enemyPieces *[]square, enemyPawns *[]square, enemyKing square,
+	currSliders *[]square, currKnights *[]square, currPawns *[]square, currKing *square,
+	enemySliders *[]square, enemyKnights *[]square, enemyPawns *[]square, enemyKing square,
 	currCastleRank rank, currKingSideCastleFlag, currQueenSideCastleFlag byte,
 	enemyCastleRank rank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag byte,
 	currColorBit, enemyColorBit piece,
 ) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return &pos.blackPieces, &pos.blackPawns, &pos.blackKing,
-			&pos.whitePieces, &pos.whitePawns, pos.whiteKing,
+		return &pos.blackSliders, &pos.blackKnights, &pos.blackPawns, &pos.blackKing,
+			&pos.whiteSliders, &pos.whiteKnights, &pos.whitePawns, pos.whiteKing,
 			Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
 			Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
 			BlackPieceBit, WhitePieceBit
 	}
-	return &pos.whitePieces, &pos.whitePawns, &pos.whiteKing,
-		&pos.blackPieces, &pos.blackPawns, pos.blackKing,
+	return &pos.whiteSliders, &pos.whiteKnights, &pos.whitePawns, &pos.whiteKing,
+		&pos.blackSliders, &pos.blackKnights, &pos.blackPawns, pos.blackKing,
 		Rank1, FlagWhiteCanCastleKside, FlagWhiteCanCastleQside,
 		Rank8, FlagBlackCanCastleKside, FlagBlackCanCastleQside,
 		WhitePieceBit, BlackPieceBit
@@ -599,18 +677,20 @@ func (pos *Position) getCurrentMakeMoveContext() (
 
 // inverse of GetCurrentMakeMoveContext()
 func (pos *Position) getUnmakeMoveContext() (
-	unmadePieces, unmadePawns *[]square,
-	unkilledPieces, unkilledPawns *[]square,
+	unmadeSliders, unmadeKnights, unmadePawns *[]square,
+	unkilledSliders, unkilledKnights, unkilledPawns *[]square,
 	unmadeKing *square,
 	unmadeColorBit piece,
 	castleRank rank,
 	enPassantUnkillRank rank,
 ) {
 	if pos.flags&FlagWhiteTurn != 0 {
-		return &pos.blackPieces, &pos.blackPawns, &pos.whitePieces, &pos.whitePawns, &pos.blackKing,
+		return &pos.blackSliders, &pos.blackKnights, &pos.blackPawns, 
+		&pos.whiteSliders,&pos.whiteKnights, &pos.whitePawns, &pos.blackKing,
 			BlackPieceBit, Rank8, Rank4
 	}
-	return &pos.whitePieces, &pos.whitePawns, &pos.blackPieces, &pos.blackPawns, &pos.whiteKing,
+	return &pos.whiteSliders, &pos.whiteKnights, &pos.whitePawns,
+	 &pos.blackSliders, &pos.blackKnights, &pos.blackPawns, &pos.whiteKing,
 		WhitePieceBit, Rank1, Rank5
 }
 
