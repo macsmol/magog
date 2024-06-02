@@ -8,11 +8,9 @@ import (
 type Position struct {
 	// 0x88 board
 	board [128]piece
-	// all but king
 	blackPieces []square
 	blackPawns  []square
 	blackKing   square
-	// all but king
 	whitePieces  []square
 	whitePawns   []square
 	whiteKing    square
@@ -50,6 +48,7 @@ func NewPosition() *Position {
 			FlagBlackCanCastleKside | FlagBlackCanCastleQside,
 		enPassSquare: InvalidSquare,
 	}
+	
 }
 
 // BUG/IDEA This string is too long to fit in 'debug watch' in VSCode. Not sure how to change cfg.

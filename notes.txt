@@ -264,6 +264,13 @@ However when I did search depth=4 from kiwipete position  the story is different
     pawn moves mixed 
     info nodes 1741500000 time 5665091 nps 307408 (and counting...)
 
+EDIT 02.06.2024 - here are "go depth 4" results  after capture ordering (magog.0.6)
+    info nodes 13000000 time 66124 nps 196599
+    info nodes 13500000 time 68544 nps 196951
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 4 nodes 13699103 time 69555 nps 196952 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 4 nodes 13699103 time 69555 nps 196952 
+    bestmove e2a6
+
 I had to break  the depth=4 (actually kill the program - there's no break flag in
  quiescence function so stop command wouldn't work). Here are results for depth=3
 
@@ -349,3 +356,23 @@ However it does play it after full search depth =4 so it's also an ordering/spee
     2024-05-29 19:45:33,743<--2:bestmove h5h3
     2024-05-29 19:45:33,743*2*Found move:Rh5xh3
 
+01.06.2024
+Had great success with magog.0.6 where moves are sorted by capture score. Here are results:
+        Engine               Score          Ma         Ma    S-B
+    1: Machess-1.0-SNAPSHOT 5,5/10 ииииииииии =1=10=1=0=   24,75
+    2: Magog.0.6            4,5/10 =0=01=0=1= ииииииииии   24,75
+
+However the big question is. Why it's still worse than Machess? My guess is that it's caused by worse move ordering (raw speed is already better).
+And ordering may be worse for two reasons:
+1. machess has separate piece lists for every type.
+2. It uses copyMakeMove rather than Make/Unmake move. (pieces are shuffled at MoveUnmake)
+
+So I made a version with separate piece list for knights (so pawns, knights and sliding pieces). And this version turned out to be worse
+than magog.0.6. Here are arena results:
+    Engine               Score          Ma         Ma         Ma    S-B
+    1: Machess-1.0-SNAPSHOT 11,0/20 ииииииииии =1=10=1=0= =1=101100=  104,50
+    2: Magog.0.6            10,0/20 =0=01=0=1= ииииииииии 10======1=   99,00
+    3: Magog.0.7            9,0/20  =0=010011= 01======0= ииииииииии   94,50
+It seems that this version is worse because while it has modest ordering improvement for positions with many captures (kiwipete),
+it suffers from small decrease in raw speed.
+Next to try is the version with copyMakeMove (now I remember that make/unkame version fo Machess was a failure too)
