@@ -2,27 +2,26 @@ package engine
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 	"unicode"
 )
 
-func NewPositionFromFen(fen string) (*Position, error) {
+func NewPositionFromFen(fen string) (Position, error) {
 	if !isASCII(fen) {
-		return nil, fmt.Errorf("FEN string should contain only ASCII characters: %v", fen)
+		return Position{}, fmt.Errorf("FEN string should contain only ASCII characters: %v", fen)
 	}
 	fields := strings.Split(fen, " ")
 	if len(fields) != 6 {
-		return nil, fmt.Errorf("FEN string does not have 6 fields separated by spaces: %v", fen)
+		return Position{}, fmt.Errorf("FEN string does not have 6 fields separated by spaces: %v", fen)
 	}
 	boardStr := fields[0]
 
 	rankStrings := strings.Split(boardStr, "/")
 	if len(rankStrings) != 8 {
-		return nil, fmt.Errorf("number of ranks different than 8: %v", rankStrings)
+		return Position{}, fmt.Errorf("number of ranks different than 8: %v", rankStrings)
 	}
 
-	var pos *Position = &Position{enPassSquare: InvalidSquare}
+	var pos Position = Position{enPassSquare: InvalidSquare}
 
 	for fenRankIdx, rankStr := range rankStrings {
 		var r rank = rankFrom07Number(7 - fenRankIdx)
@@ -35,7 +34,7 @@ func NewPositionFromFen(fen string) (*Position, error) {
 			var sq square = square(r + rank(f))
 			piece := charToPiece(c)
 			if piece == NullPiece {
-				return nil, fmt.Errorf("uknown piece: %q", c)
+				return Position{}, fmt.Errorf("uknown piece: %q", c)
 			}
 			pos.board[sq] = piece
 			if piece == BKing {
@@ -44,21 +43,21 @@ func NewPositionFromFen(fen string) (*Position, error) {
 				pos.whiteKing = sq
 			} else if piece&WhitePieceBit == 0 {
 				if piece == BPawn {
-					pos.blackPawns = append(pos.blackPawns, sq)
-				} else {
-					pos.blackPieces = append(pos.blackPieces, sq)
+					pos.blackPawns.appendPawn(sq)
+					} else {
+					pos.blackPieces.appendPiece(sq)
 				}
 			} else {
 				if piece == WPawn {
-					pos.whitePawns = append(pos.whitePawns, sq)
+					pos.whitePawns.appendPawn(sq)
 				} else {
-					pos.whitePieces = append(pos.whitePieces, sq)
+					pos.whitePieces.appendPiece(sq)
 				}
 			}
 			f++
 		}
 		if f != H+1 {
-			return nil, error(fmt.Errorf("this rank does not have 8 files: %q", rankStr))
+			return Position{}, error(fmt.Errorf("this rank does not have 8 files: %q", rankStr))
 		}
 	}
 
@@ -66,7 +65,7 @@ func NewPositionFromFen(fen string) (*Position, error) {
 	if turnStr == "w" {
 		pos.flags |= FlagWhiteTurn
 	} else if turnStr != "b" {
-		return nil, fmt.Errorf("'side to move' is neither 'b' or 'w' : %v", turnStr)
+		return Position{}, fmt.Errorf("'side to move' is neither 'b' or 'w' : %v", turnStr)
 	}
 
 	castleStr := fields[2]
@@ -85,20 +84,17 @@ func NewPositionFromFen(fen string) (*Position, error) {
 
 	enPassantStr := fields[3]
 	if len(enPassantStr) > 2 {
-		return nil, fmt.Errorf("invalid en passant square %v", enPassantStr)
+		return Position{}, fmt.Errorf("invalid en passant square %v", enPassantStr)
 	} else if len(enPassantStr) == 2 {
 		fileChar := enPassantStr[0]
 		rankChar := enPassantStr[1]
 		if fileChar < 'a' || fileChar > 'h' || (rankChar != '3' && rankChar != '6') {
-			return nil, fmt.Errorf("invalid en passant square %v", enPassantStr)
+			return Position{}, fmt.Errorf("invalid en passant square %v", enPassantStr)
 		}
 		file := fileChar - 'a'
 		rank := (rankChar - '1') << 4
 		pos.enPassSquare = square(file) + square(rank)
 	}
-
-	slices.Sort(pos.blackPawns)
-	slices.Sort(pos.whitePawns)
 
 	//TODO read rest of the fields
 	// halfmoveClockStr := fields[4]

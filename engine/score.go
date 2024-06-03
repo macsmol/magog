@@ -46,7 +46,7 @@ func pieceToScore(p piece) int {
 
 // Returns static evaluation score for Position pos. It's given relative to the currently playing
 // side (negamax score)
-func Evaluate(pos *Position, depth int, debug ...bool) int {
+func Evaluate(pos Position, depth int, debug ...bool) int {
 	currentPieces, currentPawns,
 	enemyPieces, enemyPawns := pos.evaluationContext()
 
@@ -74,7 +74,7 @@ func Evaluate(pos *Position, depth int, debug ...bool) int {
 	return score
 }
 
-func terminalNodeScore(position *Position, depth int) int {
+func terminalNodeScore(position Position, depth int) int {
 	evaluatedNodes++
 	if position.isCurrentKingUnderCheck() {
 		return LostScore + depth
@@ -83,8 +83,8 @@ func terminalNodeScore(position *Position, depth int) int {
 }
 
 func (pos *Position) evaluationContext() (
-	currPieces, currentPawns,
-	 enemyPieces, enemyPawns []square) {
+	currPieces pieceList, currentPawns pawnList,
+	 enemyPieces pieceList, enemyPawns pawnList) {
 	if pos.flags&FlagWhiteTurn == 0 {
 		return pos.blackPieces, pos.blackPawns, pos.whitePieces, pos.whitePawns
 	} else {
@@ -93,7 +93,7 @@ func (pos *Position) evaluationContext() (
 }
 
 // Counts all possible moves from pos position
-func (pos *Position) countMoves() int {
+func (pos Position) countMoves() int {
 	var movesCount int = 0
 	currentPieces, enemyPieces,
 		currentPawns, enemyPawns,
@@ -102,7 +102,8 @@ func (pos *Position) countMoves() int {
 		currColorBit, enemyColorBit,
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
-	for _, from := range currentPawns {
+	for i := int8(0) ; i < currentPawns.size; i++ {
+		from := currentPawns.squares[i]
 		// queenside take
 		to := from + square(pawnAdvanceDirection) - 1
 		if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 ||
@@ -131,7 +132,8 @@ func (pos *Position) countMoves() int {
 			}
 		}
 	}
-	for _, from := range currentPieces {
+	for i := int8(0) ; i < currentPieces.size; i++ {
+		from := currentPieces.squares[i]
 		piece := pos.board[from]
 		switch piece {
 		case WKnight, BKnight:
@@ -241,20 +243,18 @@ func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, e
 	return movesCount
 }
 
-func (pos *Position) isLegal(pseudolegal Move) bool {
-	undo := pos.MakeMove(pseudolegal)
-	toReturn := undo.move != Move{}
-	if toReturn {
-		pos.UnmakeMove(undo)
-	}
-	return toReturn
+// Returns true if the move is legal. False otherwise. 
+// Note that it takes a value not a pointer so that it does not mutate the actual argument
+func (pos Position) isLegal(pseudolegal Move) bool {
+	// it is important to have isLegal() as a wrapper for (pos *Position).MakeMove() as MakeMove() 
+	// mutates the original. Here it only mutates formal paramete
+	return pos.MakeMove(pseudolegal)
 }
 
-func materialScore(pieces, pawns []square, board *[128]piece) int {
+func materialScore(pieces pieceList, pawns pawnList, board *[128]piece) int {
 	score := 0
-	for _, square := range pieces {
-		//Is it faster to just switch over pairs of cases?
-		switch board[square] & ColorlessPiece {
+	for i := int8(0) ; i < pieces.size; i++ {
+		switch board[pieces.squares[i]] & ColorlessPiece {
 		case Knight:
 			score += MaterialKnightScore
 		case Bishop:
@@ -265,6 +265,6 @@ func materialScore(pieces, pawns []square, board *[128]piece) int {
 			score += MaterialQueenScore
 		}
 	}
-	score += len(pawns) * MaterialPawnScore
+	score += int(pawns.size) * MaterialPawnScore
 	return score
 }
