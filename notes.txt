@@ -376,3 +376,8 @@ than magog.0.6. Here are arena results:
 It seems that this version is worse because while it has modest ordering improvement for positions with many captures (kiwipete),
 it suffers from small decrease in raw speed.
 Next to try is the version with copyMakeMove (now I remember that make/unkame version fo Machess was a failure too)
+
+03.06.2024
+Finished the copyMakeMove version. It's 3x slower. Profiler shows that there is a lot of heap allocations and gc going on. 
+Looks like it is related with conversion between values and pointers for method calls. Need to investigate more:
+-need to investigate isLegal() version with working on positionStack rather that autoconversions on method calls that golang provides.

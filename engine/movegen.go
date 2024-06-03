@@ -10,35 +10,25 @@ type Move struct {
 	enPassant square
 }
 
-type backtrackInfo struct {
-	move          Move
-	lastFlags     byte
-	lastEnPassant square
-	takenPiece    piece
-}
-
-// Ply meaning: https://www.chessprogramming.org/Ply
-type PlyContext struct {
-	rankedMoves []rankedMove
-	undo        backtrackInfo
-}
-
 // move together with a score suggesting how soon should it be taken while searching the game tree
+// in alphaBeta search moves are taken starting from the highest ranking
 type rankedMove struct {
-	mov Move
-	// in alphaBeta search moves are taken starting from the highest ranking
+	mov     Move
 	ranking int
 }
 
 // ranking bonud for move that is on line returned by previous iteration of iterative deepening
 const (
-	rankingBonusPvMove = 20000
+	rankingBonusPvMove  = 20000
 	rankingBonusCapture = 1000
 )
 
 type Generator struct {
-	pos    *Position
-	plies  []PlyContext
+	// indexed [plyIdx]
+	posStack []Position
+	// indexed [plyIdx][moveIdx]
+	movStack  [][]rankedMove
+	// ply meaning turn of one side AKA half move
 	plyIdx int16
 }
 
@@ -65,59 +55,73 @@ func (move Move) String() string {
 }
 
 func NewGenerator() *Generator {
+	newPosStack := make([]Position, plyBufferCapacity)
+	newPosStack[0] = NewPosition()
 	return &Generator{
-		pos:    NewPosition(),
-		plies:  newPlies(),
-		plyIdx: 0,
+		posStack: newPosStack,
+		movStack:    newMoveStack(),
+		plyIdx:   0,
 	}
 }
 
 func NewGeneratorFromFen(fen string) (*Generator, error) {
-	//new pos allocation for every generator, worthwhile reusing?
 	fenPos, err := NewPositionFromFen(fen)
 	if err != nil {
 		return nil, err
 	}
+	newPosStack := make([]Position, plyBufferCapacity)
+	newPosStack[0] = fenPos
+	
 	return &Generator{
-		pos:    fenPos,
-		plies:  newPlies(),
-		plyIdx: 0,
+		posStack: newPosStack,
+		movStack:    newMoveStack(),
+		plyIdx:   0,
 	}, nil
 }
 
-func newPlies() []PlyContext {
-
+func newMoveStack() [][]rankedMove {
 	// IDEA probably will experiment with something that does not realloc whole
 	// thing when exceeding max
-	newPlies := make([]PlyContext, plyBufferCapacity)
+	newMoveStack := make([][]rankedMove, plyBufferCapacity)
 	for ply := 0; ply < plyBufferCapacity; ply++ {
-		newPlies[ply] = PlyContext{rankedMoves: make([]rankedMove, 0, moveBufferCapacity)}
+		newMoveStack[ply] = make([]rankedMove, 0, moveBufferCapacity)
 	}
-	return newPlies
+	return newMoveStack
 }
 
-func (gen *Generator) PushMove(move Move) (success bool) {
-	undo := gen.pos.MakeMove(move)
-	if (undo.move == Move{}) {
-		return false
-	}
-	gen.plies[gen.plyIdx].undo = undo
+// Pushes legalMove on top of posStack. Panics if the move is illegal
+func (gen *Generator) PushMove(legalMove Move) {
+	gen.posStack[gen.plyIdx + 1] = gen.posStack[gen.plyIdx]
 	gen.plyIdx++
-	return true
+	// MakeMove is defined on *Position. So the call below will change value at the top of the stack, right?
+	success := gen.posStack[gen.plyIdx].MakeMove(legalMove)
+	if !success {
+		panic(fmt.Sprintf("Applying move %v resulted in illegal position %v", legalMove, gen.getTopPos()))
+	}
 }
 
-func (gen *Generator) PushMoveSafely(move Move) (success bool) {
-	if gen.pos.board[move.from]&ColorlessPiece == Pawn &&
-		(move.from.getRank() == Rank7 && move.to.getRank() == Rank5 ||
-			move.from.getRank() == Rank2 && move.to.getRank() == Rank4) {
-		move.enPassant = (move.from + move.to) / 2
+func (gen *Generator) ApplyUciMove(moveFromUci Move) {
+	if gen.getTopPos().board[moveFromUci.from]&ColorlessPiece == Pawn &&
+		(moveFromUci.from.getRank() == Rank7 && moveFromUci.to.getRank() == Rank5 ||
+			moveFromUci.from.getRank() == Rank2 && moveFromUci.to.getRank() == Rank4) {
+		moveFromUci.enPassant = (moveFromUci.from + moveFromUci.to) / 2
 	}
-	return gen.PushMove(move)
+	success := gen.posStack[gen.plyIdx].MakeMove(moveFromUci)
+	if !success {
+		panic(fmt.Sprintf("Applying uci move %v resulted in illegal position %v", moveFromUci, gen.getTopPos()))
+	}
+}
+
+func (gen Generator)getTopPos() *Position {
+	return &gen.posStack[gen.plyIdx]
+}
+
+func (gen Generator) getMovesFromTopPos() *[]rankedMove {
+	return &gen.movStack[gen.plyIdx]
 }
 
 func (gen *Generator) PopMove() {
 	gen.plyIdx--
-	gen.pos.UnmakeMove(gen.plies[gen.plyIdx].undo)
 }
 
 // From position that gen generator is currently holding returns all legal moves.
@@ -132,27 +136,24 @@ func (gen *Generator) GenerateTacticalMoves() []rankedMove {
 
 func (gen *Generator) generateLegalMoves(generateSthPseudolegal func()) []rankedMove {
 	generateSthPseudolegal()
-	plyContext := &gen.plies[gen.plyIdx]
+	rankedMoves := &gen.movStack[gen.plyIdx]
 	i := 0
-	for _, pseudoMove := range plyContext.rankedMoves {
-
-		undo := gen.pos.MakeMove(pseudoMove.mov)
+	for _, pseudoMove := range *rankedMoves {
+		success := gen.getTopPos().isLegal(pseudoMove.mov)
 		// move is valid
-		if (undo.move != Move{}) {
-			plyContext.rankedMoves[i] = pseudoMove
+		if success {
+			(*rankedMoves)[i] = pseudoMove
 			i++
-			gen.pos.UnmakeMove(undo)
 		}
 	}
-	plyContext.rankedMoves = plyContext.rankedMoves[:i]
-	return plyContext.rankedMoves
+	(*rankedMoves) = (*rankedMoves)[:i]
+	return *rankedMoves
 }
 
 func (gen *Generator) Perft(depth int) int64 {
-
 	var movesCount int64 = 0
 	if depth <= 1 {
-		return int64(gen.pos.countMoves())
+		return int64(gen.getTopPos().countMoves())
 	}
 
 	moves := gen.GenerateMoves()
@@ -168,7 +169,7 @@ func (gen *Generator) PerftTactical(depth int) int64 {
 
 	var movesCount int64 = 0
 	if depth <= 1 {
-		return int64(gen.pos.countTacticalMoves())
+		return int64(gen.getTopPos().countTacticalMoves())
 	}
 
 	moves := gen.GenerateMoves()
@@ -220,8 +221,9 @@ func (gen *Generator) Perftdd(depth int) {
 }
 
 func (gen *Generator) generatePseudoLegalMoves() {
-	pos := gen.pos
-	var outputMoves *[]rankedMove = &gen.plies[gen.plyIdx].rankedMoves
+	pos := gen.getTopPos()
+	var outputMoves *[]rankedMove = gen.getMovesFromTopPos()
+	
 	*outputMoves = (*outputMoves)[:0]
 
 	currentPieces, enemyPieces,
@@ -231,7 +233,8 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		currColorBit, enemyColorBit,
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
-	for _, from := range currentPawns {
+	for i := int8(0); i < currentPawns.size; i++ {
+		from := currentPawns.squares[i]
 		// queenside take
 		to := from + square(pawnAdvanceDirection) - 1
 
@@ -250,10 +253,8 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		} else if to == pos.enPassSquare {
 			pos.appendPawnCaptures(from, to, promotionRank, Pawn, outputMoves)
 		}
-	}
-	for _, from := range currentPawns {
 		//pushes
-		to := from + square(pawnAdvanceDirection)
+		to = from + square(pawnAdvanceDirection)
 		if pos.board[to] == NullPiece {
 			appendPawnPushes(from, to, promotionRank, outputMoves)
 			enPassantSquare := to
@@ -263,7 +264,9 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			}
 		}
 	}
-	for _, from := range currentPieces {
+	for i := int8(0); i < currentPieces.size; i++ {
+		from := currentPieces.squares[i]
+
 		piece := pos.board[from]
 		switch piece {
 		case WKnight, BKnight:
@@ -271,7 +274,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-					gen.pos.appendRankedMove(outputMoves, from, to)
+					appendRankedMoveOrCapture(outputMoves, from, to, pos)
 				}
 			}
 		case WBishop, BBishop:
@@ -292,7 +295,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 &&
 			// IDEA same check done later in MakeMove. Skip here?
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, to) {
-			gen.pos.appendRankedMove(outputMoves, currentKingSq, to)
+			appendRankedMoveOrCapture(outputMoves, currentKingSq, to, pos)
 		}
 	}
 	if queensideCastlePossible {
@@ -306,7 +309,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
 			// IDEA same check done later in MakeMove. Skip here?
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
-			gen.pos.appendRankedMove(outputMoves, currentKingSq, square(kingDest))
+				appendRankedMoveOrCapture(outputMoves, currentKingSq, square(kingDest), pos)
 		}
 	}
 	if kingsideCastlePossible {
@@ -317,12 +320,13 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
 			// IDEA same check done later in MakeMove. Skip here?
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
-			gen.pos.appendRankedMove(outputMoves, currentKingSq, square(kingDest))
+			appendRankedMoveOrCapture(outputMoves, currentKingSq, square(kingDest), pos)
 		}
 	}
 }
 
-func (pos *Position) appendRankedMove(outputMoves *[]rankedMove, from, to square) {
+//TODO I only take board from pos. How would it affect the speed if I passed it as a table, or ref to table.
+func appendRankedMoveOrCapture(outputMoves *[]rankedMove, from, to square, pos *Position) {
 	mov := NewMove(from, to)
 	attacked := pos.board[mov.to] & ColorlessPiece
 	if attacked == NullPiece {
@@ -345,8 +349,8 @@ func appendRankedMove(outputMoves *[]rankedMove, from, to square, attacker, atta
 }
 
 func (gen *Generator) generatePseudoLegalTacticalMoves() {
-	pos := gen.pos
-	var outputMoves *[]rankedMove = &gen.plies[gen.plyIdx].rankedMoves
+	pos := gen.getTopPos()
+	var outputMoves *[]rankedMove = gen.getMovesFromTopPos()
 	*outputMoves = (*outputMoves)[:0]
 
 	currentPieces, enemyPieces,
@@ -356,7 +360,8 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 		currColorBit, enemyColorBit,
 		promotionRank := pos.GetCurrentTacticalMoveContext()
 
-	for _, from := range currentPawns {
+	for i := int8(0); i < currentPawns.size; i++ {
+		from := currentPawns.squares[i]
 		// queenside take
 		to := from + square(pawnAdvanceDirection) - 1
 		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
@@ -378,7 +383,8 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 			appendPawnPushes(from, to, promotionRank, outputMoves)
 		}
 	}
-	for _, from := range currentPieces {
+	for i := int8(0); i < currentPieces.size; i++ {
+		from := currentPieces.squares[i]
 		piece := pos.board[from]
 		switch piece {
 		case WKnight, BKnight:
@@ -406,7 +412,7 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 		to := currentKingSq + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
-			pos.appendRankedMove(outputMoves, currentKingSq, to)
+			appendRankedMoveOrCapture(outputMoves, currentKingSq, to, pos)
 		}
 	}
 }
@@ -420,7 +426,8 @@ func (pos *Position) countTacticalMoves() int {
 		pawnAdvanceDirection,
 		currColorBit, enemyColorBit,
 		promotionRank := pos.GetCurrentTacticalMoveContext()
-	for _, from := range currentPawns {
+	for i := int8(0); i < currentPawns.size; i++ {
+		from := currentPawns.squares[i]
 		// queenside take
 		to := from + square(pawnAdvanceDirection) - 1
 		if to&InvalidSquare == 0 && (pos.board[to]&enemyColorBit != 0 || to == pos.enPassSquare) {
@@ -437,7 +444,8 @@ func (pos *Position) countTacticalMoves() int {
 			movesCount += pos.countPawnMoves(from, to, promotionRank)
 		}
 	}
-	for _, from := range currentPieces {
+	for i := int8(0); i < currentPieces.size; i++ {
+		from := currentPieces.squares[i]
 		piece := pos.board[from]
 		switch piece {
 		case WKnight, BKnight:
@@ -473,8 +481,9 @@ func (pos *Position) countTacticalMoves() int {
 	return movesCount
 }
 
+//TODO this method shows almost nothing about gen
 func (gen *Generator) String() string {
-	return gen.pos.String()
+	return gen.getTopPos().String()
 }
 
 func appendPawnPushes(from, to square, promotionRank rank, outputMoves *[]rankedMove) {
