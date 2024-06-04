@@ -119,7 +119,7 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 
 	if len(moves) == 0 {
 		*currBestLine = (*currBestLine)[:0]
-		terminalNodeScore(*aPosGen.getTopPos(), depth)
+		terminalNodeScore(aPosGen.getTopPos(), depth)
 	}
 
 	applyPvMoveBonus(moves, candidateLine, depth)
@@ -233,7 +233,7 @@ func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move)
 func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
 	currBestLine *[]Move, startTime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
-	score := Evaluate(*aPosGen.getTopPos(), depth)
+	score := Evaluate(aPosGen.getTopPos(), depth)
 
 	if evaluatedNodes%LogEveryNNodes == 0 {
 		timeElapsed := time.Since(startTime)

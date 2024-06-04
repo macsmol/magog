@@ -46,7 +46,7 @@ func pieceToScore(p piece) int {
 
 // Returns static evaluation score for Position pos. It's given relative to the currently playing
 // side (negamax score)
-func Evaluate(pos Position, depth int, debug ...bool) int {
+func Evaluate(pos *Position, depth int, debug ...bool) int {
 	currentPieces, currentPawns,
 	enemyPieces, enemyPawns := pos.evaluationContext()
 
@@ -74,7 +74,7 @@ func Evaluate(pos Position, depth int, debug ...bool) int {
 	return score
 }
 
-func terminalNodeScore(position Position, depth int) int {
+func terminalNodeScore(position *Position, depth int) int {
 	evaluatedNodes++
 	if position.isCurrentKingUnderCheck() {
 		return LostScore + depth
@@ -93,7 +93,7 @@ func (pos *Position) evaluationContext() (
 }
 
 // Counts all possible moves from pos position
-func (pos Position) countMoves() int {
+func (pos *Position) countMoves() int {
 	var movesCount int = 0
 	currentPieces, enemyPieces,
 		currentPawns, enemyPawns,
@@ -126,7 +126,7 @@ func (pos Position) countMoves() int {
 			enPassantSquare := to
 			to = to + square(pawnAdvanceDirection)
 			if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
-				if pos.isLegal(Move{from, to, NullPiece, enPassantSquare}) {
+				if isLegal(pos, Move{from, to, NullPiece, enPassantSquare}) {
 					movesCount++
 				}
 			}
@@ -141,7 +141,7 @@ func (pos Position) countMoves() int {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-					if pos.isLegal(NewMove(from, to)) {
+					if isLegal(pos, NewMove(from, to)) {
 						movesCount++
 					}
 				}
@@ -163,7 +163,7 @@ func (pos Position) countMoves() int {
 	for _, dir := range kingDirections {
 		to := currentKing + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-			if pos.isLegal(NewMove(currentKing, to)) {
+			if isLegal(pos, NewMove(currentKing, to)) {
 				movesCount++
 			}
 		}
@@ -195,7 +195,7 @@ func (pos Position) countMoves() int {
 }
 
 func (pos *Position) countPawnMoves(from, to square, promotionRank rank) int {
-	if !pos.isLegal(NewMove(from, to)) {
+	if !isLegal(pos, NewMove(from, to)) {
 		return 0
 	}
 	if to.getRank() == promotionRank {
@@ -214,7 +214,7 @@ func (pos *Position) countSlidingPieceMoves(from square, currColorBit, enemyColo
 			if toContent&currColorBit != 0 {
 				break
 			}
-			if pos.isLegal(NewMove(from, to)) {
+			if isLegal(pos, NewMove(from, to)) {
 				movesCount++
 			}
 			if toContent&enemyColorBit != 0 {
@@ -234,7 +234,7 @@ func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, e
 			if toContent&currColorBit != 0 {
 				break
 			}
-			if toContent&enemyColorBit != 0 && pos.isLegal(NewMove(from, to)) {
+			if toContent&enemyColorBit != 0 && isLegal(pos, NewMove(from, to)) {
 				movesCount++
 				break
 			}
@@ -243,12 +243,10 @@ func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, e
 	return movesCount
 }
 
-// Returns true if the move is legal. False otherwise. 
-// Note that it takes a value not a pointer so that it does not mutate the actual argument
-func (pos Position) isLegal(pseudolegal Move) bool {
-	// it is important to have isLegal() as a wrapper for (pos *Position).MakeMove() as MakeMove() 
-	// mutates the original. Here it only mutates formal paramete
-	return pos.MakeMove(pseudolegal)
+// Returns true if pseudolegal is legal in pos. False otherwise. 
+func isLegal(pos *Position, pseudolegal Move) bool {
+	tested_position := *pos
+	return (&tested_position).MakeMove(pseudolegal)
 }
 
 func materialScore(pieces pieceList, pawns pawnList, board *[128]piece) int {

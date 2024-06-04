@@ -34,7 +34,7 @@ func ParseInputLine(inputLine string) {
 		search = NewSearch()
 		fmt.Println("readyok")
 	} else if inputLine == "eval" {
-		fmt.Println(Evaluate(*posGen.getTopPos(), 0, true))
+		fmt.Println(Evaluate(posGen.getTopPos(), 0, true))
 	} else if inputLine == "tostr" {
 		fmt.Printf("%v\n", posGen)
 	} else if inputLine == "quit" {
