@@ -27,9 +27,11 @@ type Generator struct {
 	// indexed [plyIdx]
 	posStack []Position
 	// indexed [plyIdx][moveIdx]
-	movStack  [][]rankedMove
+	movStack [][]rankedMove
 	// ply meaning turn of one side AKA half move
-	plyIdx int16
+	plyIdx       int16
+	//index of the first move in currently searched line (so it can be print in quiescence search)
+	firstMoveIdx int
 }
 
 const (
@@ -55,7 +57,7 @@ func (move Move) String() string {
 }
 
 func (move rankedMove) String() string {
-	return fmt.Sprintf("(%v, %d)",move.mov, move.ranking)
+	return fmt.Sprintf("(%v, %d)", move.mov, move.ranking)
 }
 
 func NewGenerator() *Generator {
@@ -63,7 +65,7 @@ func NewGenerator() *Generator {
 	newPosStack[0] = NewPosition()
 	return &Generator{
 		posStack: newPosStack,
-		movStack:    newMoveStack(),
+		movStack: newMoveStack(),
 		plyIdx:   0,
 	}
 }
@@ -75,10 +77,10 @@ func NewGeneratorFromFen(fen string) (*Generator, error) {
 	}
 	newPosStack := make([]Position, plyBufferCapacity)
 	newPosStack[0] = fenPos
-	
+
 	return &Generator{
 		posStack: newPosStack,
-		movStack:    newMoveStack(),
+		movStack: newMoveStack(),
 		plyIdx:   0,
 	}, nil
 }
@@ -95,7 +97,7 @@ func newMoveStack() [][]rankedMove {
 
 // Pushes legalMove on top of posStack. Panics if the move is illegal
 func (gen *Generator) PushMove(legalMove Move) {
-	gen.posStack[gen.plyIdx + 1] = gen.posStack[gen.plyIdx]
+	gen.posStack[gen.plyIdx+1] = gen.posStack[gen.plyIdx]
 	gen.plyIdx++
 	// MakeMove is defined on *Position. So the call below will change value at the top of the stack, right?
 	success := gen.posStack[gen.plyIdx].MakeMove(legalMove)
@@ -116,7 +118,7 @@ func (gen *Generator) ApplyUciMove(moveFromUci Move) {
 	}
 }
 
-func (gen Generator)getTopPos() *Position {
+func (gen Generator) getTopPos() *Position {
 	return &gen.posStack[gen.plyIdx]
 }
 
@@ -152,6 +154,15 @@ func (gen *Generator) generateLegalMoves(generateSthPseudolegal func()) []ranked
 	}
 	(*rankedMoves) = (*rankedMoves)[:i]
 	return *rankedMoves
+}
+
+var tested_for_legality Position
+
+// Returns true if pseudolegal is legal in pos. False otherwise.
+func isLegal(pos *Position, pseudolegal Move) bool {
+	// it's important to assign this to global var, otherwise a lot of GC kicks in for some reason
+	tested_for_legality = *pos
+	return (&tested_for_legality).MakeMove(pseudolegal)
 }
 
 func (gen *Generator) Perft(depth int) int64 {
@@ -227,7 +238,7 @@ func (gen *Generator) Perftdd(depth int) {
 func (gen *Generator) generatePseudoLegalMoves() {
 	pos := gen.getTopPos()
 	var outputMoves *[]rankedMove = gen.getMovesFromTopPos()
-	
+
 	*outputMoves = (*outputMoves)[:0]
 
 	currentPieces, enemyPieces,
@@ -313,7 +324,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
 			// IDEA same check done later in MakeMove. Skip here?
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
-				appendRankedMoveOrCapture(outputMoves, currentKingSq, square(kingDest), pos)
+			appendRankedMoveOrCapture(outputMoves, currentKingSq, square(kingDest), pos)
 		}
 	}
 	if kingsideCastlePossible {
@@ -329,7 +340,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 	}
 }
 
-//TODO I only take board from pos. How would it affect the speed if I passed it as a table, or ref to table.
+// TODO I only take board from pos. How would it affect the speed if I passed it as a table, or ref to table.
 func appendRankedMoveOrCapture(outputMoves *[]rankedMove, from, to square, pos *Position) {
 	mov := NewMove(from, to)
 	attacked := pos.board[mov.to] & ColorlessPiece
@@ -485,7 +496,7 @@ func (pos *Position) countTacticalMoves() int {
 	return movesCount
 }
 
-//TODO this method shows almost nothing about gen. add more info
+// TODO this method shows almost nothing about gen. add more info
 func (gen *Generator) String() string {
 	return gen.getTopPos().String()
 }

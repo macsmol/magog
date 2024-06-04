@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.9.copyMakeMoveBugfixed"
+	VERSION_STRING string = "0.9"
 )
 
 type rank int8

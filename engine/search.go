@@ -119,7 +119,7 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 
 	if len(moves) == 0 {
 		*currBestLine = (*currBestLine)[:0]
-		terminalNodeScore(aPosGen.getTopPos(), depth)
+		return terminalNodeScore(aPosGen.getTopPos(), depth)
 	}
 
 	applyPvMoveBonus(moves, candidateLine, depth)
@@ -164,12 +164,13 @@ func (search *Search) startAlphaBeta(aPosGen *Generator, targetDepth int, currBe
 
 	if len(moves) == 0 {
 		*currBestLine = (*currBestLine)[:0]
-		return terminalNodeScore(*aPosGen.getTopPos(), 0), false
+		return terminalNodeScore(aPosGen.getTopPos(), 0), false
 	}
 
 	applyPvMoveBonus(moves, pvLine, 0)
 	sortMoves(moves)
-	for _, move := range moves {
+	for aPosGen.firstMoveIdx = 0; aPosGen.firstMoveIdx < len(moves); (aPosGen.firstMoveIdx)++ {
+		move := aPosGen.movStack[0][aPosGen.firstMoveIdx]
 		if search.interrupted {
 			break
 		}
@@ -236,12 +237,14 @@ func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
 	score := Evaluate(aPosGen.getTopPos(), depth)
 
 	if evaluatedNodes%LogEveryNNodes == 0 {
+		currMoveNo := aPosGen.firstMoveIdx
 		timeElapsed := time.Since(startTime)
 		fmt.Println("info",
 			"nodes", evaluatedNodes,
 			"time", timeElapsed.Milliseconds(),
 			"nps", nps(evaluatedNodes, timeElapsed),
-			"currmove", posGen.plies[int(posGen.plyIdx)-depth].undo.move)
+			"currmove", aPosGen.movStack[0][currMoveNo].mov,
+			"currmovenumber", currMoveNo + 1)
 	}
 
 	if score >= beta {
