@@ -139,7 +139,7 @@ func (gen *Generator) generateLegalMoves(generateSthPseudolegal func()) []ranked
 	rankedMoves := &gen.movStack[gen.plyIdx]
 	i := 0
 	for _, pseudoMove := range *rankedMoves {
-		success := gen.getTopPos().isLegal(pseudoMove.mov)
+		success := isLegal(gen.getTopPos(), pseudoMove.mov)
 		// move is valid
 		if success {
 			(*rankedMoves)[i] = pseudoMove
@@ -453,7 +453,7 @@ func (pos *Position) countTacticalMoves() int {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
-					if pos.isLegal(NewMove(from, to)) {
+					if isLegal(pos, NewMove(from, to)) {
 						movesCount++
 					}
 				}
@@ -481,7 +481,7 @@ func (pos *Position) countTacticalMoves() int {
 	return movesCount
 }
 
-//TODO this method shows almost nothing about gen
+//TODO this method shows almost nothing about gen. add more info
 func (gen *Generator) String() string {
 	return gen.getTopPos().String()
 }
