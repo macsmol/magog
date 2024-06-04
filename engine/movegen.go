@@ -150,6 +150,13 @@ func (gen *Generator) generateLegalMoves(generateSthPseudolegal func()) []ranked
 	return *rankedMoves
 }
 
+var tested_for_legality Position
+// Returns true if pseudolegal is legal in pos. False otherwise. 
+func isLegal(pos *Position, pseudolegal Move) bool {
+	tested_for_legality = *pos
+	return (&tested_for_legality).MakeMove(pseudolegal)
+}
+
 func (gen *Generator) Perft(depth int) int64 {
 	var movesCount int64 = 0
 	if depth <= 1 {

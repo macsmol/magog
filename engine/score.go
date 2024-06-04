@@ -243,11 +243,6 @@ func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, e
 	return movesCount
 }
 
-// Returns true if pseudolegal is legal in pos. False otherwise. 
-func isLegal(pos *Position, pseudolegal Move) bool {
-	tested_position := *pos
-	return (&tested_position).MakeMove(pseudolegal)
-}
 
 func materialScore(pieces pieceList, pawns pawnList, board *[128]piece) int {
 	score := 0

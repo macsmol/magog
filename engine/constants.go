@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.6.copyMakeMove"
+	VERSION_STRING string = "0.6.copyMakeMove-globvar"
 )
 
 type rank int8
