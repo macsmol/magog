@@ -381,3 +381,18 @@ Next to try is the version with copyMakeMove (now I remember that make/unkame ve
 Finished the copyMakeMove version. It's 3x slower. Profiler shows that there is a lot of heap allocations and gc going on. 
 Looks like it is related with conversion between values and pointers for method calls. Need to investigate more:
 -need to investigate isLegal() version with working on positionStack rather that autoconversions on method calls that golang provides.
+
+04.06.2024
+Found a way to make copyMakeMove version work fast. Now it's 5-30% faster than previous one. The problem was related to autoconversions.
+For some cases golang decides to place autoconverted variables  (pointer -> stack vars) allocated on the heap. I was expecting that it would
+be placing them on stack - even if they are big eg. hundreds of bytes (because they are stack variables after all).
+This turned out not to be the case.
+But anyway the that was only part of the problem. Another thing was that I was using methods on (pos Poision) and (pos *Position) interchangably.
+So I decided to stick with (pos *Position). And only in isLegal() I would copy whatever was under pointer to another variable - so this way I
+knew that whatever autoconversions were going on they were limited only to this method.
+Another crucial thing was using global variable instead of stack variable (variable inside of function). Looks like this pushed golang compiler
+to do the right thing:
+-it stopped allocating Position on heap
+-it stopped doing excessive gc 
+
+So now the new version is finally faster than magog.0.6.
