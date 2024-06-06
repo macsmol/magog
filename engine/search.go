@@ -65,7 +65,7 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 		}
 
 		copyBestLine(bestLine, search.bestLineAtDepth[0])
-		printInfo(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
+		maybePrintInfo(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
 		depthCompleted = currDepth
 		bestScore = scoreAtDepth
 
@@ -184,7 +184,7 @@ func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBes
 			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 
-			printInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "")
+			maybePrintInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "")
 			// printInfo( alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "in startAB:")
 		}
 

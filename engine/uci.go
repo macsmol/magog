@@ -90,7 +90,7 @@ func doGo(goCommand string) {
 
 	var err error
 
-	out:
+out:
 	for i, token := range tokens {
 		switch token {
 		case uMoveTime:
@@ -154,6 +154,13 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 	now := time.Now()
 	endtime := now.Add(time.Millisecond * time.Duration(millisForMove))
 	return endtime
+}
+
+func maybePrintInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
+	if timeElapsed < time.Duration(200*time.Millisecond) {
+		return
+	}
+	printInfo(score, depth, bestLine, timeElapsed, debugSuffix)
 }
 
 func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
