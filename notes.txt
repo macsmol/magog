@@ -376,3 +376,82 @@ than magog.0.6. Here are arena results:
 It seems that this version is worse because while it has modest ordering improvement for positions with many captures (kiwipete),
 it suffers from small decrease in raw speed.
 Next to try is the version with copyMakeMove (now I remember that make/unkame version fo Machess was a failure too)
+
+03.06.2024
+Finished the copyMakeMove version. It's 3x slower. Profiler shows that there is a lot of heap allocations and gc going on. 
+Looks like it is related with conversion between values and pointers for method calls. Need to investigate more:
+-need to investigate isLegal() version with working on positionStack rather that autoconversions on method calls that golang provides.
+
+04.06.2024
+Found a way to make copyMakeMove version work fast. Now it's 5-30% faster than previous one. The problem was related to autoconversions.
+For some cases golang decides to place autoconverted variables  (pointer -> stack vars) allocated on the heap. I was expecting that it would
+be placing them on stack - even if they are big eg. hundreds of bytes (because they are stack variables after all).
+This turned out not to be the case.
+But anyway the that was only part of the problem. Another thing was that I was using methods on (pos Poision) and (pos *Position) interchangably.
+So I decided to stick with (pos *Position). And only in isLegal() I would copy whatever was under pointer to another variable - so this way I
+knew that whatever autoconversions were going on they were limited only to this method.
+Another crucial thing was using global variable instead of stack variable (variable inside of function). Looks like this pushed golang compiler
+to do the right thing:
+-it stopped allocating Position on heap
+-it stopped doing excessive gc 
+
+So now the new version is finally faster than magog.0.6.
+
+04.06.2024
+v0.8 lost. Why? It's faster in raw speed Maybe the evaluation function is bad? I should analyze games and look for pattern where Magog.0.8 thinks
+it's gaining an edge and then loosing.
+
+    -----------------Machess-1.0-SNAPSHOT-----------------
+    Machess-1.0-SNAPSHOT - Magog.0.6 : 5,0/10 2-2-6 (=1=10===0=)  50%    ±0
+    Machess-1.0-SNAPSHOT - Magog.0.8 : 6,5/10 5-2-3 (1=11101==0)  65%  +108
+    -----------------Magog.0.6-----------------
+    Magog.0.6 - Machess-1.0-SNAPSHOT : 5,0/10 2-2-6 (=0=01===1=)  50%    ±0
+    Magog.0.6 - Magog.0.8            : 5,0/10 2-2-6 (=1====0=10)  50%    ±0
+    -----------------Magog.0.8-----------------
+    Magog.0.8 - Machess-1.0-SNAPSHOT : 3,5/10 2-5-3 (0=00010==1)  35%  -108
+    Magog.0.8 - Magog.0.6            : 5,0/10 2-2-6 (=0====1=01)  50%    ±0
+
+
+
+05.06.2024
+Yup looks like it is the case of not so good evaluation function, worse pruning. 
+Sometimes it barely manages to search one ply deeper than magog 0.6. Searches 4 plies rather than 3 
+Hypothesis 1: Even with quiescence search, search result with even depth will return more cautious move - because the 
+line found ends with opponent's reply. 
+And then it cannot keep up at this depth consistently on next moves.
+
+Here are pairs of games against machess: one game is lost by magog.0.8 and other is drawn by magog.0.6. 
+Links point to the moves where the games diverge.
+https://lichess.org/mE4Sh1X4#18
+https://lichess.org/lHYsF7KI#18
+
+https://lichess.org/zbAffPbv#9
+https://lichess.org/NY0e6AFO#9
+
+here it actually chose better move according to Stockfish on Lichess
+https://lichess.org/NzFITo6Y#17
+https://lichess.org/DbXVmMz7#17
+
+In first two of these positions magog0.8 refrained from pushing the pawn so maybe it's high time to 
+add piece-square tables for pawns.
+
+Hypothesis 2: It's due to bad move ordering: Check version with silent moves descending sorted by type of material moved
+(pawns -> knights -> bish -> rook -> queen)
+
+06.06.2024
+Checked Hypothesis 1. Played 0.8 agains Machess but this time not at 3 mins but at 4mins. It did a little better:
+    -----------------Machess-1.0-SNAPSHOT-----------------
+    Machess-1.0-SNAPSHOT - Magog.0.8 : 6,0/10 4-2-4 (1===11=010)  60%   +70
+    -----------------Magog.0.8-----------------
+    Magog.0.8 - Machess-1.0-SNAPSHOT : 4,0/10 2-4-4 (0===00=101)  40%   -70
+
+so maybe the the theory about hitting odd depths explains it - but I didn't check the average depths reached really)
+Now time to check hypothesis 2...
+
+06.06.2024 - 2
+Hypothesis 2 failed. Here are results of magog.0.8 with silent moves ranked by descending value of piece moved.
+
+    -----------------Machess-1.0-SNAPSHOT-----------------
+    Machess-1.0-SNAPSHOT - Magog.0.8.silentsRanked : 7,0/10 5-1-4 (111===1=01)  70%  +147
+    -----------------Magog.0.8.silentsRanked-----------------
+    Magog.0.8.silentsRanked - Machess-1.0-SNAPSHOT : 3,0/10 1-5-4 (000===0=10)  30%  -147
