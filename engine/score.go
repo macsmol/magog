@@ -15,8 +15,8 @@ const (
 
 const (
 	MaterialPawnScore   = 100
-	MaterialKnightScore = 300
-	MaterialBishopScore = 300
+	MaterialKnightScore = 320
+	MaterialBishopScore = 330
 	MaterialRookScore   = 500
 	MaterialQueenScore  = 900
 )
