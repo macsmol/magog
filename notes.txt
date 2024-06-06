@@ -440,8 +440,7 @@ Hypothesis 2: It's due to bad move ordering: Check version with silent moves des
 
 06.06.2024
 Checked Hypothesis 1. Played 0.8 agains Machess but this time not at 3 mins but at 4mins. It did a little better:
-    -----------------Machess-1.0-SNAPSHOT-----------------
-    Machess-1.0-SNAPSHOT - Magog.0.8 : 6,0/10 4-2-4 (1===11=010)  60%   +70
+
     -----------------Magog.0.8-----------------
     Magog.0.8 - Machess-1.0-SNAPSHOT : 4,0/10 2-4-4 (0===00=101)  40%   -70
 
@@ -451,7 +450,22 @@ Now time to check hypothesis 2...
 06.06.2024 - 2
 Hypothesis 2 failed. Here are results of magog.0.8 with silent moves ranked by descending value of piece moved.
 
-    -----------------Machess-1.0-SNAPSHOT-----------------
-    Machess-1.0-SNAPSHOT - Magog.0.8.silentsRanked : 7,0/10 5-1-4 (111===1=01)  70%  +147
     -----------------Magog.0.8.silentsRanked-----------------
     Magog.0.8.silentsRanked - Machess-1.0-SNAPSHOT : 3,0/10 1-5-4 (000===0=10)  30%  -147
+
+06.06.2024 - 3
+Did a test of magog 0.6 + pawn square tables. Another failure. Played weaker than magog.0.6:
+
+
+    -----------------Magog.0.6.pawnSquareTable-----------------
+    Magog.0.6.pawnSquareTable - Machess-1.0-SNAPSHOT : 2,0/10 0-6-4 (00==00==00)  20%  -241
+
+
+Machess plays faster - it has expected_moves_to_be_played=40 not 30 like magog. 
+Hypothesis 3: Maybe magog blunder under time trouble in late game?
+
+06.06.2024 - 4
+magog.0.6 + simplified evaluation function for material (P = 100; N = 320; B = 330; R = 500; Q = 900)
+Another failure:
+    -----------------Magog.0.6.sev_material-----------------
+    Magog.0.6.sev_material - Machess-1.0-SNAPSHOT    : 2,5/10 0-5-5 (00=0==00==)  25%  -191
