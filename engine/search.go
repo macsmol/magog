@@ -125,14 +125,15 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 	applyPvMoveBonus(moves, candidateLine, depth)
 	sortMoves(moves)
 	for _, move := range moves {
-		if search.interrupted {
-			break
-		}
 		posGen.PushMove(move.mov)
 		currScore := -search.alphaBeta(posGen, targetDepth, depth+1, -beta, -alpha, &bestSubline,
 			candidateLine, startTime, endtime)
 		posGen.PopMove()
 
+		if search.interrupted || time.Now().After(endtime) {
+			break
+		}
+		
 		if currScore > beta {
 			return beta
 		}
@@ -140,13 +141,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 		}
-		if time.Now().After(endtime) {
-			break
-		}
-		if search.interrupted {
-			break
-		}
-
+		
 		select {
 		case <-search.stop:
 			search.interrupted = true
@@ -172,24 +167,22 @@ func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBes
 	applyPvMoveBonus(moves, pvLine, 0)
 	sortMoves(moves)
 	for _, move := range moves {
-		if search.interrupted {
-			break
-		}
+		
 		posGen.PushMove(move.mov)
 		currScore := -search.alphaBeta(posGen, targetDepth, 1, -beta, -alpha, &bestSubline,
 			pvLine, starttime, endtime)
 		posGen.PopMove()
 
+		if search.interrupted || time.Now().After(endtime) {
+			break
+		}
+
 		if currScore > alpha {
 			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 
-			maybePrintInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "")
+			maybePrintInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), " inStart")
 			// printInfo( alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "in startAB:")
-		}
-
-		if search.interrupted {
-			break
 		}
 		if nextMoveWins(currScore) {
 			break
