@@ -8,4 +8,4 @@ const MaxSearchDepth = 40
 const ExpectedFullMovesToBePlayed = 30
 
 //log info everytime we run evaluation on this number of nodes(positions)
-const LogEveryNNodes = 500_000
+const LogEveryNNodes = 1000_000

@@ -65,7 +65,7 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 		}
 
 		copyBestLine(bestLine, search.bestLineAtDepth[0])
-		maybePrintInfo(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
+		printInfoAfterDepth(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
 		depthCompleted = currDepth
 		bestScore = scoreAtDepth
 
@@ -181,7 +181,7 @@ func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBes
 			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 
-			maybePrintInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), " inStart")
+			maybePrintNewPvInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), " inStart")
 			// printInfo( alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "in startAB:")
 		}
 		if nextMoveWins(currScore) {
@@ -235,7 +235,8 @@ func (search *Search) quiescence(posGen *Generator, alpha, beta, depth int,
 		fmt.Println("info",
 			"nodes", evaluatedNodes,
 			"time", timeElapsed.Milliseconds(),
-			"nps", nps(evaluatedNodes, timeElapsed))
+			"nps", nps(evaluatedNodes, timeElapsed),
+			"currmove", posGen.plies[int(posGen.plyIdx)-depth].undo.move)
 	}
 
 	if score >= beta {

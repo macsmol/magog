@@ -156,7 +156,7 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 	return endtime
 }
 
-func maybePrintInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
+func maybePrintNewPvInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
 	if timeElapsed < time.Duration(200*time.Millisecond) {
 		return
 	}
@@ -168,6 +168,20 @@ func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, deb
 	fmt.Println("info pv", line.String(),
 		"score", formatScore(score),
 		"depth", depth,
+		"nodes", evaluatedNodes,
+		"time", timeElapsed.Milliseconds(),
+		"nps", nps(evaluatedNodes, timeElapsed),
+		debugSuffix)
+}
+
+func printInfoAfterDepth(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
+	if depth < 2 {
+		return
+	}
+	line := Line{moves: bestLine}
+	fmt.Println("info depth", depth,
+		"pv", line.String(),
+		"score", formatScore(score),
 		"nodes", evaluatedNodes,
 		"time", timeElapsed.Milliseconds(),
 		"nps", nps(evaluatedNodes, timeElapsed),
