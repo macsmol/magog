@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.6.3"
+	VERSION_STRING string = "0.6.4.betaCufoffFix"
 )
 
 type rank int8

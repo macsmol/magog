@@ -469,3 +469,25 @@ magog.0.6 + simplified evaluation function for material (P = 100; N = 320; B = 3
 Another failure:
     -----------------Magog.0.6.sev_material-----------------
     Magog.0.6.sev_material - Machess-1.0-SNAPSHOT    : 2,5/10 0-5-5 (00=0==00==)  25%  -191
+
+08.06.2024 
+Found what was the problem! It was a bug in beta cutoff in alphaBeta() funcion. I returned
+beta only if score > beta. I should have done that when score >= beta. One letter fix!
+
+Started a new tournament. Engine plays noticably better but it run into another bug in the rook endgame.
+It exceeded the MaxSearchDepth (which was 40). Could just increase it but even before it got to that
+depth it was returning rather strange scores.
+
+    2024-06-08 12:50:43,087-->2:go wtime 25596 btime 40009 winc 0 binc 0
+    2024-06-08 12:50:43,094<--2:info depth 2 pv e4f4 score mate -49949999 nodes 43 time 0 nps 43000000 
+    2024-06-08 12:50:43,109<--2:info depth 3 pv e4f4 score mate -49949999 nodes 63 time 0 nps 63000000 
+    2024-06-08 12:50:43,125<--2:info depth 4 pv e4f4 score mate -49949999 nodes 83 time 0 nps 83000000 
+    ...
+    2024-06-08 12:50:43,436<--2:info depth 24 pv e4f4 score mate -49949999 nodes 483 time 2 nps 167012 
+    2024-06-08 12:50:43,452<--2:info depth 25 pv e4f4 score mate -49949999 nodes 503 time 2 nps 173928 
+    ...
+    2024-06-08 12:50:43,608<--2:info depth 35 pv e4f4 score mate -49949999 nodes 703 time 5 nps 127424 
+    2024-06-08 12:50:43,624<--2:info depth 36 pv e4f4 score mate -49949999 nodes 723 time 5 nps 126354 
+    2024-06-08 12:50:43,639<--2:info depth 37 pv e4f4 score mate -49949999 nodes 743 time 5 nps 129849 
+    2024-06-08 12:50:43,655<--2:info depth 38 pv e4f4 score mate -49949999 nodes 763 time 6 nps 117366 
+

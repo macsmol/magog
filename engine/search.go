@@ -134,7 +134,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 			break
 		}
 		
-		if currScore > beta {
+		if currScore >= beta {
 			return beta
 		}
 		if currScore > alpha {
@@ -181,7 +181,7 @@ func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBes
 			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 
-			maybePrintNewPvInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), " inStart")
+			maybePrintNewPvInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "")
 			// printInfo( alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "in startAB:")
 		}
 		if nextMoveWins(currScore) {
