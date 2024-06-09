@@ -119,7 +119,7 @@ func (search *Search) alphaBeta(posGen *Generator, targetDepth, depth, alpha, be
 
 	if len(moves) == 0 {
 		*currBestLine = (*currBestLine)[:0]
-		terminalNodeScore(posGen.pos, depth)
+		return terminalNodeScore(posGen.pos, depth)
 	}
 
 	applyPvMoveBonus(moves, candidateLine, depth)
@@ -161,7 +161,7 @@ func (search *Search) startAlphaBeta(posGen *Generator, targetDepth int, currBes
 
 	if len(moves) == 0 {
 		*currBestLine = (*currBestLine)[:0]
-		terminalNodeScore(posGen.pos, 0)
+		return terminalNodeScore(posGen.pos, 0), false
 	}
 
 	applyPvMoveBonus(moves, pvLine, 0)

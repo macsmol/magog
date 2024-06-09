@@ -491,3 +491,8 @@ depth it was returning rather strange scores.
     2024-06-08 12:50:43,639<--2:info depth 37 pv e4f4 score mate -49949999 nodes 743 time 5 nps 129849 
     2024-06-08 12:50:43,655<--2:info depth 38 pv e4f4 score mate -49949999 nodes 763 time 6 nps 117366 
 
+09.06.2024 
+The bug that cause engine to exceed MaxSearchDepth (and later to overflow the stack) was a rather embarassing one:
+When returning a terminal node score I've missed an actual return statement. So on stalemate position rather than returning
+stalemate score it would returned minus infinity score (formated as mate -49949999). That's one case of silly error that linter
+does not complain about.. Anyway - fixed.

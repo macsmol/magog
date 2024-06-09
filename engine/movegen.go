@@ -64,6 +64,10 @@ func (move Move) String() string {
 	return move.from.String() + move.to.String()
 }
 
+func (move rankedMove) String() string {
+	return fmt.Sprintf("(%v, %d)",move.mov, move.ranking)
+}
+
 func NewGenerator() *Generator {
 	return &Generator{
 		pos:    NewPosition(),
