@@ -5,6 +5,8 @@ critical:
 
 promising:
 -0x88 board with padding for faster sliders movegen: https://www.talkchess.com/forum/viewtopic.php?t=62279&sid=c7b5a5b1b3297382937208ab995ba79d
+-interrupt in quiescence search
+-better time management
 
 rathole:
 -faster/specialized (when in check, in doublecheck, pinned) movegen

@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.6.5.terminalNodeFix"
+	VERSION_STRING string = "0.9"
 )
 
 type rank int8
@@ -73,7 +73,7 @@ func (s square) getFile() file {
 
 func (s square) String() string {
 	if s&InvalidSquare != 0 {
-		return "InvalidSquare"
+		return "--"
 	}
 	var file rune = rune(s&0x0F) + 'a'
 	var rank rune = rune(s>>4) + '1'

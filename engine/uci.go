@@ -34,7 +34,7 @@ func ParseInputLine(inputLine string) {
 		search = NewSearch()
 		fmt.Println("readyok")
 	} else if inputLine == "eval" {
-		fmt.Println(Evaluate(posGen.pos, 0, true))
+		fmt.Println(Evaluate(posGen.getTopPos(), 0, true))
 	} else if inputLine == "tostr" {
 		fmt.Printf("%v\n", posGen)
 	} else if inputLine == "quit" {
@@ -65,7 +65,7 @@ func doPosition(positionCommand string) {
 		moveStrings := strings.Split(movesString, " ")
 		for _, moveStr := range moveStrings {
 			//TODO this uses up ply buffer for long move list. Compressing that would be good.
-			posGen.PushMoveSafely(parseMoveString(moveStr))
+			posGen.ApplyUciMove(parseMoveString(moveStr))
 		}
 	}
 }
@@ -144,7 +144,7 @@ out:
 
 func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
 	givenMovesToGo int) time.Time {
-	isBlackTurn := posGen.pos.flags&FlagWhiteTurn == 0
+	isBlackTurn := posGen.getTopPos().flags&FlagWhiteTurn == 0
 	var millisForMove int
 	if isBlackTurn {
 		millisForMove = blackMillisLeft / givenMovesToGo
@@ -254,11 +254,11 @@ func parsePosition(positionWithoutMoves string) {
 	if strings.HasPrefix(positionWithoutMoves, uStartpos) {
 		posGen = NewGenerator()
 	} else {
-		pos, err := NewGeneratorFromFen(positionWithoutMoves)
+		newPosGen, err := NewGeneratorFromFen(positionWithoutMoves)
 		if err != nil {
 			fmt.Println("invalid FEN: ", err)
 		} else {
-			posGen = pos
+			posGen = newPosGen
 		}
 	}
 }

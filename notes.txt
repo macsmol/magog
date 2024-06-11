@@ -496,3 +496,26 @@ The bug that cause engine to exceed MaxSearchDepth (and later to overflow the st
 When returning a terminal node score I've missed an actual return statement. So on stalemate position rather than returning
 stalemate score it would returned minus infinity score (formated as mate -49949999). That's one case of silly error that linter
 does not complain about.. Anyway - fixed.
+
+11.09.2024
+Tried to apply copyMakeMove again after doing all bugfixes. Great success:
+    
+    -----------------Magog.0.9.copyMakeMoveBugfixed-----------------
+    Magog.0.9.copyMakeMoveBugfixed - Magog.0.6.terminalNodeFix : 8,5/10 7-0-3 (11==111=11)  85%  +301
+
+Copy make move crushed best version so far that that was using moveMake/Unmake.
+
+Another observation. Need to upgrade set of openings used for testing. Currenlty I use 5:
+
+    [Event "1 .King's Pawn Game"]
+    1.e4 
+    [Event "2. Queen's Pawn Game"]
+    1.d4 
+    [Event "3. English Opening"]
+    1.c4 
+    [Event "4. Zukertort Opening"]
+    1.Nf3
+    [Event "5. Scandinavian Defense"]
+    1.e4 d5
+
+And it turns out that both King's Pawn games turned into exact same Scandinavian Defenses anyway (2. ..d5)
