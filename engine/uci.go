@@ -165,12 +165,12 @@ func maybePrintNewPvInfo(score, depth int, bestLine []Move, timeElapsed time.Dur
 
 func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
 	line := Line{moves: bestLine}
-	fmt.Println("info pv", line.String(),
-		"score", formatScore(score),
+	fmt.Println("info score", formatScore(score),
 		"depth", depth,
-		"nodes", evaluatedNodes,
+		"nps", nps(evaluatedNodes, timeElapsed),	
 		"time", timeElapsed.Milliseconds(),
-		"nps", nps(evaluatedNodes, timeElapsed),
+		"nodes", evaluatedNodes,
+		"pv", line.String(),
 		debugSuffix)
 }
 
@@ -180,11 +180,11 @@ func printInfoAfterDepth(score, depth int, bestLine []Move, timeElapsed time.Dur
 	}
 	line := Line{moves: bestLine}
 	fmt.Println("info depth", depth,
-		"pv", line.String(),
 		"score", formatScore(score),
-		"nodes", evaluatedNodes,
-		"time", timeElapsed.Milliseconds(),
 		"nps", nps(evaluatedNodes, timeElapsed),
+		"time", timeElapsed.Milliseconds(),
+		"nodes", evaluatedNodes,
+		"pv", line.String(),
 		debugSuffix)
 }
 

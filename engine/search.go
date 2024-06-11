@@ -240,11 +240,11 @@ func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
 		currMoveNo := aPosGen.firstMoveIdx
 		timeElapsed := time.Since(startTime)
 		fmt.Println("info",
+			"currmove", aPosGen.movStack[0][currMoveNo].mov,
+			"currmovenumber", currMoveNo + 1,
 			"nodes", evaluatedNodes,
 			"time", timeElapsed.Milliseconds(),
-			"nps", nps(evaluatedNodes, timeElapsed),
-			"currmove", aPosGen.movStack[0][currMoveNo].mov,
-			"currmovenumber", currMoveNo + 1)
+			"nps", nps(evaluatedNodes, timeElapsed))
 	}
 
 	if score >= beta {
