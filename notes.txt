@@ -497,7 +497,7 @@ When returning a terminal node score I've missed an actual return statement. So 
 stalemate score it would returned minus infinity score (formated as mate -49949999). That's one case of silly error that linter
 does not complain about.. Anyway - fixed.
 
-11.09.2024
+11.06.2024
 Tried to apply copyMakeMove again after doing all bugfixes. Great success:
     
     -----------------Magog.0.9.copyMakeMoveBugfixed-----------------
@@ -519,3 +519,9 @@ Another observation. Need to upgrade set of openings used for testing. Currenlty
     1.e4 d5
 
 And it turns out that both King's Pawn games turned into exact same Scandinavian Defenses anyway (2. ..d5)
+
+12.06.2024
+Finetuned material score was better than 0.9 and it is now 0.10.
+Tested it against 0.10.pieceSquaresTable version. pSqT lost but it showed some nice intuition in the endgames.
+Probably it lost due to smaller raw speed (couldn't match the depth of prev version). Need to confirm.
+Could increase the speed drastically by using Lazy Evaluation (eg. skipping mobility score if score apparently bad - pSq table are good enough replacement-right?)
