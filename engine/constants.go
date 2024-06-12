@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.9.tunedMaterialScore"
+	VERSION_STRING string = "0.10"
 )
 
 type rank int8
