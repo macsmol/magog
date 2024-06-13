@@ -236,12 +236,12 @@ func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
 	bestSubline := search.bestLineAtDepth[depth+1]
 	score := Evaluate(aPosGen.getTopPos(), depth)
 
-	if evaluatedNodes%LogEveryNNodes == 0 {
+	if evaluatedNodes%int64(currmoveLogInterval) == 0 {
 		currMoveNo := aPosGen.firstMoveIdx
 		timeElapsed := time.Since(startTime)
 		fmt.Println("info",
 			"currmove", aPosGen.movStack[0][currMoveNo].mov,
-			"currmovenumber", currMoveNo + 1,
+			"currmovenumber", currMoveNo+1,
 			"nodes", evaluatedNodes,
 			"time", timeElapsed.Milliseconds(),
 			"nps", nps(evaluatedNodes, timeElapsed))

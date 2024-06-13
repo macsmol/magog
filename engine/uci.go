@@ -23,6 +23,10 @@ const (
 	uDepth     string = "depth"
 	uInfinite  string = "infinite"
 	uMoveTime  string = "movetime"
+
+	uOptionSet   string = "setoption"
+	uOptionName  string = "name"
+	uOptionValue string = "value"
 )
 
 var posGen *Generator
@@ -45,13 +49,45 @@ func ParseInputLine(inputLine string) {
 		fmt.Println("id name Magog " + VERSION_STRING)
 		fmt.Println("id author Maciej Smolczewski")
 		fmt.Println("uciok")
+		printOptions()
 	} else if strings.HasPrefix(inputLine, uGo) {
 		doGo(strings.TrimSpace(strings.TrimPrefix(inputLine, uGo)))
 	} else if inputLine == "stop" {
 		if search != nil {
 			search.stop <- true
 		}
+	} else if strings.HasPrefix(inputLine, uOptionSet) {
+		setOption(strings.TrimSpace(strings.TrimPrefix(inputLine, uOptionSet)))
 	}
+}
+
+func setOption(setOptionCommand string) {
+	// So far this func can only set one option. Will upgrade it if needed.
+	
+	tokens := strings.Split(setOptionCommand, " ")
+	if len(tokens) != 4 {
+		return
+	}
+
+	if tokens[0] != uOptionName || tokens[2] != uOptionValue {
+		return
+	}
+	if tokens[1] == currmoveLogIntervalKey {
+		val, err := strconv.Atoi(tokens[3])
+		if err == nil {
+			currmoveLogInterval = val
+		}
+	}
+}
+
+func printOptions() {
+	fmt.Println("option",
+		uOptionName, currmoveLogIntervalKey,
+		"type", "spin",
+		"default", currmoveLogIntervalDefault,
+		"min", currmoveLogIntervalMin,
+		"max", currmoveLogIntervalMax,
+	)
 }
 
 func doPosition(positionCommand string) {
@@ -167,7 +203,7 @@ func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, deb
 	line := Line{moves: bestLine}
 	fmt.Println("info score", formatScore(score),
 		"depth", depth,
-		"nps", nps(evaluatedNodes, timeElapsed),	
+		"nps", nps(evaluatedNodes, timeElapsed),
 		"time", timeElapsed.Milliseconds(),
 		"nodes", evaluatedNodes,
 		"pv", line.String(),
