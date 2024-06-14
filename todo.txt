@@ -11,7 +11,6 @@
     
 
 promising (2.0?):
--lazy evaluation (skip mobility if score bad already)
 -0x88 board with padding for faster sliders movegen: https://www.talkchess.com/forum/viewtopic.php?t=62279&sid=c7b5a5b1b3297382937208ab995ba79d
 -better time management (large fraction of preallocated time wasted in opening and midgame due to large branching factor in iterative deepening)
 

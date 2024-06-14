@@ -40,6 +40,11 @@ go wtime 109301 btime 108488 winc 1000 binc 1000
     info currmove a7a6 currmovenumber 7 nodes 1000000 time 3141 nps 318285
     info score cp -70 depth 4 nps 319810 time 3616 nodes 1156554 pv f6e4 e5e6 f8b4 c2c3 
     bestmove f6e4
+0.10.pstNoMobility !!!
+    info currmove a7a6 currmovenumber 7 nodes 5000000 time 2698 nps 1852741
+    info currmove a7a6 currmovenumber 7 nodes 6000000 time 3224 nps 1860626
+    info score cp -40 depth 5 nps 1852159 time 3616 nodes 6697555 pv f6h5 e2e3 h5f4 e3f4 c8e6 
+    bestmove f6h5
 
 ------------------ from 2024.06.14
 position startpos moves d2d4 d7d5 b1c3 g8f6 c1f4 b8c6 c3b5 e7e5 d4e5 f6e4 e5e6 f8b4 c2c3 b4a5 e6f7 e8f7 f4c7
@@ -55,4 +60,16 @@ go wtime 99149 btime 98366 winc 1000 binc 1000
     info depth 6 score cp -165 nps 348391 time 2420 nodes 843115 pv d8h4 d1d5 c8e6 b5d6 f7e7 d5e4 h4e4 d6e4 a5c7 
     info currmove d8h4 currmovenumber 1 nodes 1000000 time 2940 nps 340127
     info score cp -165 depth 6 nps 339148 time 3278 nodes 1111937 pv d8h4 d1d5 c8e6 b5d6 f7e7 d5e4 h4e4 d6e4 a5c7 
+    bestmove d8h4
+
+0.10.pstNoMobility (!!!)
+    info currmove e4c3 currmovenumber 2 nodes 6000000 time 2467 nps 2431720
+    info currmove f7e6 currmovenumber 7 nodes 7000000 time 3251 nps 2152708
+    info score cp -94 depth 7 nps 2145669 time 3278 nodes 7034271 pv a5c7 b5c7 e4c3 b2c3 d8c7 d1d5 c8e6 
+    bestmove a5c7
+
+0.10.pstLazyEvalNarrow
+    info currmove c6e5 currmovenumber 7 nodes 2000000 time 2618 nps 763795
+    info currmove h7h5 currmovenumber 24 nodes 3000000 time 2961 nps 1012935
+    info score cp -117 depth 6 nps 1115691 time 3278 nodes 3657534 pv d8h4 g2g3 h4h5 c7a5 c6a5 g1f3
     bestmove d8h4
