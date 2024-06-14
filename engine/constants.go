@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.10.pieceSquareTable"
+	VERSION_STRING string = "0.10.pstLazyEval"
 )
 
 type rank int8

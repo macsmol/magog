@@ -28,6 +28,9 @@ const (
 	MobilityScoreFactor = 5
 )
 
+// controls width of window where full evaluation is done
+const fullEvalScoreMargin = MaterialKnightScore + 20
+
 func pieceToScore(p piece) int {
 	switch p {
 	case Pawn:
@@ -48,16 +51,33 @@ func pieceToScore(p piece) int {
 	return 0
 }
 
-// Returns static evaluation score for Position pos. It's given relative to the currently playing
+// Returns fulll static evaluation score for Position pos. It's given relative to the currently playing
 // side (negamax score)
 func Evaluate(pos *Position, depth int, debug ...bool) int {
+	return LazyEvaluate(pos, depth, MinusInfinityScore, InfinityScore, debug...)
+}
+
+// Returns static evaluation score for Position pos. It's given relative to the currently playingside (negamax score)
+// If the score is outsied <alpha-fullEvalScoreMargin, beta+fullEvalScoreMargin> window it skips costly part of evaluation.
+func LazyEvaluate(pos *Position, depth int, alpha, beta int, debug ...bool) int {
+	evaluatedNodes++
+
+	if isCheckMate(pos) {
+		return LostScore + depth
+	}
+
 	gamePhaseFactor := gamePhaseFactor(pos)
 	materialSquaresScore := pieceSquareScore(pos, gamePhaseFactor, debug...)
+
+	if materialSquaresScore > beta+fullEvalScoreMargin ||
+		materialSquaresScore < alpha-fullEvalScoreMargin {
+		return materialSquaresScore
+	}
 
 	// mobility
 	currentMobilityScore := pos.countMoves() * MobilityScoreFactor
 	if currentMobilityScore == 0 {
-		return terminalNodeScore(pos, depth)
+		return DrawScore
 	}
 	pos.flags = pos.flags ^ FlagWhiteTurn
 	enemyMobilityScore := pos.countMoves() * MobilityScoreFactor
@@ -69,7 +89,6 @@ func Evaluate(pos *Position, depth int, debug ...bool) int {
 			"mobilityScore: ", mobilityScore)
 	}
 	var score int = materialSquaresScore + mobilityScore
-	evaluatedNodes++
 	return score
 }
 
@@ -145,6 +164,10 @@ func pieceSquareScore(pos *Position, gamePhaseFactor float64, debug ...bool) int
 	// 	fmt.Println("whitePieceSquare: ", whiteScore, "; blackPieceSquare:", blackScore, " negamaxFactor: ", negamaxFactor)
 	// }
 	return score * negamaxFactor
+}
+
+func isCheckMate(position *Position) bool {
+	return position.isCurrentKingUnderCheck() && position.countMoves() == 0
 }
 
 func terminalNodeScore(position *Position, depth int) int {
