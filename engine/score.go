@@ -53,7 +53,7 @@ func pieceToScore(p piece) int {
 func Evaluate(pos *Position, depth int, debug ...bool) int {
 	gamePhaseFactor := gamePhaseFactor(pos)
 	materialSquaresScore := pieceSquareScore(pos, gamePhaseFactor, debug...)
-	
+
 	// mobility
 	currentMobilityScore := pos.countMoves() * MobilityScoreFactor
 	if currentMobilityScore == 0 {
@@ -64,9 +64,9 @@ func Evaluate(pos *Position, depth int, debug ...bool) int {
 	pos.flags = pos.flags ^ FlagWhiteTurn
 	mobilityScore := currentMobilityScore - enemyMobilityScore
 	if len(debug) > 0 {
-		fmt.Println("gamePhaseFactor:",gamePhaseFactor, 
-		"materialSquaresScore: ", materialSquaresScore,
-		"mobilityScore: ", mobilityScore)
+		fmt.Println("gamePhaseFactor:", gamePhaseFactor,
+			"materialSquaresScore: ", materialSquaresScore,
+			"mobilityScore: ", mobilityScore)
 	}
 	var score int = materialSquaresScore + mobilityScore
 	evaluatedNodes++
@@ -102,11 +102,11 @@ func pieceSquareScore(pos *Position, gamePhaseFactor float64, debug ...bool) int
 		whiteScore += MaterialPawnScore + int(sqTablePawnsWhite[pos.whitePawns.squares[i]])
 	}
 	{
-		yMid := int(sqTableKingMidgameWhite[pos.whiteKing])
-		yEnd := int(sqTableKingEndgameWhite[pos.whiteKing])
-		kingScore := int(gamePhaseFactor*float64(yMid) + (1.0-gamePhaseFactor)*float64(yEnd))
+		yMid := float64(sqTableKingMidgameWhite[pos.whiteKing])
+		yEnd := float64(sqTableKingEndgameWhite[pos.whiteKing])
+		kingScore := int(gamePhaseFactor*yMid + (1.0-gamePhaseFactor)*yEnd)
 		// if len(debug) > 0 {
-		// 	fmt.Println("\tblackKingScore: ", kingScore)
+		// 	fmt.Println("\twhiteKingScore: ", kingScore)
 		// }
 		whiteScore += kingScore
 	}
@@ -129,9 +129,9 @@ func pieceSquareScore(pos *Position, gamePhaseFactor float64, debug ...bool) int
 		blackScore += MaterialPawnScore + int(sqTablePawnsBlack[pos.blackPawns.squares[i]])
 	}
 	{
-		yMid := int(sqTableKingMidgameBlack[pos.blackKing])
-		yEnd := int(sqTableKingEndgameBlack[pos.blackKing])
-		kingScore := int(gamePhaseFactor*float64(yMid) + (1.0-gamePhaseFactor)*float64(yEnd))
+		yMid := float64(sqTableKingMidgameBlack[pos.blackKing])
+		yEnd := float64(sqTableKingEndgameBlack[pos.blackKing])
+		kingScore := int(gamePhaseFactor*yMid + (1.0-gamePhaseFactor)*yEnd)
 		// if len(debug) > 0 {
 		// 	fmt.Println("\tblackKingScore: ", kingScore)
 		// }
