@@ -234,7 +234,7 @@ func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move)
 func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
 	currBestLine *[]Move, startTime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
-	score := LazyEvaluate(aPosGen.getTopPos(), depth, alpha, beta)
+	score := LazyEvaluate(aPosGen.getTopPos(), depth)
 
 	if evaluatedNodes%int64(currmoveLogInterval) == 0 {
 		currMoveNo := aPosGen.firstMoveIdx

@@ -54,12 +54,12 @@ func pieceToScore(p piece) int {
 // Returns fulll static evaluation score for Position pos. It's given relative to the currently playing
 // side (negamax score)
 func Evaluate(pos *Position, depth int, debug ...bool) int {
-	return LazyEvaluate(pos, depth, MinusInfinityScore, InfinityScore, debug...)
+	return LazyEvaluate(pos, depth, debug...)
 }
 
 // Returns static evaluation score for Position pos. It's given relative to the currently playingside (negamax score)
 // If the score is outsied <alpha-fullEvalScoreMargin, beta+fullEvalScoreMargin> window it skips costly part of evaluation.
-func LazyEvaluate(pos *Position, depth int, alpha, beta int, debug ...bool) int {
+func LazyEvaluate(pos *Position, depth int, debug ...bool) int {
 	evaluatedNodes++
 
 	if isCheckMate(pos) {
@@ -69,27 +69,7 @@ func LazyEvaluate(pos *Position, depth int, alpha, beta int, debug ...bool) int 
 	gamePhaseFactor := gamePhaseFactor(pos)
 	materialSquaresScore := pieceSquareScore(pos, gamePhaseFactor, debug...)
 
-	if materialSquaresScore > beta+fullEvalScoreMargin ||
-		materialSquaresScore < alpha-fullEvalScoreMargin {
-		return materialSquaresScore
-	}
-
-	// mobility
-	currentMobilityScore := pos.countMoves() * MobilityScoreFactor
-	if currentMobilityScore == 0 {
-		return DrawScore
-	}
-	pos.flags = pos.flags ^ FlagWhiteTurn
-	enemyMobilityScore := pos.countMoves() * MobilityScoreFactor
-	pos.flags = pos.flags ^ FlagWhiteTurn
-	mobilityScore := currentMobilityScore - enemyMobilityScore
-	if len(debug) > 0 {
-		fmt.Println("gamePhaseFactor:", gamePhaseFactor,
-			"materialSquaresScore: ", materialSquaresScore,
-			"mobilityScore: ", mobilityScore)
-	}
-	var score int = materialSquaresScore + mobilityScore
-	return score
+	return materialSquaresScore
 }
 
 // (endgame) 0.0 <-------------> 1.0 (opening/midgame)
