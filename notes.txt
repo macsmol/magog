@@ -556,3 +556,11 @@ And few things become apparrent.
     b. winning material with some tactics proceeding to endgame and promoting a pawn
 2. However many of the draws that defender obtained were accomplished by infinite checkmate. So the new version that
 knows nothing about mobility cannot forsee these situations.
+
+14.06.2024 - 3
+Turns out that lazy evaluation with narrower window is even better!
+    -----------------Magog.0.10.pstLazyEvalNarrow-----------------
+    Magog.0.10.pstLazyEvalNarrow - Magog.0.10.pstNoMobility : 8,0/14 4-2-8 (0=11=10=1=====)  57%   +49
+
+You can see that 0.10.pstNoMobility really does not understand the importance of developing.
+Frequently not developing rooks for example.
