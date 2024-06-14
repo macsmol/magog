@@ -525,3 +525,11 @@ Finetuned material score was better than 0.9 and it is now 0.10.
 Tested it against 0.10.pieceSquaresTable version. pSqT lost but it showed some nice intuition in the endgames.
 Probably it lost due to smaller raw speed (couldn't match the depth of prev version). Need to confirm.
 Could increase the speed drastically by using Lazy Evaluation (eg. skipping mobility score if score apparently bad - pSq table are good enough replacement-right?)
+
+14.06.2024
+Thinking of writing automated testing framework that would save me some time.
+Rather than playing test games I could build a base of critical positions (positions when engine blundered).
+This data would include both positions and time given for a move - two uci commands)
+Framework could then simply plug engine variants and compare what each of them plays and compare it to reference moves
+obtained from reference engine.
+So by running such test I could quickly have idea how each engine compares to others, is it improving?
