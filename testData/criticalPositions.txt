@@ -1,0 +1,27 @@
+------------------ from 2024.06.12
+position startpos moves e2e4 e7e5 g1f3 d8f6 b1c3 f8b4 c3d5 f6d6 c2c3 b4a5 d2d4 c7c6 d5e3 e5d4 e3f5 d6c5 b2b4 c5c3 c1d2 c3a3 b4a5 g7g6 f5d4 d7d5 e4e5 c8g4 d1b1 a3e7 f1d3 b8a6 d3a6 b7a6 d4c6 e7c7 f3d4 g4d7 b1c2 a8c8
+go wtime 79199 btime 79136 winc 1000 binc 1000
+
+0.10.pst
+    info score cp 195 depth 5 nps 362541 time 2639 nodes 956761 pv c2c5 d7c6 d4c6 c7c6 c5a7 
+    bestmove c2c5
+0.10.pstLazyEval
+    info currmove c6b8 currmovenumber 18 nodes 1000000 time 1781 nps 561408
+    info score cp 165 depth 6 nps 562340 time 1899 nodes 1068221 pv d2e3 d7c6 c2c6 c7c6 d4c6 c8c6 e3a7 
+    info score cp 195 depth 5 nps 545971 time 2639 nodes 1440820 pv c2c5 d7c6 d4c6 c7c6 c5a7 
+    bestmove c2c5
+
+------------------ from 2024.06.12
+position startpos moves e2e4 e7e5 g1f3 d8f6 b1c3 f8b4 c3d5 f6d6 c2c3 b4a5 d2d4 c7c6 d5e3 e5d4 e3f5 d6c5 b2b4 c5c3 c1d2 c3a3 b4a5 g7g6 f5d4 d7d5 e4e5 c8g4 d1b1 a3e7 f1d3 b8a6 d3a6 b7a6 d4c6 e7c7 f3d4 g4d7 b1c2 a8c8 c2c5 d7c6
+go wtime 77548 btime 77485 winc 1000 binc 1000
+
+0.10.pst
+    info score cp 105 depth 6 nps 409950 time 475 nodes 195044 pv d4c6 c7c6 c5c6 c8c6 d2e3 c6c7 
+    info currmove a1d1 currmovenumber 12 nodes 1000000 time 2565 nps 389803
+    info score cp 180 depth 5 nps 389782 time 2584 nodes 1007334 pv d4c6 c7c6 c5a7 c6b5 a7b6 
+    bestmove d4c6
+0.10.pstLazyEval
+    info score cp 105 depth 6 nps 808884 time 241 nodes 195044 pv d4c6 c7c6 c5c6 c8c6 d2e3 c6c7 
+    info currmove a1d1 currmovenumber 12 nodes 1000000 time 1769 nps 565213
+    info score cp 180 depth 5 nps 537577 time 2592 nodes 1393707 pv d4c6 c7c6 c5a7 c6b5 a7b6 
+    bestmove d4c6
