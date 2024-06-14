@@ -1,0 +1,75 @@
+------------------ from 2024.06.12
+position startpos moves e2e4 e7e5 g1f3 d8f6 b1c3 f8b4 c3d5 f6d6 c2c3 b4a5 d2d4 c7c6 d5e3 e5d4 e3f5 d6c5 b2b4 c5c3 c1d2 c3a3 b4a5 g7g6 f5d4 d7d5 e4e5 c8g4 d1b1 a3e7 f1d3 b8a6 d3a6 b7a6 d4c6 e7c7 f3d4 g4d7 b1c2 a8c8
+go wtime 79199 btime 79136 winc 1000 binc 1000
+
+0.10.pst
+    info score cp 195 depth 5 nps 362541 time 2639 nodes 956761 pv c2c5 d7c6 d4c6 c7c6 c5a7 
+    bestmove c2c5
+0.10.pstLazyEval
+    info currmove c6b8 currmovenumber 18 nodes 1000000 time 1781 nps 561408
+    info score cp 165 depth 6 nps 562340 time 1899 nodes 1068221 pv d2e3 d7c6 c2c6 c7c6 d4c6 c8c6 e3a7 
+    info score cp 195 depth 5 nps 545971 time 2639 nodes 1440820 pv c2c5 d7c6 d4c6 c7c6 c5a7 
+    bestmove c2c5
+
+------------------ from 2024.06.12
+position startpos moves e2e4 e7e5 g1f3 d8f6 b1c3 f8b4 c3d5 f6d6 c2c3 b4a5 d2d4 c7c6 d5e3 e5d4 e3f5 d6c5 b2b4 c5c3 c1d2 c3a3 b4a5 g7g6 f5d4 d7d5 e4e5 c8g4 d1b1 a3e7 f1d3 b8a6 d3a6 b7a6 d4c6 e7c7 f3d4 g4d7 b1c2 a8c8 c2c5 d7c6
+go wtime 77548 btime 77485 winc 1000 binc 1000
+
+0.10.pst
+    info score cp 105 depth 6 nps 409950 time 475 nodes 195044 pv d4c6 c7c6 c5c6 c8c6 d2e3 c6c7 
+    info currmove a1d1 currmovenumber 12 nodes 1000000 time 2565 nps 389803
+    info score cp 180 depth 5 nps 389782 time 2584 nodes 1007334 pv d4c6 c7c6 c5a7 c6b5 a7b6 
+    bestmove d4c6
+0.10.pstLazyEval
+    info score cp 105 depth 6 nps 808884 time 241 nodes 195044 pv d4c6 c7c6 c5c6 c8c6 d2e3 c6c7 
+    info currmove a1d1 currmovenumber 12 nodes 1000000 time 1769 nps 565213
+    info score cp 180 depth 5 nps 537577 time 2592 nodes 1393707 pv d4c6 c7c6 c5a7 c6b5 a7b6 
+    bestmove d4c6
+
+------------------ from 2024.06.14
+position startpos moves d2d4 d7d5 b1c3 g8f6 c1f4 b8c6 c3b5 e7e5 d4e5
+go wtime 109301 btime 108488 winc 1000 binc 1000
+
+0.10.pstLazyEval
+    info score cp 60 depth 5 nps 379844 time 1633 nodes 620427 pv f6e4 a2a3 g7g5 f4e3 c6e5 e3a7 
+    info currmove c8d7 currmovenumber 16 nodes 1000000 time 2561 nps 390431
+    info score cp -5 depth 4 nps 388720 time 3616 nodes 1405888 pv f6e4 g1f3 f8b4 c2c3 
+    bestmove f6e4
+0.9.tunedMaterialScore
+    info score cp -25 depth 5 nps 314530 time 2026 nodes 637347 pv f6e4 c2c3 c8g4 e5e6 f8c5 
+    info currmove a7a6 currmovenumber 7 nodes 1000000 time 3141 nps 318285
+    info score cp -70 depth 4 nps 319810 time 3616 nodes 1156554 pv f6e4 e5e6 f8b4 c2c3 
+    bestmove f6e4
+0.10.pstNoMobility !!!
+    info currmove a7a6 currmovenumber 7 nodes 5000000 time 2698 nps 1852741
+    info currmove a7a6 currmovenumber 7 nodes 6000000 time 3224 nps 1860626
+    info score cp -40 depth 5 nps 1852159 time 3616 nodes 6697555 pv f6h5 e2e3 h5f4 e3f4 c8e6 
+    bestmove f6h5
+
+------------------ from 2024.06.14
+position startpos moves d2d4 d7d5 b1c3 g8f6 c1f4 b8c6 c3b5 e7e5 d4e5 f6e4 e5e6 f8b4 c2c3 b4a5 e6f7 e8f7 f4c7
+go wtime 99149 btime 98366 winc 1000 binc 1000
+
+0.10.pstLazyEval
+    info currmove c6e5 currmovenumber 7 nodes 2000000 time 2590 nps 771960
+    info currmove h7h5 currmovenumber 24 nodes 3000000 time 2931 nps 1023479
+    info score cp -117 depth 6 nps 1135953 time 3280 nodes 3726873 pv d8h4 g2g3 h4h5 c7a5 c6a5 g1f3 
+    bestmove d8h4
+    
+0.9.tunedMaterialScore
+    info depth 6 score cp -165 nps 348391 time 2420 nodes 843115 pv d8h4 d1d5 c8e6 b5d6 f7e7 d5e4 h4e4 d6e4 a5c7 
+    info currmove d8h4 currmovenumber 1 nodes 1000000 time 2940 nps 340127
+    info score cp -165 depth 6 nps 339148 time 3278 nodes 1111937 pv d8h4 d1d5 c8e6 b5d6 f7e7 d5e4 h4e4 d6e4 a5c7 
+    bestmove d8h4
+
+0.10.pstNoMobility (!!!)
+    info currmove e4c3 currmovenumber 2 nodes 6000000 time 2467 nps 2431720
+    info currmove f7e6 currmovenumber 7 nodes 7000000 time 3251 nps 2152708
+    info score cp -94 depth 7 nps 2145669 time 3278 nodes 7034271 pv a5c7 b5c7 e4c3 b2c3 d8c7 d1d5 c8e6 
+    bestmove a5c7
+
+0.10.pstLazyEvalNarrow
+    info currmove c6e5 currmovenumber 7 nodes 2000000 time 2618 nps 763795
+    info currmove h7h5 currmovenumber 24 nodes 3000000 time 2961 nps 1012935
+    info score cp -117 depth 6 nps 1115691 time 3278 nodes 3657534 pv d8h4 g2g3 h4h5 c7a5 c6a5 g1f3
+    bestmove d8h4

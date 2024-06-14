@@ -497,7 +497,7 @@ When returning a terminal node score I've missed an actual return statement. So 
 stalemate score it would returned minus infinity score (formated as mate -49949999). That's one case of silly error that linter
 does not complain about.. Anyway - fixed.
 
-11.09.2024
+11.06.2024
 Tried to apply copyMakeMove again after doing all bugfixes. Great success:
     
     -----------------Magog.0.9.copyMakeMoveBugfixed-----------------
@@ -519,3 +519,40 @@ Another observation. Need to upgrade set of openings used for testing. Currenlty
     1.e4 d5
 
 And it turns out that both King's Pawn games turned into exact same Scandinavian Defenses anyway (2. ..d5)
+
+12.06.2024
+Finetuned material score was better than 0.9 and it is now 0.10.
+Tested it against 0.10.pieceSquaresTable version. 
+    -----------------Magog.0.10.pieceSquare-----------------
+    Magog.0.10.pieceSquare - Magog.0.9.finetunedMaterial : 6,0/14 2-4-8 (=00==1====01=0)  43%   -49
+
+pSqT lost but it showed some nice intuition in the endgames.
+Probably it lost due to smaller raw speed (couldn't match the depth of prev version). Need to confirm.
+Could increase the speed drastically by using Lazy Evaluation (eg. skipping mobility score if score apparently bad - pSq table are good enough replacement-right?)
+
+14.06.2024
+Thinking of writing automated testing framework that would save me some time.
+Rather than playing test games I could build a base of critical positions (positions when engine blundered).
+This data would include both positions and time given for a move - two uci commands)
+Framework could then simply plug engine variants and compare what each of them plays and compare it to reference moves
+obtained from reference engine.
+So by running such test I could quickly have idea how each engine compares to others, is it improving?
+
+14.06.2024 - 2
+Did 2 tournaments.
+First 0.10.pstLazyEval (meaning piece-square-table+lazy evaluation) against 0.10.
+    -----------------Magog.0.10.pstLazyEval-----------------
+    Magog.0.10.pstLazyEval - Magog.0.9.finetunedMaterial : 7,5/14 3-2-9 (=10==1=====1=0)  54%   +28
+
+The lazy eval version did a little better than 0.10! An upgrade. However it does hint more that mobility is eval() is a slow thing.
+
+Then I did a tournament 0.10.pstNoMobility against 0.10. The challenger won decisively!
+    -----------------Magog.0.10.pstNoMobility-----------------
+    Magog.0.10.pstNoMobility - Magog.0.9.finetunedMaterial : 10,0/14 6-0-8 (=111==1====11=)  71%  +156
+
+And few things become apparrent. 
+1. Boost in nps is very important. Most of the games challenger manages to win by either:
+    a. winning material with some tactics and overpower defender.
+    b. winning material with some tactics proceeding to endgame and promoting a pawn
+2. However many of the draws that defender obtained were accomplished by infinite checkmate. So the new version that
+knows nothing about mobility cannot forsee these situations.

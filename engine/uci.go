@@ -63,7 +63,7 @@ func ParseInputLine(inputLine string) {
 
 func setOption(setOptionCommand string) {
 	// So far this func can only set one option. Will upgrade it if needed.
-	
+
 	tokens := strings.Split(setOptionCommand, " ")
 	if len(tokens) != 4 {
 		return

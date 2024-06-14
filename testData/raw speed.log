@@ -1,0 +1,167 @@
+---------------- startpos, go wtime 300000 movestogo 30 ------------------------
+
+magog 0.4
+    info nodes 4500000 time 9502 nps 473577
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 0 depth 4 nodes 4748120 time 9993 nps 475105 
+    bestmove e2e3
+magog 0.6
+    info nodes 4500000 time 9864 nps 456192
+    info pv b1c3 b7b6 g2g3 b6b5 c3b5 score cp 130 depth 5 nodes 4563627 time 10000 nps 456332 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 4563628 time 10000 nps 456332 
+    bestmove e2e3
+magog 0.7-knights list  
+    info nodes 4500000 time 9977 nps 451012
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 4509439 time 10001 nps 450879 
+    bestmove e2e3
+magog 0.8 (copyMakeGlobVar)
+    info nodes 5000000 time 9467 nps 528130
+    info pv a2a3 a7a5 e2e3 e7e5 d1g4 score cp 65 depth 5 nodes 5308412 time 10006 nps 530514 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 5308412 time 10006 nps 530513 
+    bestmove e2e3
+magog 0.9 (copyMake with all fixes)
+    info depth 6 pv e2e3 e7e5 d1g4 h7h5 g4f5 d8f6 score cp 20 nodes 1110947 time 2805 nps 396036 
+    info nodes 2000000 time 5128 nps 389955 currmove e2e3 currmovenumber 1
+    info nodes 3000000 time 7716 nps 388764 currmove e2e3 currmovenumber 1
+    info pv e2e3 e7e5 d1g4 h7h5 g4f5 d8f6 score cp 20 depth 6 nodes 3872784 time 10001 nps 387202 
+    bestmove e2e3
+magog 0.10.pstLazyEval
+    info depth 6 score cp 15 nps 421102 time 2906 nodes 1223783 pv e2e4 d7d5 b1c3 g8f6 d1f3 c8g4 
+    info currmove e2e4 currmovenumber 1 nodes 2000000 time 4835 nps 413615
+    info currmove e2e4 currmovenumber 1 nodes 3000000 time 7328 nps 409346
+    info score cp 50 depth 7 nps 405732 time 8473 nodes 3438082 pv e2e4 b8c6 d2d4 d7d5 e4e5 e7e6 f1b5 
+    info currmove g1f3 currmovenumber 3 nodes 4000000 time 9750 nps 410222
+    info score cp 15 depth 6 nps 410848 time 10000 nodes 4108623 pv e2e4 d7d5 b1c3 g8f6 d1f3 c8g4 
+    bestmove e2e4
+
+machess 1.0-Snapshot
+    info nodes 1603294 pv e2e3 e7e5 d1g4 h7h5 g4f5 d8f6 time 5004 depth 6 nps 320346 score cp 20
+    info nodes 2000000
+    info nodes 2500000
+    info nodes 3000000
+    info pv e2e3 e7e5 d1g4 d8f6 a2a3 f6g6 g4c4 score cp 5 haha
+    nodes evaluateddd 3033094
+    bestmove e2e3
+
+------------------------ startpos, go depth 4
+magog 0.4
+    info nodes 277942
+    bestmove e2e3
+magog 0.6
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 24873 time 66 nps 374080 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 278080 time 652 nps 426236 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 278080 time 653 nps 425569 
+    bestmove e2e3
+magog 0.7
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 24568 time 61 nps 398488 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 276775 time 643 nps 430077 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 276775 time 643 nps 430077 
+    bestmove e2e3
+magog 0.8 (copyMakeGlobVar)
+    info pv e2e3 e7e5 d1g4 score cp 75 depth 3 nodes 9415 time 48 nps 195441 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 25116 time 102 nps 245127 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 278908 time 594 nps 469468 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 278908 time 594 nps 469468
+    bestmove e2e3
+magog 0.9 (copyMake with all fixes)
+    info depth 3 pv e2e3 e7e5 d1g4 score cp 75 nodes 1327 time 9 nps 147411
+    info depth 4 pv e2e3 d7d5 f1b5 c7c6 score cp 25 nodes 9655 time 32 nps 301248 
+    info pv e2e3 d7d5 f1b5 c7c6 score cp 25 depth 4 nodes 9655 time 32 nps 296584
+    bestmove e2e3
+magog 0.10.pstLazyEval
+    info depth 2 score cp 0 nps 54716 time 2 nodes 116 pv e2e4 e7e5 
+    info depth 3 score cp 85 nps 254239 time 7 nodes 1784 pv d2d4 d7d5 d1d3
+    info depth 4 score cp 0 nps 383104 time 41 nodes 15954 pv e2e4 e7e5 d1h5 d8f6 
+    info score cp 0 depth 4 nps 344928 time 46 nodes 15954 pv e2e4 e7e5 d1h5 d8f6 
+    bestmove e2e4
+
+machess 1.0-Snapshot
+    info nodes 11848
+    bestmove e2e3
+
+
+------------------------------ kiwipete (r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1), go depth 3
+magog 0.4
+    info nodes 26500000 time 89019 nps 297688
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 26948101 time 90589 nps 297474 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 0 depth 3 nodes 26948101 time 90589 nps 297474 
+    bestmove e2a6
+
+magog 0.6 (move ordering - captures)
+    info pv e2a6 b4c3 score cp 70 depth 2 nodes 56793 time 269 nps 210939 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 80789 time 371 nps 217547 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 374842 time 1817 nps 206216 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 374842 time 1817 nps 206216
+    bestmove e2a6
+
+magog 0.7 (knights list)
+    info pv e2a6 b4c3 score cp 70 depth 2 nodes 53033 time 234 nps 226489 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 76779 time 337 nps 227795 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 369648 time 1737 nps 212738 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 369648 time 1737 nps 212738 
+    bestmove e2a6
+magog 0.8 (copyMakeGlobVar)
+    info pv e2a6 b4c3 score cp 70 depth 2 nodes 52417 time 178 nps 293601 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 69175 time 241 nps 286970 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 354974 time 1332 nps 266422 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 354974 time 1332 nps 266422
+    bestmove e2a6
+magog 0.9 (copyMake with all fixes)
+    info depth 2 pv e2a6 b4c3 score cp 70 nodes 45170 time 144 nps 311779 
+    info depth 3 pv e2a6 e6d5 c3d5 e7e5 score cp 50 nodes 86292 time 279 nps 308631 
+    info pv e2a6 e6d5 c3d5 e7e5 score cp 50 depth 3 nodes 86292 time 279 nps 308631 
+    bestmove e2a6
+magog 0.10.pstLazyEval
+    info depth 2 score cp 140 nps 351595 time 86 nodes 30330 pv e2a6 b4c3 
+    info depth 3 score cp 105 nps 371408 time 186 nodes 69209 pv e2a6 e6d5 c3d5 e7e5 
+    info score cp 105 depth 3 nps 371408 time 186 nodes 69209 pv e2a6 e6d5 c3d5 e7e5 
+    bestmove e2a6
+
+machess 1.0-Snapshot
+    info nodes 31000000
+    info nodes 31172702 pv e2a6 e6d5 c3d5 e7e5 time 130361 depth 3 nps 239125 score cp 50
+    nodes evaluateddd 31172702
+    bestmove e2a6
+
+
+-------------------- position 8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1, go depth 6
+magog 0.4
+    info nodes 26000000 time 28528 nps 911363
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 depth 6 nodes 26263934 time 28820 nps 911302 
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 0 depth 6 nodes 26263934 time 28820 nps 911302
+    bestmove b4f4
+
+magog 0.6
+    info nodes 27000000 time 31224 nps 864717
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 depth 6 nodes 27381269 time 31665 nps 864697 
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 depth 6 nodes 27381269 time 31666 nps 864666 
+    bestmove b4f4
+
+magog 0.7  (knight list) // no better because no knights in position
+    info nodes 26500000 time 32157 nps 824064
+    info nodes 27000000 time 32761 nps 824142
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 depth 6 nodes 27381269 time 33232 nps 823919 
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 depth 6 nodes 27381269 time 33232 nps 823919 
+    bestmove b4f4
+magog 0.8 (copyMakeGlobVar)    
+    info nodes 27000000 time 26977 nps 1000851
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 depth 6 nodes 27385467 time 27357 nps 1001030 
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 depth 6 nodes 27385467 time 27357 nps 1001030
+    bestmove b4f4
+magog 0.9 (copyMake with all fixes)
+    info depth 4 pv b4f4 h4g3 f4c4 g3g2 c4c7 score cp 95 nodes 5355 time 10 nps 490339
+    info depth 5 pv b4f4 h4g3 f4f7 g3g2 f7c7 score cp 95 nodes 14303 time 22 nps 634560 
+    info depth 6 pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 nodes 55621 time 73 nps 760005 
+    info pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 score cp 85 depth 6 nodes 55621 time 73 nps 760005 
+    bestmove b4f4
+magog 0.10.pstLazyEval
+    info depth 4 score cp 83 nps 426246 time 8 nodes 3771 pv b4f4 h4g3 f4c4 h5f5 c4c7 g3g2
+    info depth 5 score cp 88 nps 678315 time 20 nodes 14130 pv b4f4 h4g3 f4f7 g3g2 f7c7 
+    info depth 6 score cp 46 nps 832533 time 90 nodes 75117 pv b4f4 h4g3 f4f7 h5c5 f7g7 g3f4 
+    info score cp 46 depth 6 nps 832533 time 90 nodes 75117 pv b4f4 h4g3 f4f7 h5c5 f7g7 g3f4 
+    bestmove b4f4
+
+machess 1.0-Snapshot
+    info nodes 88245 pv b4f4 h4g3 f4f7 g3g2 f7c7 h5h4 time 294 depth 6 nps 299660 score cp 85
+    nodes evaluateddd 88245
+    bestmove b4f4
+

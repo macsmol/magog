@@ -136,7 +136,7 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 		if search.interrupted || time.Now().After(endtime) {
 			break
 		}
-		
+
 		if currScore >= beta {
 			return beta
 		}
@@ -144,7 +144,7 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 		}
-		
+
 		select {
 		case <-search.stop:
 			search.interrupted = true
@@ -234,7 +234,7 @@ func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move)
 func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
 	currBestLine *[]Move, startTime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
-	score := Evaluate(aPosGen.getTopPos(), depth)
+	score := LazyEvaluate(aPosGen.getTopPos(), depth)
 
 	if evaluatedNodes%int64(currmoveLogInterval) == 0 {
 		currMoveNo := aPosGen.firstMoveIdx

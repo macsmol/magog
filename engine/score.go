@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"math"
 )
 
 const (
@@ -9,8 +10,11 @@ const (
 	MinusInfinityScore = -InfinityScore
 	LostScore          = -100_000
 	DrawScore          = 0
-	ScoreCloseToMate   = 2 * (9*MaterialQueenScore + 2*MaterialRookScore + 2*
-		MaterialBishopScore + 2*MaterialKnightScore)
+	ScoreCloseToMate   = 2 * (9*MaterialQueenScore + 2*MaterialRookScore +
+		2*MaterialBishopScore + 2*MaterialKnightScore)
+	// used to calc interpolation factor between mid/end game king-square tables
+	StartingSumOfMaterial = 2 * (MaterialQueenScore + 2*MaterialRookScore +
+		2*MaterialBishopScore + 2*MaterialKnightScore)
 )
 
 const (
@@ -23,6 +27,9 @@ const (
 const (
 	MobilityScoreFactor = 5
 )
+
+// controls width of window where full evaluation is done
+const fullEvalScoreMargin = MaterialKnightScore + 20
 
 func pieceToScore(p piece) int {
 	switch p {
@@ -37,41 +44,110 @@ func pieceToScore(p piece) int {
 	case Queen:
 		return MaterialQueenScore
 	case King:
-		// not sure what should return here. Lower numbers would make captures by king preferrable 
+		// not sure what should return here. Lower numbers would make captures by king preferrable
 		// as king only appears as attacker. TODO Test it
 		return 0
 	}
 	return 0
 }
 
-// Returns static evaluation score for Position pos. It's given relative to the currently playing
+// Returns fulll static evaluation score for Position pos. It's given relative to the currently playing
 // side (negamax score)
 func Evaluate(pos *Position, depth int, debug ...bool) int {
-	currentPieces, currentPawns,
-	enemyPieces, enemyPawns := pos.evaluationContext()
+	return LazyEvaluate(pos, depth, debug...)
+}
 
-	currMaterial := materialScore(currentPieces, currentPawns, &pos.board)
-	enemyMaterial := materialScore(enemyPieces, enemyPawns, &pos.board)
-	materialScore := currMaterial - enemyMaterial
-
-	// mobility
-	currentMobilityScore := pos.countMoves() * MobilityScoreFactor
-	if currentMobilityScore == 0 {
-		return terminalNodeScore(pos, depth)
-	}
-	pos.flags = pos.flags ^ FlagWhiteTurn
-	enemyMobilityScore := pos.countMoves() * MobilityScoreFactor
-	pos.flags = pos.flags ^ FlagWhiteTurn
-	mobilityScore := currentMobilityScore - enemyMobilityScore
-
-	if len(debug) > 0 {
-		fmt.Println("currMaterial: ", currMaterial, "; enemyMaterial:", enemyMaterial)
-		fmt.Println("currMobility: ", currentMobilityScore, "; enemyMobility: ", enemyMobilityScore)
-	}
-
-	var score int = materialScore + mobilityScore
+// Returns static evaluation score for Position pos. It's given relative to the currently playingside (negamax score)
+// If the score is outsied <alpha-fullEvalScoreMargin, beta+fullEvalScoreMargin> window it skips costly part of evaluation.
+func LazyEvaluate(pos *Position, depth int, debug ...bool) int {
 	evaluatedNodes++
-	return score
+
+	if isCheckMate(pos) {
+		return LostScore + depth
+	}
+
+	gamePhaseFactor := gamePhaseFactor(pos)
+	materialSquaresScore := pieceSquareScore(pos, gamePhaseFactor, debug...)
+
+	return materialSquaresScore
+}
+
+// (endgame) 0.0 <-------------> 1.0 (opening/midgame)
+func gamePhaseFactor(pos *Position) float64 {
+	whiteMaterial := nonPawnMaterialScore(pos.whitePieces, &pos.board)
+	blackMaterial := nonPawnMaterialScore(pos.blackPieces, &pos.board)
+	gamePhaseFactor := float64(whiteMaterial+blackMaterial) / StartingSumOfMaterial
+	math.Min(gamePhaseFactor, 1.0)
+	return gamePhaseFactor
+}
+
+// piece-square score from the perspective of side to move
+func pieceSquareScore(pos *Position, gamePhaseFactor float64, debug ...bool) int {
+	whiteScore := 0
+	for i := int8(0); i < pos.whitePieces.size; i++ {
+		pieceSquare := pos.whitePieces.squares[i]
+		switch pos.board[pieceSquare] & ColorlessPiece {
+		case Knight:
+			whiteScore += MaterialKnightScore + int(sqTableKnightsWhite[pieceSquare])
+		case Bishop:
+			whiteScore += MaterialBishopScore + int(sqTableBishopsWhite[pieceSquare])
+		case Rook:
+			whiteScore += MaterialRookScore + int(sqTableRooksWhite[pieceSquare])
+		case Queen:
+			whiteScore += MaterialQueenScore + int(sqTableQueensWhite[pieceSquare])
+		}
+	}
+	for i := int8(0); i < pos.whitePawns.size; i++ {
+		whiteScore += MaterialPawnScore + int(sqTablePawnsWhite[pos.whitePawns.squares[i]])
+	}
+	{
+		yMid := float64(sqTableKingMidgameWhite[pos.whiteKing])
+		yEnd := float64(sqTableKingEndgameWhite[pos.whiteKing])
+		kingScore := int(gamePhaseFactor*yMid + (1.0-gamePhaseFactor)*yEnd)
+		// if len(debug) > 0 {
+		// 	fmt.Println("\twhiteKingScore: ", kingScore)
+		// }
+		whiteScore += kingScore
+	}
+
+	blackScore := 0
+	for i := int8(0); i < pos.blackPieces.size; i++ {
+		pieceSquare := pos.blackPieces.squares[i]
+		switch pos.board[pieceSquare] & ColorlessPiece {
+		case Knight:
+			blackScore += MaterialKnightScore + int(sqTableKnightsBlack[pieceSquare])
+		case Bishop:
+			blackScore += MaterialBishopScore + int(sqTableBishopsBlack[pieceSquare])
+		case Rook:
+			blackScore += MaterialRookScore + int(sqTableRooksBlack[pieceSquare])
+		case Queen:
+			blackScore += MaterialQueenScore + int(sqTableQueensBlack[pieceSquare])
+		}
+	}
+	for i := int8(0); i < pos.blackPawns.size; i++ {
+		blackScore += MaterialPawnScore + int(sqTablePawnsBlack[pos.blackPawns.squares[i]])
+	}
+	{
+		yMid := float64(sqTableKingMidgameBlack[pos.blackKing])
+		yEnd := float64(sqTableKingEndgameBlack[pos.blackKing])
+		kingScore := int(gamePhaseFactor*yMid + (1.0-gamePhaseFactor)*yEnd)
+		// if len(debug) > 0 {
+		// 	fmt.Println("\tblackKingScore: ", kingScore)
+		// }
+		blackScore += kingScore
+	}
+
+	score := whiteScore - blackScore
+	negamaxFactor := pos.evaluationContext()
+
+	// if len(debug) > 0 {
+	// 	fmt.Println("whitePieceSquare: ", whiteScore, "; blackPieceSquare:", blackScore, " negamaxFactor: ", negamaxFactor)
+	// }
+	return score * negamaxFactor
+}
+
+func isCheckMate(position *Position) bool {
+	return position.isCurrentKingUnderCheck() && position.countMoves() == 0
 }
 
 func terminalNodeScore(position *Position, depth int) int {
@@ -83,12 +159,11 @@ func terminalNodeScore(position *Position, depth int) int {
 }
 
 func (pos *Position) evaluationContext() (
-	currPieces pieceList, currentPawns pawnList,
-	 enemyPieces pieceList, enemyPawns pawnList) {
+	negamaxFactor int) {
 	if pos.flags&FlagWhiteTurn == 0 {
-		return pos.blackPieces, pos.blackPawns, pos.whitePieces, pos.whitePawns
+		return -1
 	} else {
-		return pos.whitePieces, pos.whitePawns, pos.blackPieces, pos.blackPawns
+		return 1
 	}
 }
 
@@ -102,7 +177,7 @@ func (pos *Position) countMoves() int {
 		currColorBit, enemyColorBit,
 		queensideCastlePossible, kingsideCastlePossible,
 		pawnStartRank, promotionRank := pos.GetCurrentContext()
-	for i := int8(0) ; i < currentPawns.size; i++ {
+	for i := int8(0); i < currentPawns.size; i++ {
 		from := currentPawns.squares[i]
 		// queenside take
 		to := from + square(pawnAdvanceDirection) - 1
@@ -132,7 +207,7 @@ func (pos *Position) countMoves() int {
 			}
 		}
 	}
-	for i := int8(0) ; i < currentPieces.size; i++ {
+	for i := int8(0); i < currentPieces.size; i++ {
 		from := currentPieces.squares[i]
 		piece := pos.board[from]
 		switch piece {
@@ -243,10 +318,9 @@ func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, e
 	return movesCount
 }
 
-
-func materialScore(pieces pieceList, pawns pawnList, board *[128]piece) int {
+func nonPawnMaterialScore(pieces pieceList, board *[128]piece) int {
 	score := 0
-	for i := int8(0) ; i < pieces.size; i++ {
+	for i := int8(0); i < pieces.size; i++ {
 		switch board[pieces.squares[i]] & ColorlessPiece {
 		case Knight:
 			score += MaterialKnightScore
@@ -258,6 +332,5 @@ func materialScore(pieces pieceList, pawns pawnList, board *[128]piece) int {
 			score += MaterialQueenScore
 		}
 	}
-	score += int(pawns.size) * MaterialPawnScore
 	return score
 }
