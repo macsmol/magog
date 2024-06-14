@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.10.pstNoMobility"
+	VERSION_STRING string = "0.10.pstLazyNarrow"
 )
 
 type rank int8
