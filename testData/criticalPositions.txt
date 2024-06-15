@@ -73,3 +73,13 @@ go wtime 99149 btime 98366 winc 1000 binc 1000
     info currmove h7h5 currmovenumber 24 nodes 3000000 time 2961 nps 1012935
     info score cp -117 depth 6 nps 1115691 time 3278 nodes 3657534 pv d8h4 g2g3 h4h5 c7a5 c6a5 g1f3
     bestmove d8h4
+
+------------------ from 2024.06.15
+position startpos moves d2d4 d7d5 b1c3 c8f5 e2e4 d5e4 f1b5 c7c6 b5c4 b7b5 c4b3 b5b4 c3e2 e7e6 e2g3 f8d6 g3f5 e6f5 d1h5 g7g6 h5g5 g8f6 g5h4 e8g8 g1e2 b8d7 c1g5 c6c5 b3d5 a8c8
+go wtime 86228 btime 89843 winc 1000 binc 1000
+
+0.11 (0.10.pstLazyEvalNarrow)
+    info score cp -63 depth 4 nps 450812 time 637 nodes 287281 pv e1d2 c5d4 e2d4 d8a5 
+    info currmove g2g4 currmovenumber 11 nodes 1000000 time 2195 nps 455395
+    info score cp -28 depth 3 nps 456157 time 2888 nodes 1317523 pv e1d2 f8e8 h4h3 c5d4 e2d4 
+    bestmove e1d2

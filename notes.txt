@@ -564,3 +564,35 @@ Turns out that lazy evaluation with narrower window is even better!
 
 You can see that 0.10.pstNoMobility really does not understand the importance of developing.
 Frequently not developing rooks for example.
+
+15.06.2024
+Got the results from the games against Enko and DoctorB. Surprise! 
+It did slightly worse than previous (supposedly weaker) challenger (0.9) few days ago!
+    -----------------Magog.0.11-----------------
+    Magog.0.11 - DoctorB          : 3,0/14 1-9-4 (0=000===000010)  21%  -230
+    Magog.0.11 - EnkoChess_290818 : 1,5/14 1-12-1 (0000000010000=)  11%  -363
+old results for reference:
+    -----------------Magog.0.9-----------------
+    Magog.0.9 - DoctorB           : 3,5/14 2-9-3 (010000=0=001=0)  25%  -191
+    Magog.0.9 - EnkoChess_290818  : 2,0/14 0-10-4 (000000=0=0==00)  14%  -315
+
+15.06.2024 - 2 
+Pit 0.11 vs 0.9. 
+    -----------------Magog.0.11-----------------
+    Magog.0.11 - Magog.0.9        : 7,0/14 3-3-8 (=1==10====1=00)  50%    ±0
+
+Looks like 0.11 isn't upgrade over 0.9 after all.
+More importantly it's apparent that I need more thorough tests - against more opponents.
+This also makes testing with critical positions questionable.
+
+Regarding style of play. All variant of magog are not really good at endings. If some pawn could obviously
+be promoted to win but it's there at the starting rank, on a square that PST is suggesting then this
+pawn will never move.
+Most of the moves in the endings seem rather aimless as soon as the desired result is further than 
+max depth that's attainable.
+
+And one other thing. I need to include added time in move planning. At the moment engine disregards 
+added time and always allocates time for next move by dividing time left by expected_moves_to_be_played
+(by default 30). So now it's time left goes down asymptotically to 30s. At this point all the moves are garbage.
+If it could knew that it has more time then it could keep on playin decently in the crucial part of the game
+when positions are still around equal
