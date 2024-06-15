@@ -39,7 +39,7 @@ func NewSearch() *Search {
 	return pv
 }
 
-func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
+func (search *Search) StartIterativeDeepening(startTime, endTime time.Time, maxDepth int) {
 	if ProfileFile != nil {
 		fmt.Println("starting profiling")
 
@@ -48,16 +48,15 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 	}
 	var bestLine *Line = &Line{}
 	search.interrupted = false
-	startTime := time.Now()
 	evaluatedNodes = 0
 	var bestScore int
 	var depthCompleted int
 
 	for currDepth := 1; currDepth <= maxDepth; currDepth++ {
 		scoreAtDepth, oneLegalMove := search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0],
-			bestLine, startTime, endtime)
+			bestLine, startTime, endTime)
 
-		if time.Now().After(endtime) {
+		if time.Now().After(endTime) {
 			break
 		}
 		if search.interrupted {

@@ -29,8 +29,8 @@ const (
 	uOptionValue string = "value"
 )
 
-// anti 'loose on time' duration in case of some random delays (printing on console, GC kicking in )
-const antiflagMillis int = 40
+// anti 'loose on time' duration in case of some random delays (printing on console, GC kicking in)
+const antiflagMillis int = 20
 
 var posGen *Generator
 var search *Search
@@ -110,6 +110,7 @@ func doPosition(positionCommand string) {
 }
 
 func doGo(goCommand string) {
+	startTime := time.Now()
 	if posGen == nil {
 		return
 	}
@@ -173,15 +174,16 @@ out:
 	}
 	var endtime time.Time
 	if moveTimeMillis != -1 {
-		endtime = time.Now().Add(time.Duration(moveTimeMillis * int(time.Millisecond)))
+		moveTimeMillis -= antiflagMillis
+		endtime = startTime.Add(time.Duration(moveTimeMillis * int(time.Millisecond)))
 	} else {
-		endtime = calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
+		endtime = calcEndtime(startTime, blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
 			fullMovesToGo)
 	}
-	go search.StartIterativeDeepening(endtime, targetDepth)
+	go search.StartIterativeDeepening(startTime, endtime, targetDepth)
 }
 
-func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
+func calcEndtime(startTime time.Time, blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
 	givenMovesToGo int) time.Time {
 	isBlackTurn := posGen.getTopPos().flags&FlagWhiteTurn == 0
 	var millisForMove int
@@ -191,8 +193,7 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 		millisForMove = whiteMillisLeft/givenMovesToGo + whiteMillisIncrement
 	}
 	millisForMove -= antiflagMillis
-	now := time.Now()
-	endtime := now.Add(time.Millisecond * time.Duration(millisForMove))
+	endtime := startTime.Add(time.Millisecond * time.Duration(millisForMove))
 	return endtime
 }
 
