@@ -108,11 +108,11 @@ func (pv *Search) getBestLine() []Move {
 // (TODO - make candidateLine a list of candidate lines - so far it seems to be duplicating
 // work of currBestLine
 func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, beta int,
-	currBestLine *[]Move, candidateLine *Line, startTime, endtime time.Time) int {
+	currBestLine *[]Move, candidateLine *Line, startTime, endTime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
 	if targetDepth == depth {
 		// Evaluate(posGen.pos, depth)
-		return search.quiescence(aPosGen, alpha, beta, depth, currBestLine, startTime)
+		return search.quiescence(aPosGen, alpha, beta, depth, currBestLine, startTime, endTime)
 	}
 
 	moves := aPosGen.GenerateMoves()
@@ -130,10 +130,10 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 		}
 		aPosGen.PushMove(move.mov)
 		currScore := -search.alphaBeta(aPosGen, targetDepth, depth+1, -beta, -alpha, &bestSubline,
-			candidateLine, startTime, endtime)
+			candidateLine, startTime, endTime)
 		aPosGen.PopMove()
 
-		if search.interrupted || time.Now().After(endtime) {
+		if search.interrupted || time.Now().After(endTime) {
 			break
 		}
 
@@ -232,7 +232,7 @@ func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move)
 }
 
 func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
-	currBestLine *[]Move, startTime time.Time) int {
+	currBestLine *[]Move, startTime, endTime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
 	score := LazyEvaluate(aPosGen.getTopPos(), depth, alpha, beta)
 
@@ -259,8 +259,12 @@ func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
 	sortMoves(tacticalMoves)
 	for _, mov := range tacticalMoves {
 		aPosGen.PushMove(mov.mov)
-		score = -search.quiescence(aPosGen, -beta, -alpha, depth+1, &bestSubline, startTime)
+		score = -search.quiescence(aPosGen, -beta, -alpha, depth+1, &bestSubline, startTime, endTime)
 		aPosGen.PopMove()
+
+		if search.interrupted || time.Now().After(endTime) {
+			break
+		}
 
 		if score >= beta {
 			return beta

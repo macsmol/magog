@@ -577,7 +577,7 @@ old results for reference:
     Magog.0.9 - EnkoChess_290818  : 2,0/14 0-10-4 (000000=0=0==00)  14%  -315
 
 15.06.2024 - 2 
-Pit 0.11 vs 0.9. 
+I pit 0.11 against 0.9. 
     -----------------Magog.0.11-----------------
     Magog.0.11 - Magog.0.9        : 7,0/14 3-3-8 (=1==10====1=00)  50%    ±0
 
@@ -596,3 +596,29 @@ added time and always allocates time for next move by dividing time left by expe
 (by default 30). So now it's time left goes down asymptotically to 30s. At this point all the moves are garbage.
 If it could knew that it has more time then it could keep on playin decently in the crucial part of the game
 when positions are still around equal
+
+15.06.2024 - 3
+I pit 0.11.addedTime against others. Looks a little better I guess..
+    -----------------Magog.0.11.addedTime-----------------
+    Magog.0.11.addedTime - DoctorB          : 4,0/14 1-7-6 (=0=0=01===0000)  29%  -156
+    Magog.0.11.addedTime - EnkoChess_290818 : 1,0/14 1-13-0 (00000000010000)   7%  -449
+    Magog.0.11.addedTime - Magog.0.9        : 10,0/14 7-1-6 (1===1111==110=)  71%  +156
+
+It lost one game against DoctorB on time - I forgot to use antiflagDuration.. 
+But at least now the log gives me some idea how big should it be. Looks like it should be 10x bigger than initial guess of 4 ms.
+Timestamps on the left show that magog was 40 millis late.
+
+    2024-06-15 14:07:33,797-->2:go wtime 1 btime 52152 winc 1000 binc 1000
+    [...]
+    2024-06-15 14:07:34,715<--2:info currmove g4f5 currmovenumber 1 nodes 1000000 time 870 nps 1148920
+    2024-06-15 14:07:34,817<--2:info score cp 167 depth 7 nps 1139808 time 1009 nodes 1150405 pv g4f5 d4d6 h2h7 f8g8 h7c7 d6d5 f5e4 
+    2024-06-15 14:07:34,817-->2:stop
+    2024-06-15 14:07:34,837<--2:bestmove g4f5
+    2024-06-15 14:07:34,837*2*---------> Arena:Illegal move!: "bestmove g4f5" ()
+    2024-06-15 14:07:34,837<--2:fatal error: all goroutines are asleep - deadlock!
+    2024-06-15 14:07:34,837****Tour**Game end: 0-1 {0-1 White forfeits on time}
+    2024-06-15 14:07:34,837<--2:goroutine 1 [chan send]:
+    2024-06-15 14:07:34,837<--2:macsmol/magog/engine.ParseInputLine({0xc0003a06c4?, 0xc0000cc02b?})
+    2024-06-15 14:07:34,837****Tour**Last game won by DoctorB with Black in 141 moves
+
+Also I commit basic openings that I use in tournaments for reference.

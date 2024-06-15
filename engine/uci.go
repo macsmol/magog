@@ -29,6 +29,9 @@ const (
 	uOptionValue string = "value"
 )
 
+// anti 'loose on time' duration in case of some random delays (printing on console, GC kicking in )
+const antiflagMillis int = 40
+
 var posGen *Generator
 var search *Search
 var Quit bool
@@ -183,10 +186,11 @@ func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMi
 	isBlackTurn := posGen.getTopPos().flags&FlagWhiteTurn == 0
 	var millisForMove int
 	if isBlackTurn {
-		millisForMove = blackMillisLeft / givenMovesToGo
+		millisForMove = blackMillisLeft/givenMovesToGo + blackMillisIncrement
 	} else {
-		millisForMove = whiteMillisLeft / givenMovesToGo
+		millisForMove = whiteMillisLeft/givenMovesToGo + whiteMillisIncrement
 	}
+	millisForMove -= antiflagMillis
 	now := time.Now()
 	endtime := now.Add(time.Millisecond * time.Duration(millisForMove))
 	return endtime
