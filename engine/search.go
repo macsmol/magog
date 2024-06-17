@@ -39,7 +39,7 @@ func NewSearch() *Search {
 	return pv
 }
 
-func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
+func (search *Search) StartIterativeDeepening(startTime, endTime time.Time, maxDepth int) {
 	if ProfileFile != nil {
 		fmt.Println("starting profiling")
 
@@ -48,43 +48,52 @@ func (search *Search) StartIterativeDeepening(endtime time.Time, maxDepth int) {
 	}
 	var bestLine *Line = &Line{}
 	search.interrupted = false
-	startTime := time.Now()
 	evaluatedNodes = 0
 	var bestScore int
-	var depthCompleted int
+	var depthCompleted int = 1
+	var oneLegalMove bool
 
-	for currDepth := 1; currDepth <= maxDepth; currDepth++ {
-		scoreAtDepth, oneLegalMove := search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0],
-			bestLine, startTime, endtime)
+	// first iteration outside of the loop so that it always returns some result - even at a time pressure.
+	// In extreme case engine would loose on time rather than crash trying to print out nil/uninitialized search result.
+	bestScore, oneLegalMove = search.startAlphaBeta(posGen, 1, &search.bestLineAtDepth[0],
+		bestLine, startTime, endTime)
+	copyBestLine(bestLine, search.bestLineAtDepth[0])
 
-		if time.Now().After(endtime) {
-			break
-		}
-		if search.interrupted {
-			break
-		}
+	if !time.Now().After(endTime) && !search.interrupted && !oneLegalMove {
+		for currDepth := 2; currDepth <= maxDepth; currDepth++ {
+			var scoreAtDepth int
+			scoreAtDepth, oneLegalMove = search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0],
+				bestLine, startTime, endTime)
 
-		copyBestLine(bestLine, search.bestLineAtDepth[0])
-		printInfoAfterDepth(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
-		depthCompleted = currDepth
-		bestScore = scoreAtDepth
+			if time.Now().After(endTime) {
+				break
+			}
+			if search.interrupted {
+				break
+			}
+		
+			copyBestLine(bestLine, search.bestLineAtDepth[0])
+			printInfoAfterDepth(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
+			depthCompleted = currDepth
+			bestScore = scoreAtDepth
 
-		// shortest mating line found - no need to go deeper
-		if pliesToMate(scoreAtDepth) == currDepth {
-			break
-		}
-		// skip deeper searches when only one move is possible
-		if oneLegalMove {
-			break
+			// shortest mating line found - no need to go deeper
+			if pliesToMate(scoreAtDepth) == currDepth {
+				break
+			}
+			// skip deeper searches when only one move is possible
+			if oneLegalMove {
+				break
+			}
 		}
 	}
 	printInfo(bestScore, depthCompleted, bestLine.moves, time.Since(startTime), "")
 	fmt.Println("bestmove", bestLine.moves[0])
 }
 
-func copyBestLine(bestLine *Line, bestLineAtDepth []Move) {
-	bestLine.moves = append(bestLine.moves[:0], bestLineAtDepth...)
-	bestLine.sublineLengthMatched = 0
+func copyBestLine(bestLineDst *Line, bestLineSrc []Move) {
+	bestLineDst.moves = append(bestLineDst.moves[:0], bestLineSrc...)
+	bestLineDst.sublineLengthMatched = 0
 }
 
 func (pv *Search) PVString() string {
@@ -108,11 +117,10 @@ func (pv *Search) getBestLine() []Move {
 // (TODO - make candidateLine a list of candidate lines - so far it seems to be duplicating
 // work of currBestLine
 func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, beta int,
-	currBestLine *[]Move, candidateLine *Line, startTime, endtime time.Time) int {
+	currBestLine *[]Move, candidateLine *Line, startTime, endTime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
 	if targetDepth == depth {
-		// Evaluate(posGen.pos, depth)
-		return search.quiescence(aPosGen, alpha, beta, depth, currBestLine, startTime)
+		return search.quiescence(aPosGen, alpha, beta, depth, currBestLine, startTime, endTime)
 	}
 
 	moves := aPosGen.GenerateMoves()
@@ -130,12 +138,8 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 		}
 		aPosGen.PushMove(move.mov)
 		currScore := -search.alphaBeta(aPosGen, targetDepth, depth+1, -beta, -alpha, &bestSubline,
-			candidateLine, startTime, endtime)
+			candidateLine, startTime, endTime)
 		aPosGen.PopMove()
-
-		if search.interrupted || time.Now().After(endtime) {
-			break
-		}
 
 		if currScore >= beta {
 			return beta
@@ -144,7 +148,9 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 		}
-
+		if search.interrupted || time.Now().After(endTime) {
+			break
+		}
 		select {
 		case <-search.stop:
 			search.interrupted = true
@@ -179,16 +185,15 @@ func (search *Search) startAlphaBeta(aPosGen *Generator, targetDepth int, currBe
 			pvLine, starttime, endtime)
 		aPosGen.PopMove()
 
-		if search.interrupted || time.Now().After(endtime) {
-			break
-		}
-
 		if currScore > alpha {
 			updateBestLine(currBestLine, bestSubline, move.mov)
 			alpha = currScore
 
 			maybePrintNewPvInfo(alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "")
 			// printInfo( alpha, targetDepth, search.getBestLine(), time.Duration(time.Since(starttime)), "in startAB:")
+		}
+		if search.interrupted || time.Now().After(endtime) {
+			break
 		}
 		if nextMoveWins(currScore) {
 			break
@@ -232,7 +237,7 @@ func updateBestLine(currBestLine *[]Move, betterSubline []Move, betterMove Move)
 }
 
 func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
-	currBestLine *[]Move, startTime time.Time) int {
+	currBestLine *[]Move, startTime, endTime time.Time) int {
 	bestSubline := search.bestLineAtDepth[depth+1]
 	score := LazyEvaluate(aPosGen.getTopPos(), depth, alpha, beta)
 
@@ -259,8 +264,12 @@ func (search *Search) quiescence(aPosGen *Generator, alpha, beta, depth int,
 	sortMoves(tacticalMoves)
 	for _, mov := range tacticalMoves {
 		aPosGen.PushMove(mov.mov)
-		score = -search.quiescence(aPosGen, -beta, -alpha, depth+1, &bestSubline, startTime)
+		score = -search.quiescence(aPosGen, -beta, -alpha, depth+1, &bestSubline, startTime, endTime)
 		aPosGen.PopMove()
+
+		if search.interrupted || time.Now().After(endTime) {
+			break
+		}
 
 		if score >= beta {
 			return beta

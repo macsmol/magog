@@ -29,6 +29,9 @@ const (
 	uOptionValue string = "value"
 )
 
+// anti 'loose on time' duration in case of delays (printing on console, GC kicking in, system clock granularity)
+const antiflagMillis int = 50
+
 var posGen *Generator
 var search *Search
 var Quit bool
@@ -107,6 +110,7 @@ func doPosition(positionCommand string) {
 }
 
 func doGo(goCommand string) {
+	startTime := time.Now()
 	if posGen == nil {
 		return
 	}
@@ -170,25 +174,37 @@ out:
 	}
 	var endtime time.Time
 	if moveTimeMillis != -1 {
-		endtime = time.Now().Add(time.Duration(moveTimeMillis * int(time.Millisecond)))
+		moveTimeMillis -= antiflagMillis
+		endtime = startTime.Add(time.Duration(moveTimeMillis * int(time.Millisecond)))
 	} else {
-		endtime = calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
+		endtime = calcEndtime(startTime, blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
 			fullMovesToGo)
 	}
-	go search.StartIterativeDeepening(endtime, targetDepth)
+	go search.StartIterativeDeepening(startTime, endtime, targetDepth)
 }
 
-func calcEndtime(blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
-	givenMovesToGo int) time.Time {
+func calcEndtime(startTime time.Time, blackMillisLeft, blackMillisInc, whiteMillisLeft, whiteMillisInc int,	
+	movesToGo int) time.Time {
 	isBlackTurn := posGen.getTopPos().flags&FlagWhiteTurn == 0
 	var millisForMove int
 	if isBlackTurn {
-		millisForMove = blackMillisLeft / givenMovesToGo
+		if blackMillisLeft > blackMillisInc {
+			millisForMove = blackMillisLeft/movesToGo + blackMillisInc
+		} else {
+			millisForMove = blackMillisLeft
+		}
 	} else {
-		millisForMove = whiteMillisLeft / givenMovesToGo
+		if whiteMillisLeft > whiteMillisInc {
+			millisForMove = whiteMillisLeft/movesToGo + whiteMillisInc
+		} else {
+			millisForMove = whiteMillisLeft
+		}
 	}
-	now := time.Now()
-	endtime := now.Add(time.Millisecond * time.Duration(millisForMove))
+	millisForMove -= antiflagMillis
+	if millisForMove < 1 {
+		millisForMove = 1
+	}
+	endtime := startTime.Add(time.Millisecond * time.Duration(millisForMove))
 	return endtime
 }
 
@@ -211,9 +227,6 @@ func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, deb
 }
 
 func printInfoAfterDepth(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
-	if depth < 2 {
-		return
-	}
 	line := Line{moves: bestLine}
 	fmt.Println("info depth", depth,
 		"score", formatScore(score),

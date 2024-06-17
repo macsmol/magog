@@ -1,0 +1,20 @@
+[Event "1. Kings's Pawn Game"]
+1. e4 e5
+
+[Event "2. Queen's Pawn Game"]
+1.d4 
+
+[Event "3. English Opening"]
+1.c4 
+
+[Event "4. Zukertort Opening"]
+1.Nf3
+
+[Event "5. Scandinavian Defense"]
+1.e4 d5
+
+[Event "6. Sicilian Defense"]
+1.e4 c5
+
+[Event "7. Italian Game"]
+1. e4 e5 2. Nf3 Nc6 3. Bc4

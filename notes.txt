@@ -577,7 +577,7 @@ old results for reference:
     Magog.0.9 - EnkoChess_290818  : 2,0/14 0-10-4 (000000=0=0==00)  14%  -315
 
 15.06.2024 - 2 
-Pit 0.11 vs 0.9. 
+I pit 0.11 against 0.9. 
     -----------------Magog.0.11-----------------
     Magog.0.11 - Magog.0.9        : 7,0/14 3-3-8 (=1==10====1=00)  50%    ±0
 
@@ -596,3 +596,59 @@ added time and always allocates time for next move by dividing time left by expe
 (by default 30). So now it's time left goes down asymptotically to 30s. At this point all the moves are garbage.
 If it could knew that it has more time then it could keep on playin decently in the crucial part of the game
 when positions are still around equal
+
+15.06.2024 - 3
+I pit 0.11.addedTime against others. Looks a little better I guess..
+    -----------------Magog.0.11.addedTime-----------------
+    Magog.0.11.addedTime - DoctorB          : 4,0/14 1-7-6 (=0=0=01===0000)  29%  -156
+    Magog.0.11.addedTime - EnkoChess_290818 : 1,0/14 1-13-0 (00000000010000)   7%  -449
+    Magog.0.11.addedTime - Magog.0.9        : 10,0/14 7-1-6 (1===1111==110=)  71%  +156
+
+It lost one game against DoctorB on time - I forgot to use antiflagDuration.. 
+But at least now the log gives me some idea how big should it be. Looks like it should be 10x bigger than initial guess of 4 ms.
+Timestamps on the left show that magog was 40 millis late.
+
+    2024-06-15 14:07:33,797-->2:go wtime 1 btime 52152 winc 1000 binc 1000
+    [...]
+    2024-06-15 14:07:34,715<--2:info currmove g4f5 currmovenumber 1 nodes 1000000 time 870 nps 1148920
+    2024-06-15 14:07:34,817<--2:info score cp 167 depth 7 nps 1139808 time 1009 nodes 1150405 pv g4f5 d4d6 h2h7 f8g8 h7c7 d6d5 f5e4 
+    2024-06-15 14:07:34,817-->2:stop
+    2024-06-15 14:07:34,837<--2:bestmove g4f5
+    2024-06-15 14:07:34,837*2*---------> Arena:Illegal move!: "bestmove g4f5" ()
+    2024-06-15 14:07:34,837<--2:fatal error: all goroutines are asleep - deadlock!
+    2024-06-15 14:07:34,837****Tour**Game end: 0-1 {0-1 White forfeits on time}
+    2024-06-15 14:07:34,837<--2:goroutine 1 [chan send]:
+    2024-06-15 14:07:34,837<--2:macsmol/magog/engine.ParseInputLine({0xc0003a06c4?, 0xc0000cc02b?})
+    2024-06-15 14:07:34,837****Tour**Last game won by DoctorB with Black in 141 moves
+
+Also I commit basic openings that I use in tournaments for reference.
+
+16.06.2024
+More fixes in time management. Had to do it twice because at one point I've reintroduced bug
+fixed on 29.05.2024. Now it's good and playing stronger than ever!:
+
+    -----------------Magog.0.11.addedTime3-----------------
+    Magog.0.11.addedTime3 - DoctorB          : 5,0/14 2-6-6 (0==0=01===0001)  36%  -100
+    Magog.0.11.addedTime3 - EnkoChess_290818 : 1,5/14 1-12-1 (00000000010=00)  11%  -363
+    Magog.0.11.addedTime3 - Magog.0.9        : 10,0/14 7-1-6 (=1==1111==110=)  71%  +156
+
+But arghh! It still lost on time (against Enko)!
+
+17.06.2024
+When it lost against enko another bug become apparent where magog would crash trying to return nil results (because it didn't find anything in ~1 ms).
+I've factored out the firs loop of iterative deepening so it will always complete and all the timeout checks are only
+done at later stages. 
+Another thing is that looks like Arena has a bug where it sometimes fails to increment wtime by winc. Or it attributes it to other player.
+Not sure exactly. But one thing certain is that in that game Enko was in time trouble (4 consecutive moves with btime=1ms) and then out of thin air it got +1000ms.
+These 5 moves by Enko played with the same tempo (~1015ms according to timestamps in arena.debug).
+OTOH magog was printing bestmove in ~50 ms (according to timestamps in arena.debug) but still got ~200ms less on successive moves until eventually it crashed.
+Will see it gets magical bonus if it does not crash.
+
+17.06.2024 - 2 
+Fixed the crash and looks like it can exploit the same time measuring quirk in Arena. This time it managed a 3-fold repetition because Enko couldn't mate it with pair
+of bishops. Also scores 1.5 point more against DrB than 0.9! By only improving time control.
+    -----------------Magog.0.11.addedTime4-----------------
+    Magog.0.11.addedTime4 - DoctorB          : 5,0/14 2-6-6 (0=00=01===0=01)  36%  -100
+    Magog.0.11.addedTime4 - EnkoChess_290818 : 2,0/14 1-11-2 (00000000010==0)  14%  -315
+    Magog.0.11.addedTime4 - Magog.0.9        : 10,0/14 7-1-6 (=1==1111==110=)  71%  +156
+
