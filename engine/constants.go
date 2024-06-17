@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.11.addedTime2"
+	VERSION_STRING string = "0.11.addedTime3.1"
 )
 
 type rank int8

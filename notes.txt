@@ -622,3 +622,12 @@ Timestamps on the left show that magog was 40 millis late.
     2024-06-15 14:07:34,837****Tour**Last game won by DoctorB with Black in 141 moves
 
 Also I commit basic openings that I use in tournaments for reference.
+
+16.06.2024
+More fixes in time management. Had to do it twice because at one point I've reintroduced bug
+fixed on 29.05.2024. Now it's good and playing stronger than ever!:
+
+    -----------------Magog.0.11.addedTime3-----------------
+    Magog.0.11.addedTime3 - DoctorB          : 5,0/14 2-6-6 (0==0=01===0001)  36%  -100
+    Magog.0.11.addedTime3 - EnkoChess_290818 : 1,5/14 1-12-1 (00000000010=00)  11%  -363
+    Magog.0.11.addedTime3 - Magog.0.9        : 10,0/14 7-1-6 (=1==1111==110=)  71%  +156

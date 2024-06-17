@@ -30,7 +30,7 @@ const (
 )
 
 // anti 'loose on time' duration in case of some random delays (printing on console, GC kicking in)
-const antiflagMillis int = 20
+const antiflagMillis int = 40
 
 var posGen *Generator
 var search *Search
@@ -183,16 +183,27 @@ out:
 	go search.StartIterativeDeepening(startTime, endtime, targetDepth)
 }
 
-func calcEndtime(startTime time.Time, blackMillisLeft, blackMillisIncrement, whiteMillisLeft, whiteMillisIncrement,
-	givenMovesToGo int) time.Time {
+func calcEndtime(startTime time.Time, blackMillisLeft, blackMillisInc, whiteMillisLeft, whiteMillisInc int,	
+	movesToGo int) time.Time {
 	isBlackTurn := posGen.getTopPos().flags&FlagWhiteTurn == 0
 	var millisForMove int
 	if isBlackTurn {
-		millisForMove = blackMillisLeft/givenMovesToGo + blackMillisIncrement
+		if blackMillisLeft > blackMillisInc {
+			millisForMove = blackMillisLeft/movesToGo + blackMillisInc
+		} else {
+			millisForMove = blackMillisLeft
+		}
 	} else {
-		millisForMove = whiteMillisLeft/givenMovesToGo + whiteMillisIncrement
+		if whiteMillisLeft > whiteMillisInc {
+			millisForMove = whiteMillisLeft/movesToGo + whiteMillisInc
+		} else {
+			millisForMove = whiteMillisLeft
+		}
 	}
 	millisForMove -= antiflagMillis
+	if millisForMove < 1 {
+		millisForMove = 1
+	}
 	endtime := startTime.Add(time.Millisecond * time.Duration(millisForMove))
 	return endtime
 }
