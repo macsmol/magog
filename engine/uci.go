@@ -29,8 +29,8 @@ const (
 	uOptionValue string = "value"
 )
 
-// anti 'loose on time' duration in case of some random delays (printing on console, GC kicking in)
-const antiflagMillis int = 40
+// anti 'loose on time' duration in case of delays (printing on console, GC kicking in, system clock granularity)
+const antiflagMillis int = 50
 
 var posGen *Generator
 var search *Search
@@ -227,9 +227,6 @@ func printInfo(score, depth int, bestLine []Move, timeElapsed time.Duration, deb
 }
 
 func printInfoAfterDepth(score, depth int, bestLine []Move, timeElapsed time.Duration, debugSuffix string) {
-	if depth < 2 {
-		return
-	}
 	line := Line{moves: bestLine}
 	fmt.Println("info depth", depth,
 		"score", formatScore(score),

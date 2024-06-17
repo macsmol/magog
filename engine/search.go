@@ -50,40 +50,50 @@ func (search *Search) StartIterativeDeepening(startTime, endTime time.Time, maxD
 	search.interrupted = false
 	evaluatedNodes = 0
 	var bestScore int
-	var depthCompleted int
+	var depthCompleted int = 1
+	var oneLegalMove bool
 
-	for currDepth := 1; currDepth <= maxDepth; currDepth++ {
-		scoreAtDepth, oneLegalMove := search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0],
-			bestLine, startTime, endTime)
+	// first iteration outside of the loop so that it always returns some result - even at a time pressure.
+	// In extreme case engine would loose on time rather than crash trying to print out nil/uninitialized search result.
+	bestScore, oneLegalMove = search.startAlphaBeta(posGen, 1, &search.bestLineAtDepth[0],
+		bestLine, startTime, endTime)
+	copyBestLine(bestLine, search.bestLineAtDepth[0])
 
-		if time.Now().After(endTime) {
-			break
-		}
-		if search.interrupted {
-			break
-		}
+	if !time.Now().After(endTime) && !search.interrupted && !oneLegalMove {
+		for currDepth := 2; currDepth <= maxDepth; currDepth++ {
+			var scoreAtDepth int
+			scoreAtDepth, oneLegalMove = search.startAlphaBeta(posGen, currDepth, &search.bestLineAtDepth[0],
+				bestLine, startTime, endTime)
 
-		copyBestLine(bestLine, search.bestLineAtDepth[0])
-		printInfoAfterDepth(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
-		depthCompleted = currDepth
-		bestScore = scoreAtDepth
+			if time.Now().After(endTime) {
+				break
+			}
+			if search.interrupted {
+				break
+			}
+		
+			copyBestLine(bestLine, search.bestLineAtDepth[0])
+			printInfoAfterDepth(scoreAtDepth, currDepth, bestLine.moves, time.Since(startTime), "")
+			depthCompleted = currDepth
+			bestScore = scoreAtDepth
 
-		// shortest mating line found - no need to go deeper
-		if pliesToMate(scoreAtDepth) == currDepth {
-			break
-		}
-		// skip deeper searches when only one move is possible
-		if oneLegalMove {
-			break
+			// shortest mating line found - no need to go deeper
+			if pliesToMate(scoreAtDepth) == currDepth {
+				break
+			}
+			// skip deeper searches when only one move is possible
+			if oneLegalMove {
+				break
+			}
 		}
 	}
 	printInfo(bestScore, depthCompleted, bestLine.moves, time.Since(startTime), "")
 	fmt.Println("bestmove", bestLine.moves[0])
 }
 
-func copyBestLine(bestLine *Line, bestLineAtDepth []Move) {
-	bestLine.moves = append(bestLine.moves[:0], bestLineAtDepth...)
-	bestLine.sublineLengthMatched = 0
+func copyBestLine(bestLineDst *Line, bestLineSrc []Move) {
+	bestLineDst.moves = append(bestLineDst.moves[:0], bestLineSrc...)
+	bestLineDst.sublineLengthMatched = 0
 }
 
 func (pv *Search) PVString() string {
