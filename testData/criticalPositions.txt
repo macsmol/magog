@@ -58,6 +58,22 @@ go wtime 109301 btime 108488 winc 1000 binc 1000
     info score cp 60 depth 5 nps 389869 time 4566 nodes 1780529 pv f6e4 a2a3 g7g5 f4e3 c6e5 e3a7 
     bestmove f6e4
 
+0.12.killerMoves - blunder! :(
+    info depth 2 score cp -5 nps 173380 time 3 nodes 594 pv f8b4 c2c3 
+    info depth 3 score cp 60 nps 345550 time 18 nodes 6232 pv f6e4 a2a3 c8g4
+    info depth 4 score cp -5 nps 368143 time 113 nodes 41951 pv f6e4 g1f3 f8b4 c2c3 
+    info score cp 60 depth 5 nps 383073 time 429 nodes 164344 pv f6e4 a2a3 g7g5 f4e3 c6e5 e3a7 
+    info depth 5 score cp 60 nps 439122 time 528 nodes 231863 pv f6e4 a2a3 g7g5 f4e3 c6e5 e3a7 
+    info score cp -17 depth 6 nps 426186 time 1382 nodes 589210 pv f6e4 e5e6 f8b4 c2c3 b4a5 b5c7 a5c7 e6f7 e8f7 f4c7 
+    info currmove f6h5 currmovenumber 33 nodes 1000000 time 2228 nps 448782
+    info depth 6 score cp -17 nps 448757 time 2279 nodes 1022840 pv f6e4 e5e6 f8b4 c2c3 b4a5 b5c7 a5c7 e6f7 e8f7 f4c7
+    info score cp -143 depth 7 nps 456100 time 3727 nodes 1700118 pv f6e4 d1d5 c8f5 d5d8 e8d8 a1d1 d8c8
+    info currmove a7a6 currmovenumber 7 nodes 2000000 time 4237 nps 471975
+    info score cp -35 depth 7 nps 478991 time 4481 nodes 2146365 pv a7a6 b5c3 f6h5 f4c1 d5d4 e2e4 f8b4
+    info score cp -15 depth 7 nps 477452 time 4566 nodes 2180055 pv g7g5 e5f6 g5f4 a2a3 c8f5 e2e3 a7a6
+    info score cp -17 depth 6 nps 477452 time 4566 nodes 2180055 pv f6e4 e5e6 f8b4 c2c3 b4a5 b5c7 a5c7 e6f7 e8f7 f4c7
+    bestmove f6e4
+
 ------------------ from 2024.06.14
 position startpos moves d2d4 d7d5 b1c3 g8f6 c1f4 b8c6 c3b5 e7e5 d4e5 f6e4 e5e6 f8b4 c2c3 b4a5 e6f7 e8f7 f4c7
 go wtime 99149 btime 98366 winc 1000 binc 1000
@@ -104,6 +120,24 @@ go wtime 99149 btime 98366 winc 1000 binc 1000
     info score cp -152 depth 8 nps 1219721 time 4228 nodes 5158054 pv a5c7 b5c7 a8b8 c7d5 h7h5 c3c4 b7b5 a1c1 
     info score cp -59 depth 7 nps 1219721 time 4228 nodes 5158054 pv a5c7 b5c7 e4c3 b2c3 d8c7 d1d5 c8e6 
     bestmove a5c7
+0.12.killerMoves (0.13?) 
+    info depth 2 score cp -7 nps 231393 time 5 nodes 1340 pv a5c7 b5c7 
+    info depth 3 score cp -40 nps 428533 time 15 nodes 6449 pv a5b6 e2e3 d8g5
+    info depth 4 score cp -51 nps 547819 time 41 nodes 22551 pv a5c7 b5c7 d8c7 d1d5 
+    info depth 5 score cp -95 nps 1081350 time 116 nodes 125734 pv a5c7 b5c7 e4f2 e1f2 d8h4 
+    info score cp -117 depth 6 nps 868889 time 361 nodes 314346 pv d8h4 g2g3 h4h5 c7a5 c6a5 g1f3 
+    info depth 6 score cp -117 nps 913291 time 730 nodes 667414 pv d8h4 g2g3 h4h5 c7a5 c6a5 g1f3 
+    info currmove d8h4 currmovenumber 1 nodes 1000000 time 1239 nps 806918
+    info score cp -137 depth 7 nps 743605 time 1563 nodes 1162878 pv d8h4 g2g3 h4e7 d1d5 c8e6 d5e4 a5c7 
+    info score cp -59 depth 7 nps 767209 time 1829 nodes 1403869 pv a5c7 b5c7 e4c3 b2c3 d8c7 d1d5 c8e6
+    info currmove c8e6 currmovenumber 15 nodes 2000000 time 1998 nps 1000820
+    info currmove d8g5 currmovenumber 27 nodes 3000000 time 2409 nps 1245207
+    info currmove h8f8 currmovenumber 42 nodes 4000000 time 2786 nps 1435375
+    info depth 7 score cp -59 nps 1499887 time 2869 nodes 4304267 pv a5c7 b5c7 e4c3 b2c3 d8c7 d1d5 c8e6 //  nodes at d=7 !!!
+    info currmove a5c7 currmovenumber 1 nodes 5000000 time 3866 nps 1293249
+    info score cp -396 depth 8 nps 1270440 time 4228 nodes 5371714 pv a5c7 a1c1 e4c3 c1c3 c7h2 h1h2 c8e6 c3f3
+    info score cp -59 depth 7 nps 1270440 time 4228 nodes 5371714 pv a5c7 b5c7 e4c3 b2c3 d8c7 d1d5 c8e6
+    bestmove a5c7
 
 ------------------ from 2024.06.15
 position startpos moves d2d4 d7d5 b1c3 c8f5 e2e4 d5e4 f1b5 c7c6 b5c4 b7b5 c4b3 b5b4 c3e2 e7e6 e2g3 f8d6 g3f5 e6f5 d1h5 g7g6 h5g5 g8f6 g5h4 e8g8 g1e2 b8d7 c1g5 c6c5 b3d5 a8c8
@@ -115,7 +149,7 @@ go wtime 86228 btime 89843 winc 1000 binc 1000
     info score cp -28 depth 3 nps 456157 time 2888 nodes 1317523 pv e1d2 f8e8 h4h3 c5d4 e2d4 
     bestmove e1d2
 
-0.12(time control with increment)
+0.12 (time control with increment)
     info depth 2 score cp -36 nps 451134 time 179 nodes 80865 pv d5b7 c8b8 
     info score cp -28 depth 3 nps 455827 time 413 nodes 188370 pv e1d2 f8e8 h4h3 c5d4 e2d4 
     info depth 3 score cp -28 nps 454649 time 425 nodes 193339 pv e1d2 f8e8 h4h3 c5d4 e2d4 
@@ -124,3 +158,13 @@ go wtime 86228 btime 89843 winc 1000 binc 1000
     info score cp -51 depth 4 nps 441506 time 3824 nodes 1688439 pv a2a3 a7a6 f2f3 h7h6
     info score cp -28 depth 3 nps 441506 time 3824 nodes 1688439 pv e1d2 f8e8 h4h3 c5d4 e2d4
     bestmove e1d2
+0.12.killerMoves (0.13?) !!!
+    info depth 3 score cp -28 nps 392009 time 89 nodes 35226 pv e1d2 f8e8 h4h3 c5d4 e2d4 
+    info score cp -51 depth 4 nps 448645 time 602 nodes 270427 pv d5b7 c8b8 d4c5 d6c5 
+    info depth 4 score cp -51 nps 450087 time 753 nodes 339259 pv d5b7 c8b8 d4c5 d6c5 
+    info score cp -41 depth 5 nps 450965 time 830 nodes 374644 pv d5b7 c8b8 d4c5 d6c5 b7d5
+    info depth 5 score cp -41 nps 516024 time 1604 nodes 828189 pv d5b7 c8b8 d4c5 d6c5 b7d5
+    info currmove d5b7 currmovenumber 1 nodes 1000000 time 1956 nps 511223
+    info score cp -66 depth 6 nps 519035 time 2024 nodes 1050988 pv d5b7 c8b8 b7d5 c5d4 e2d4 d8a5
+    info score cp -41 depth 5 nps 492390 time 3824 nodes 1883251 pv d5b7 c8b8 d4c5 d6c5 b7d5
+    bestmove d5b7

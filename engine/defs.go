@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.12"
+	VERSION_STRING string = "0.12.killerMoves"
 )
 
 type rank int8

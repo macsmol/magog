@@ -14,13 +14,23 @@ type Move struct {
 // in alphaBeta search moves are taken starting from the highest ranking
 type rankedMove struct {
 	mov     Move
-	ranking int
+	ranking int16
+	flags   byte
 }
 
-// ranking bonud for move that is on line returned by previous iteration of iterative deepening
 const (
-	rankingBonusPvMove  = 20000
-	rankingBonusCapture = 1000
+	// set for move that changes material (is capture or promotion)
+	mFlagTactical byte = 1 << iota
+)
+
+// ranking bonud for move that is on line returned by previous iteration of iterative deepening
+// TODO there's some overlap between some sacrificing captures and killer moves.. run some games to fine-tune it
+// Watch out for overlflow - rankedMove.rakning is int16!
+const (
+	rankingBonusPvMove    int16 = 10000
+	rankingBonusTactical  int16 = 9000
+	rankingBonusKiller1st int16 = 8000
+	rankingBonusKiller2nd       = 7000
 )
 
 type Generator struct {
@@ -29,7 +39,7 @@ type Generator struct {
 	// indexed [plyIdx][moveIdx]
 	movStack [][]rankedMove
 	// ply meaning turn of one side AKA half move
-	plyIdx       int16
+	plyIdx int16
 	//index of the first move in currently searched line (so it can be print in quiescence search)
 	firstMoveIdx int
 }
@@ -271,11 +281,11 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		//pushes
 		to = from + square(pawnAdvanceDirection)
 		if pos.board[to] == NullPiece {
-			appendPawnPushes(from, to, promotionRank, outputMoves)
+			appendPawnPushes(from, to, promotionRank, pos.ply, outputMoves)
 			enPassantSquare := to
 			to = to + square(pawnAdvanceDirection)
 			if from.getRank() == pawnStartRank && pos.board[to] == NullPiece {
-				*outputMoves = append(*outputMoves, rankedMove{Move{from, to, NullPiece, enPassantSquare}, 0})
+				*outputMoves = append(*outputMoves, rankedMove{Move{from, to, NullPiece, enPassantSquare}, 0, 0})
 			}
 		}
 	}
@@ -345,22 +355,33 @@ func appendRankedMoveOrCapture(outputMoves *[]rankedMove, from, to square, pos *
 	mov := NewMove(from, to)
 	attacked := pos.board[mov.to] & ColorlessPiece
 	if attacked == NullPiece {
-		*outputMoves = append(*outputMoves, rankedMove{mov, 0})
+		*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, pos.ply), 0})
 		return
 	}
 	attacker := pos.board[mov.from] & ColorlessPiece
+	captureRanking := int16(pieceToScore(attacked) - pieceToScore(attacker)) + rankingBonusTactical
 	*outputMoves = append(*outputMoves,
-		rankedMove{mov, pieceToScore(attacked) - pieceToScore(attacker) + rankingBonusCapture})
+		rankedMove{mov, captureRanking, mFlagTactical})
 }
 
-func appendRankedMove(outputMoves *[]rankedMove, from, to square, attacker, attacked piece) {
+func appendRankedMove(outputMoves *[]rankedMove, from, to square, attacker, attacked piece, ply int16) {
 	mov := NewMove(from, to)
 	if attacked == NullPiece {
-		*outputMoves = append(*outputMoves, rankedMove{mov, 0})
+		*outputMoves = append(*outputMoves, rankedMove{mov, 0, 0})
 		return
 	}
-	*outputMoves = append(*outputMoves,
-		rankedMove{mov, pieceToScore(attacked) - pieceToScore(attacker) + rankingBonusCapture})
+	captureRanking := int16(pieceToScore(attacked) - pieceToScore(attacker)) + rankingBonusTactical
+	*outputMoves = append(*outputMoves,	rankedMove{mov, captureRanking, mFlagTactical})
+}
+
+func probeKillerMoves(mov Move, ply int16) int16 {
+	killers := killerMoves[ply]
+	if mov == killers[0] {
+		return rankingBonusKiller1st
+	} else if mov == killers [1] {
+		return rankingBonusKiller2nd
+	}
+	return 0
 }
 
 func (gen *Generator) generatePseudoLegalTacticalMoves() {
@@ -395,7 +416,7 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 		// promoting pushes
 		to = from + square(pawnAdvanceDirection)
 		if pos.board[to] == NullPiece && to.getRank() == promotionRank {
-			appendPawnPushes(from, to, promotionRank, outputMoves)
+			appendPawnPushes(from, to, promotionRank, gen.getTopPos().ply, outputMoves)
 		}
 	}
 	for i := int8(0); i < currentPieces.size; i++ {
@@ -407,7 +428,7 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
-					appendRankedMove(outputMoves, from, to, Knight, pos.board[to]&ColorlessPiece)
+					appendRankedMove(outputMoves, from, to, Knight, pos.board[to]&ColorlessPiece, pos.ply)
 				}
 			}
 		case WBishop, BBishop:
@@ -501,34 +522,40 @@ func (gen *Generator) String() string {
 	return gen.getTopPos().String()
 }
 
-func appendPawnPushes(from, to square, promotionRank rank, outputMoves *[]rankedMove) {
+func appendPawnPushes(from, to square, promotionRank rank, ply int16, outputMoves *[]rankedMove) {
 	if to.getRank() == promotionRank {
+		var commonPart int16 = rankingBonusTactical - MaterialPawnScore
 		*outputMoves = append(*outputMoves,
-			rankedMove{NewPromotionMove(from, to, Queen), MaterialQueenScore - MaterialPawnScore},
-			rankedMove{NewPromotionMove(from, to, Rook), MaterialRookScore - MaterialPawnScore},
-			rankedMove{NewPromotionMove(from, to, Bishop), MaterialBishopScore - MaterialPawnScore},
-			rankedMove{NewPromotionMove(from, to, Knight), MaterialKnightScore - MaterialPawnScore},
+			rankedMove{NewPromotionMove(from, to, Queen), MaterialQueenScore + commonPart, mFlagTactical},
+			rankedMove{NewPromotionMove(from, to, Rook), MaterialRookScore + commonPart, mFlagTactical},
+			rankedMove{NewPromotionMove(from, to, Bishop), MaterialBishopScore + commonPart, mFlagTactical},
+			rankedMove{NewPromotionMove(from, to, Knight), MaterialKnightScore + commonPart, mFlagTactical},
 		)
 	} else {
-		*outputMoves = append(*outputMoves, rankedMove{NewMove(from, to), 0})
+		mov := NewMove(from, to)
+		killers := killerMoves[ply]
+		var moveRanking int16 = 0
+		if mov == killers[0] {
+			moveRanking = rankingBonusKiller1st
+		} else if mov == killers [1] {
+			moveRanking = rankingBonusKiller2nd
+		}
+		*outputMoves = append(*outputMoves, rankedMove{mov, moveRanking, 0})
 	}
 }
 
 func (pos *Position) appendPawnCaptures(from, to square, promotionRank rank, captured piece, outputMoves *[]rankedMove) {
-	captureRanking := pieceToScore(captured) - MaterialPawnScore
+	captureRanking := int16(pieceToScore(captured)-MaterialPawnScore) + rankingBonusTactical
 	if to.getRank() == promotionRank {
+		var promoCaptureRanking int16 = captureRanking - MaterialPawnScore
 		*outputMoves = append(*outputMoves,
-			rankedMove{NewPromotionMove(from, to, Queen), rankingBonusCapture + captureRanking +
-				MaterialQueenScore - MaterialPawnScore},
-			rankedMove{NewPromotionMove(from, to, Rook), rankingBonusCapture + captureRanking +
-				MaterialRookScore - MaterialPawnScore},
-			rankedMove{NewPromotionMove(from, to, Bishop), rankingBonusCapture + captureRanking +
-				MaterialBishopScore - MaterialPawnScore},
-			rankedMove{NewPromotionMove(from, to, Knight), rankingBonusCapture + captureRanking +
-				MaterialKnightScore - MaterialPawnScore},
+			rankedMove{NewPromotionMove(from, to, Queen), MaterialQueenScore + promoCaptureRanking, mFlagTactical},
+			rankedMove{NewPromotionMove(from, to, Rook), MaterialRookScore + promoCaptureRanking, mFlagTactical},
+			rankedMove{NewPromotionMove(from, to, Bishop), MaterialBishopScore + promoCaptureRanking, mFlagTactical},
+			rankedMove{NewPromotionMove(from, to, Knight), MaterialKnightScore + promoCaptureRanking, mFlagTactical},
 		)
 	} else {
-		*outputMoves = append(*outputMoves, rankedMove{NewMove(from, to), captureRanking})
+		*outputMoves = append(*outputMoves, rankedMove{NewMove(from, to), captureRanking, mFlagTactical})
 	}
 }
 
@@ -540,7 +567,7 @@ func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyCol
 			if toContent&currColorBit != 0 {
 				break
 			}
-			appendRankedMove(outputMoves, from, to, attacker, toContent&ColorlessPiece)
+			appendRankedMove(outputMoves, from, to, attacker, toContent&ColorlessPiece, pos.ply)
 			if toContent&enemyColorBit != 0 {
 				break
 			}
@@ -557,7 +584,7 @@ func (pos *Position) appendSlidingPieceTacticalMoves(from square, currColorBit, 
 			}
 			if toContent&enemyColorBit != 0 {
 				appendRankedMove(outputMoves, from, to, pos.board[from]&ColorlessPiece,
-					toContent&ColorlessPiece)
+					toContent&ColorlessPiece, pos.ply)
 				break
 			}
 		}
