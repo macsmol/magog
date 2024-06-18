@@ -65,6 +65,8 @@ type Position struct {
 	whiteKing    square
 	flags        byte
 	enPassSquare square
+	// zero based halfmove counter
+	ply			 int16
 }
 
 // used for position.flags
@@ -125,7 +127,7 @@ func (pos *Position) String() string {
 		pos.flags&FlagWhiteCanCastleKside != 0,
 		pos.flags&FlagWhiteTurn != 0)
 	sb.WriteString(fmt.Sprintf("WhiteKing: %v; WhitePieces: %v; WhitePawns: %v\n", pos.whiteKing, pos.whitePieces, pos.whitePawns))
-	sb.WriteString(fmt.Sprintf("En passant square: %v", pos.enPassSquare))
+	sb.WriteString(fmt.Sprintf("En passant square: %v; ply: %d", pos.enPassSquare, pos.ply))
 	return sb.String()
 }
 
@@ -201,6 +203,8 @@ func (pos *Position) MakeMove(mov Move) (isLegal bool) {
 		enemyCastleRank, enemyKingSideCastleFlag, enemyQueenSideCastleFlag,
 		currColorBit, enemyColorBit := pos.getCurrentMakeMoveContext()
 	// pos.AssertConsistency("make" + mov.String())
+	pos.ply++
+
 	// one of thre possibilities - pawn move, king move, other piece move
 	if pos.board[mov.from] == Pawn|currColorBit {
 		// normal move - just update entry
