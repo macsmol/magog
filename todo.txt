@@ -4,6 +4,7 @@
         -square-piece weights
             -incremental?
 -better readme.md
+-fen export
 -submit to CCRL
 
 
