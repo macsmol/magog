@@ -4,7 +4,6 @@
         -square-piece weights
             -incremental?
 -better readme.md
--interrupt in quiescence search
 -submit to CCRL
 
 
