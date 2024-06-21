@@ -107,6 +107,11 @@ func doPosition(positionCommand string) {
 			posGen.ApplyUciMove(parseMoveString(moveStr))
 		}
 	}
+	//clear killer moves
+	for _, killers := range killerMoves {
+		killers[0] = Move{}
+		killers[1] = Move{}
+	}
 }
 
 func doGo(goCommand string) {
@@ -183,7 +188,7 @@ out:
 	go search.StartIterativeDeepening(startTime, endtime, targetDepth)
 }
 
-func calcEndtime(startTime time.Time, blackMillisLeft, blackMillisInc, whiteMillisLeft, whiteMillisInc int,	
+func calcEndtime(startTime time.Time, blackMillisLeft, blackMillisInc, whiteMillisLeft, whiteMillisInc int,
 	movesToGo int) time.Time {
 	isBlackTurn := posGen.getTopPos().flags&FlagWhiteTurn == 0
 	var millisForMove int

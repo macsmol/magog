@@ -26,6 +26,8 @@ type Search struct {
 	stop            chan bool
 	interrupted     bool
 }
+// killerMoves [ply][]
+var  killerMoves [][2]Move = make([][2]Move, killerMovesMaxPly)
 
 var evaluatedNodes int64
 var ProfileFile *os.File
@@ -142,6 +144,9 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 		aPosGen.PopMove()
 
 		if currScore >= beta {
+			if move.flags & mFlagTactical == 0 {
+				updateKillerMoves(aPosGen.getTopPos().ply, move.mov)
+			}
 			return beta
 		}
 		if currScore > alpha {
@@ -159,6 +164,11 @@ func (search *Search) alphaBeta(aPosGen *Generator, targetDepth, depth, alpha, b
 	}
 
 	return alpha
+}
+
+func updateKillerMoves(currPly int16, move Move) {
+	killerMoves[currPly][1] = killerMoves[currPly][0]
+	killerMoves[currPly][0] = move
 }
 
 func (search *Search) startAlphaBeta(aPosGen *Generator, targetDepth int, currBestLine *[]Move,
@@ -226,7 +236,7 @@ func sortMoves(moves []rankedMove) {
 	slices.SortFunc(moves,
 		//desc sort by ranking
 		func(a, b rankedMove) int {
-			return b.ranking - a.ranking
+			return int(b.ranking - a.ranking)
 		})
 }
 

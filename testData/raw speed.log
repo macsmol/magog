@@ -32,6 +32,19 @@ magog 0.10.pstLazyEval
     info currmove g1f3 currmovenumber 3 nodes 4000000 time 9750 nps 410222
     info score cp 15 depth 6 nps 410848 time 10000 nodes 4108623 pv e2e4 d7d5 b1c3 g8f6 d1f3 c8g4 
     bestmove e2e4
+magog 0.12.killerMoves
+    info depth 6 score cp 15 nps 403971 time 403 nodes 162838 pv e2e4 e7e5 b1c3 b8c6 d1h5 d8f6
+    info score cp 50 depth 7 nps 411749 time 1006 nodes 414516 pv e2e4 b8c6 b1c3 e7e5 g1f3 f8c5 f1c4
+    info score cp 65 depth 7 nps 432130 time 2195 nodes 948744 pv d2d4 d7d5 b1c3 b8c6 c1f4 c8f5 g1f3
+    info currmove e2e3 currmovenumber 9 nodes 1000000 time 2305 nps 433744
+    info depth 7 score cp 65 nps 453445 time 2995 nodes 1358073 pv d2d4 d7d5 b1c3 b8c6 c1f4 c8f5 g1f3
+    info currmove d2d4 currmovenumber 1 nodes 2000000 time 4498 nps 444640
+    info score cp 0 depth 8 nps 455265 time 6291 nodes 2864316 pv d2d4 d7d5 b1c3 g8f6 g1f3 b8c6 c1f4 c8f5
+    info currmove g1f3 currmovenumber 3 nodes 3000000 time 6621 nps 453100
+    info currmove e2e4 currmovenumber 4 nodes 4000000 time 9099 nps 439581
+    info score cp 5 depth 8 nps 437175 time 9950 nodes 4349926 pv c2c4 c7c6 b1c3 d8a5 e2e3 g8f6 d1a4 a5a4 c3a4
+    info score cp 65 depth 7 nps 437175 time 9950 nodes 4349926 pv d2d4 d7d5 b1c3 b8c6 c1f4 c8f5 g1f3
+    bestmove d2d4
 
 machess 1.0-Snapshot
     info nodes 1603294 pv e2e3 e7e5 d1g4 h7h5 g4f5 d8f6 time 5004 depth 6 nps 320346 score cp 20

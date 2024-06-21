@@ -1,17 +1,19 @@
 1.0:
--beat DrB
-    -better evaluation
-        -square-piece weights
-            -incremental?
 -better readme.md
 -submit to CCRL
 
 
     
 
-promising (2.0?):
+2.0:
 -0x88 board with padding for faster sliders movegen: https://www.talkchess.com/forum/viewtopic.php?t=62279&sid=c7b5a5b1b3297382937208ab995ba79d
 -better time management (large fraction of preallocated time wasted in opening and midgame due to large branching factor in iterative deepening)
+-fen export
+-useful/fun position transformations from commandline:  
+    -flip colors.
+    -flip vertically
+    -flip horizontally
+    -make null move?
 
 rathole:
 -faster/specialized (when in check, in doublecheck, pinned) movegen

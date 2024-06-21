@@ -2,6 +2,7 @@ package engine
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -65,7 +66,7 @@ func NewPositionFromFen(fen string) (Position, error) {
 	if turnStr == "w" {
 		pos.flags |= FlagWhiteTurn
 	} else if turnStr != "b" {
-		return Position{}, fmt.Errorf("'side to move' is neither 'b' or 'w' : %v", turnStr)
+		return Position{}, fmt.Errorf("'side to move' is neither 'b' or 'w': %v", turnStr)
 	}
 
 	castleStr := fields[2]
@@ -84,12 +85,12 @@ func NewPositionFromFen(fen string) (Position, error) {
 
 	enPassantStr := fields[3]
 	if len(enPassantStr) > 2 {
-		return Position{}, fmt.Errorf("invalid en passant square %v", enPassantStr)
+		return Position{}, fmt.Errorf("invalid en passant square: %v", enPassantStr)
 	} else if len(enPassantStr) == 2 {
 		fileChar := enPassantStr[0]
 		rankChar := enPassantStr[1]
 		if fileChar < 'a' || fileChar > 'h' || (rankChar != '3' && rankChar != '6') {
-			return Position{}, fmt.Errorf("invalid en passant square %v", enPassantStr)
+			return Position{}, fmt.Errorf("invalid en passant square: %v", enPassantStr)
 		}
 		file := fileChar - 'a'
 		rank := (rankChar - '1') << 4
@@ -98,7 +99,22 @@ func NewPositionFromFen(fen string) (Position, error) {
 
 	//TODO read rest of the fields
 	// halfmoveClockStr := fields[4]
-	// halfmoveClockStr := fields[5]
+
+	fullMoveCounterStr := fields[5]
+	fullMoveCounter, err := strconv.Atoi(fullMoveCounterStr)
+	if err != nil {
+		return Position{}, fmt.Errorf("invalid full move counter: %v", fullMoveCounterStr)
+	}
+	if fullMoveCounter < 1 {
+		return Position{}, fmt.Errorf("full move counter is not 1-based: %d", fullMoveCounter)
+	}
+
+	pos.ply = int16((fullMoveCounter-1)*2)
+	if pos.flags & FlagWhiteTurn == 0 {
+		pos.ply++
+	}
+	
+
 	return pos, nil
 }
 
