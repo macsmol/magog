@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	VERSION_STRING string = "0.12.killerMoves"
-	logWatermark string = "0.12.km"
+	VERSION_STRING string = "0.13"
+	logWatermark string = "0.13"
 )
 
 type rank int8
