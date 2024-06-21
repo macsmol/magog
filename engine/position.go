@@ -286,7 +286,6 @@ func (pos *Position) MakeMove(mov Move) (isLegal bool) {
 	pos.board[mov.from] = NullPiece
 
 	// move mov was a double push
-	//reuse mov.enPassant with flag?
 	pos.enPassSquare = mov.enPassant
 
 	pos.flags = pos.flags ^ FlagWhiteTurn

@@ -89,7 +89,7 @@ func (search *Search) StartIterativeDeepening(startTime, endTime time.Time, maxD
 			}
 		}
 	}
-	printInfo(bestScore, depthCompleted, bestLine.moves, time.Since(startTime), logWatermark)
+	printInfo(bestScore, depthCompleted, bestLine.moves, time.Since(startTime), "")
 	fmt.Println("bestmove", bestLine.moves[0])
 }
 
