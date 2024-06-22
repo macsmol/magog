@@ -4,10 +4,7 @@ import (
 	"fmt"
 )
 
-const (
-	VERSION_STRING string = "0.13"
-	logWatermark string = "0.13"
-)
+const VERSION_STRING string = "0.13"
 
 type rank int8
 
