@@ -33,12 +33,13 @@ var evaluatedNodes int64
 var ProfileFile *os.File
 
 func NewSearch() *Search {
-	pv := &Search{}
-	for i := 0; i < len(pv.bestLineAtDepth); i++ {
-		pv.bestLineAtDepth[i] = make([]Move, MaxSearchDepth-i)
+	search := &Search{}
+	for i := 0; i < len(search.bestLineAtDepth); i++ {
+		search.bestLineAtDepth[i] = make([]Move, MaxSearchDepth-i)
 	}
-	pv.stop = make(chan bool)
-	return pv
+	search.stop = make(chan bool)
+	search.interrupted = true
+	return search
 }
 
 func (search *Search) StartIterativeDeepening(startTime, endTime time.Time, maxDepth int) {

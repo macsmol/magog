@@ -177,8 +177,10 @@ func isLegal(pos *Position, pseudolegal Move) bool {
 
 func (gen *Generator) Perft(depth int) int64 {
 	var movesCount int64 = 0
-	if depth <= 1 {
+	if depth == 1 {
 		return int64(gen.getTopPos().countMoves())
+	} else if depth == 0 {
+		return 1
 	}
 
 	moves := gen.GenerateMoves()
@@ -207,15 +209,19 @@ func (gen *Generator) PerftTactical(depth int) int64 {
 }
 
 func (gen *Generator) Perftd(depth int) {
-	if depth <= 1 {
+	if depth == 0 {
 		return
 	}
+	var total int64 = 0
 	for _, rankedMove := range gen.GenerateMoves() {
 		move := rankedMove.mov
 		gen.PushMove(move)
-		fmt.Printf("%v %d\n", move, gen.Perft(depth-1))
+		subTotal := gen.Perft(depth-1)
+		total += subTotal
+		fmt.Printf("%v: %d\n", move, subTotal)
 		gen.PopMove()
 	}
+	fmt.Println("total:", total)
 }
 
 func (gen *Generator) Perftdd(depth int) {

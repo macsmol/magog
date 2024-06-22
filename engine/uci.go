@@ -42,8 +42,6 @@ func ParseInputLine(inputLine string) {
 		fmt.Println("readyok")
 	} else if inputLine == "eval" {
 		fmt.Println(Evaluate(posGen.getTopPos(), 0, true))
-	} else if inputLine == "tostr" {
-		fmt.Printf("%v\n", posGen)
 	} else if inputLine == "quit" {
 		Quit = true
 	} else if strings.HasPrefix(inputLine, uPosition) {
@@ -51,17 +49,52 @@ func ParseInputLine(inputLine string) {
 	} else if inputLine == uUci {
 		fmt.Println("id name Magog " + VERSION_STRING)
 		fmt.Println("id author Maciej Smolczewski")
-		fmt.Println("uciok")
 		printOptions()
+		fmt.Println("uciok")
 	} else if strings.HasPrefix(inputLine, uGo) {
 		doGo(strings.TrimSpace(strings.TrimPrefix(inputLine, uGo)))
 	} else if inputLine == "stop" {
-		if search != nil {
+		if search != nil && !search.interrupted {
 			search.stop <- true
 		}
 	} else if strings.HasPrefix(inputLine, uOptionSet) {
 		setOption(strings.TrimSpace(strings.TrimPrefix(inputLine, uOptionSet)))
+		// non-uci commands
+	} else if inputLine == "tostr" {
+		fmt.Printf("%v\n", posGen)
+	} else if strings.HasPrefix(inputLine, "perft") {
+		doPerftDivide(strings.TrimSpace(strings.TrimPrefix(inputLine, "perft")))
+	} else if inputLine == "help" {
+		printHelp()
 	}
+}
+
+func printHelp() {
+	fmt.Println(`Available UCI commands:
+ * uci - print engine info and options
+ * isready - print 'readyok' when the engine is ready
+ * setoption name <name> value <value> - set an UCI option
+ * position [startpos | fen <fenstring> [moves <move1> ... <movei>]] - set position
+ * go [depth <depth> | movetime <time> | wtime <time> | btime <time> | winc <time> | binc <time> | movestogo <moves> | infinite] - start search
+ * stop - stop searching
+ * quit|exit - quit the engine
+Other available commands:
+ * perft <depth> - count number of moves possible from current position
+ * tostr - print current position
+ * eval - evaluate current position`)
+}
+
+func doPerftDivide(perftArg string) {
+	depth, err := strconv.Atoi(perftArg)
+	if err != nil || depth <= 0 {
+		fmt.Println("Invalid depth: ", perftArg)
+		return
+	}
+	if posGen == nil {
+		fmt.Println("No position set to count perft from")
+		return
+	}
+	posGen.Perftd(depth)
 }
 
 func setOption(setOptionCommand string) {
@@ -103,8 +136,12 @@ func doPosition(positionCommand string) {
 		movesString := strings.TrimSpace(positionCommand[movesIdx+len(uMoves):])
 		moveStrings := strings.Split(movesString, " ")
 		for _, moveStr := range moveStrings {
-			//TODO this uses up ply buffer for long move list. Compressing that would be good.
-			posGen.ApplyUciMove(parseMoveString(moveStr))
+			move, err := parseMoveString(moveStr)
+			if err != nil {
+				fmt.Println("Invalid position command:", err)
+				return
+			}
+			posGen.ApplyUciMove(move)
 		}
 	}
 	//clear killer moves
@@ -117,6 +154,7 @@ func doPosition(positionCommand string) {
 func doGo(goCommand string) {
 	startTime := time.Now()
 	if posGen == nil {
+		fmt.Println("No position set to start search from")
 		return
 	}
 	if search == nil {
@@ -144,6 +182,10 @@ out:
 				return
 			}
 			//ignore rest of params
+			break out
+		case uInfinite:
+			// Default value of ****MillisLeft should make it search  for few years - good enough.
+			// Ignore rest of params
 			break out
 		case uWtime:
 			whiteMillisLeft, err = strconv.Atoi(tokens[i+1])
@@ -282,8 +324,20 @@ func pliesToMate(score int) int {
 	return pliesToMate
 }
 
-func parseMoveString(moveStr string) Move {
+func parseMoveString(moveStr string) (Move, error) {
 	moveStr = strings.ToLower(moveStr)
+
+	if len(moveStr) < 4 {
+		return Move{}, fmt.Errorf("move in not in long algebraic notation: %s", moveStr)
+	}
+	if moveStr[0] < 'a' || moveStr[0] > 'h' ||
+		moveStr[2] < 'a' || moveStr[2] > 'h' {
+		return Move{}, fmt.Errorf("move has invalid file: %s", moveStr)
+	}
+	if moveStr[1] < '1' || moveStr[1] > '8' ||
+		moveStr[3] < '1' || moveStr[3] > '8' {
+		return Move{}, fmt.Errorf("move has invalid rank: %s", moveStr)
+	}
 
 	var from square = square((moveStr[0] - 'a') + (moveStr[1]-'1')<<4)
 	var to square = square((moveStr[2] - 'a') + (moveStr[3]-'1')<<4)
@@ -299,9 +353,9 @@ func parseMoveString(moveStr string) Move {
 		case 'q':
 			promoteTo = Queen
 		}
-		return NewPromotionMove(from, to, promoteTo)
+		return NewPromotionMove(from, to, promoteTo), nil
 	}
-	return NewMove(from, to)
+	return NewMove(from, to), nil
 }
 
 func parsePosition(positionWithoutMoves string) {
@@ -310,7 +364,7 @@ func parsePosition(positionWithoutMoves string) {
 	} else {
 		newPosGen, err := NewGeneratorFromFen(positionWithoutMoves)
 		if err != nil {
-			fmt.Println("invalid FEN: ", err)
+			fmt.Println("invalid FEN:", err)
 		} else {
 			posGen = newPosGen
 		}
