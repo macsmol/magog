@@ -1,4 +1,5 @@
 1.0:
+-investigate wrong perft in tactical movegen. Getting wrong (too big) perft
 -better readme.md
 -submit to CCRL
 

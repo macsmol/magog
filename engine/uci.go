@@ -47,10 +47,7 @@ func ParseInputLine(inputLine string) {
 	} else if strings.HasPrefix(inputLine, uPosition) {
 		doPosition(strings.TrimSpace(strings.TrimPrefix(inputLine, uPosition)))
 	} else if inputLine == uUci {
-		fmt.Println("id name Magog " + VERSION_STRING)
-		fmt.Println("id author Maciej Smolczewski")
-		printOptions()
-		fmt.Println("uciok")
+		doUci()
 	} else if strings.HasPrefix(inputLine, uGo) {
 		doGo(strings.TrimSpace(strings.TrimPrefix(inputLine, uGo)))
 	} else if inputLine == "stop" {
@@ -64,6 +61,8 @@ func ParseInputLine(inputLine string) {
 		fmt.Printf("%v\n", posGen)
 	} else if strings.HasPrefix(inputLine, "perft") {
 		doPerftDivide(strings.TrimSpace(strings.TrimPrefix(inputLine, "perft")))
+	} else if strings.HasPrefix(inputLine, "tperft") {
+		doTacticalPerftDivide(strings.TrimSpace(strings.TrimPrefix(inputLine, "tperft")))
 	} else if inputLine == "help" {
 		printHelp()
 	}
@@ -77,9 +76,10 @@ func printHelp() {
  * position [startpos | fen <fenstring> [moves <move1> ... <movei>]] - set position
  * go [depth <depth> | movetime <time> | wtime <time> | btime <time> | winc <time> | binc <time> | movestogo <moves> | infinite] - start search
  * stop - stop searching
- * quit|exit - quit the engine
+ * quit - quit the engine
 Other available commands:
  * perft <depth> - count number of moves possible from current position
+ * tperft <depth> - same as perft but at <depth> count only captures and promotions. Useful for testing movegen in quiescence search.
  * tostr - print current position
  * eval - evaluate current position`)
 }
@@ -95,6 +95,19 @@ func doPerftDivide(perftArg string) {
 		return
 	}
 	posGen.Perftd(depth)
+}
+
+func doTacticalPerftDivide(tperftArg string) {
+	depth, err := strconv.Atoi(tperftArg)
+	if err != nil || depth <= 0 {
+		fmt.Println("Invalid depth: ", tperftArg)
+		return
+	}
+	if posGen == nil {
+		fmt.Println("No position set to count perft from")
+		return
+	}
+	posGen.PerftDivTactical(depth)
 }
 
 func setOption(setOptionCommand string) {
@@ -116,7 +129,9 @@ func setOption(setOptionCommand string) {
 	}
 }
 
-func printOptions() {
+func doUci() {
+	fmt.Println("id name Magog " + VERSION_STRING)
+	fmt.Println("id author Maciej Smolczewski")
 	fmt.Println("option",
 		uOptionName, currmoveLogIntervalKey,
 		"type", "spin",
@@ -124,6 +139,7 @@ func printOptions() {
 		"min", currmoveLogIntervalMin,
 		"max", currmoveLogIntervalMax,
 	)
+	fmt.Println("uciok")
 }
 
 func doPosition(positionCommand string) {
@@ -158,7 +174,7 @@ func doGo(goCommand string) {
 		return
 	}
 	if search == nil {
-		return
+		search = NewSearch()
 	}
 
 	tokens := strings.Split(goCommand, " ")

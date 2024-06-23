@@ -40,13 +40,13 @@ func printWelcome() {
   _ __  ____ ____ ___  ____
  | '  \/ _  / _  / _ \/ _  |
  |_|_|_\__,_\__, \___/\__, |
-  v.. . . . |___/ . . |___/
+ v. . . . . |___/ . . |___/
  . . UCI chess engine . .
 `
 	mutableBanner := []rune(banner)
 	verPrefixStr := "v."
 	i := strings.Index(banner, verPrefixStr) + len(verPrefixStr)
-	copy(mutableBanner[i:], []rune(" " + engine.VERSION_STRING + " "))
+	copy(mutableBanner[i:], []rune(engine.VERSION_STRING + " "))
 	fmt.Println(string(mutableBanner))
 
 	fmt.Println("Welcome!")

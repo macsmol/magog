@@ -208,6 +208,22 @@ func (gen *Generator) PerftTactical(depth int) int64 {
 	return movesCount
 }
 
+func (gen *Generator) PerftDivTactical(depth int)  {
+	var total int64 = 0
+	if depth <= 1 {
+		return
+	}
+
+	for _, move := range gen.GenerateMoves() {
+		gen.PushMove(move.mov)
+		subTotal := gen.PerftTactical(depth - 1)
+		total += subTotal
+		gen.PopMove()
+		fmt.Printf("%v: %d\n", move.mov, subTotal)
+	}
+	fmt.Println("total material-changing moves:", total)
+}
+
 func (gen *Generator) Perftd(depth int) {
 	if depth == 0 {
 		return
