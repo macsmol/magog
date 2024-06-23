@@ -216,7 +216,7 @@ func (gen *Generator) Perftd(depth int) {
 	for _, rankedMove := range gen.GenerateMoves() {
 		move := rankedMove.mov
 		gen.PushMove(move)
-		subTotal := gen.Perft(depth-1)
+		subTotal := gen.Perft(depth - 1)
 		total += subTotal
 		fmt.Printf("%v: %d\n", move, subTotal)
 		gen.PopMove()
@@ -278,8 +278,8 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		// this will require boundscheck if I ever decide to implement
 		// https://www.talkchess.com/forum/viewtopic.php?p=696431&sid=0f2d2d56c1fed62bbf4d2b793617857f#p696431
 		to = from + square(pawnAdvanceDirection) + 1
-		enemyPiece := pos.board[to] 
-		if enemyPiece & enemyColorBit != NullPiece {
+		enemyPiece := pos.board[to]
+		if enemyPiece&enemyColorBit != NullPiece {
 			pos.appendPawnCaptures(from, to, promotionRank, enemyPiece&ColorlessPiece, outputMoves)
 		} else if to == pos.enPassSquare {
 			pos.appendPawnCaptures(from, to, promotionRank, Pawn, outputMoves)
@@ -337,10 +337,11 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			pos.board[kingDest] == NullPiece &&
 			pos.board[kingAsByte+dirAsByte*3] == NullPiece &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, currentKingSq) &&
+			// TODO same expensive check as done for normal king move - reuse prev result
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
-				mov := NewMove(currentKingSq, square(kingDest))
-				*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, pos.ply), 0})
+			mov := NewMove(currentKingSq, square(kingDest))
+			*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, pos.ply), 0})
 		}
 	}
 	if kingsideCastlePossible {
@@ -348,10 +349,11 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		kingDest := kingAsByte + dirAsByte*2
 		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, currentKingSq) &&
+			// TODO same expensive check as done for normal king move - reuse prev result
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
-				mov := NewMove(currentKingSq, square(kingDest))
-				*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, pos.ply), 0})
+			mov := NewMove(currentKingSq, square(kingDest))
+			*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, pos.ply), 0})
 		}
 	}
 }
@@ -365,7 +367,7 @@ func appendMoveOrCapture(outputMoves *[]rankedMove, from, to square, pos *Positi
 		return
 	}
 	attacker := pos.board[mov.from] & ColorlessPiece
-	captureRanking := int16(pieceToScore(attacked) - pieceToScore(attacker)) + rankingBonusTactical
+	captureRanking := int16(pieceToScore(attacked)-pieceToScore(attacker)) + rankingBonusTactical
 	*outputMoves = append(*outputMoves,
 		rankedMove{mov, captureRanking, mFlagTactical})
 }
@@ -376,21 +378,21 @@ func appendSlidingPieceMoveOrCapture(outputMoves *[]rankedMove, from, to square,
 		*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, ply), 0})
 		return
 	}
-	captureRanking := int16(pieceToScore(attacked) - pieceToScore(attacker)) + rankingBonusTactical
-	*outputMoves = append(*outputMoves,	rankedMove{mov, captureRanking, mFlagTactical})
+	captureRanking := int16(pieceToScore(attacked)-pieceToScore(attacker)) + rankingBonusTactical
+	*outputMoves = append(*outputMoves, rankedMove{mov, captureRanking, mFlagTactical})
 }
 
 func appendCapture(outputMoves *[]rankedMove, from, to square, attacker, attacked piece) {
 	mov := NewMove(from, to)
-	captureRanking := int16(pieceToScore(attacked) - pieceToScore(attacker)) + rankingBonusTactical
-	*outputMoves = append(*outputMoves,	rankedMove{mov, captureRanking, mFlagTactical})
+	captureRanking := int16(pieceToScore(attacked)-pieceToScore(attacker)) + rankingBonusTactical
+	*outputMoves = append(*outputMoves, rankedMove{mov, captureRanking, mFlagTactical})
 }
 
 func probeKillerMoves(mov Move, ply int16) int16 {
 	killers := killerMoves[ply]
 	if mov == killers[0] {
 		return rankingBonusKiller1st
-	} else if mov == killers [1] {
+	} else if mov == killers[1] {
 		return rankingBonusKiller2nd
 	}
 	return 0
@@ -545,7 +547,7 @@ func appendPawnPushes(from, to square, promotionRank rank, ply int16, outputMove
 		)
 	} else {
 		mov := NewMove(from, to)
-		*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov,ply), 0})
+		*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, ply), 0})
 	}
 }
 
@@ -565,7 +567,7 @@ func (pos *Position) appendPawnCaptures(from, to square, promotionRank rank, cap
 }
 
 func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyColorBit piece,
-	 dirs []Direction, outputMoves *[]rankedMove) {
+	dirs []Direction, outputMoves *[]rankedMove) {
 	attacker := pos.board[from] & ColorlessPiece
 	for _, dir := range dirs {
 		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
@@ -581,7 +583,7 @@ func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyCol
 	}
 }
 
-func (pos *Position) appendSlidingPieceCaptures(from square, currColorBit, enemyColorBit piece, 
+func (pos *Position) appendSlidingPieceCaptures(from square, currColorBit, enemyColorBit piece,
 	dirs []Direction, outputMoves *[]rankedMove) {
 	for _, dir := range dirs {
 		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {

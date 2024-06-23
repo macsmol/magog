@@ -271,6 +271,7 @@ func (pos *Position) countMoves() int {
 			pos.board[kingDest] == NullPiece &&
 			pos.board[kingAsByte+dirAsByte*3] == NullPiece &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, currentKing) &&
+			// TODO same expensive check as done for normal king move - reuse prev result
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, square(kingAsByte+dirAsByte)) &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, square(kingDest)) {
 			movesCount++
@@ -281,6 +282,7 @@ func (pos *Position) countMoves() int {
 		kingDest := kingAsByte + dirAsByte*2
 		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, currentKing) &&
+			// TODO same expensive check as done for normal king move - reuse prev result
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, square(kingAsByte+dirAsByte)) &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, square(kingDest)) {
 			movesCount++
