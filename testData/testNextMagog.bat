@@ -8,7 +8,7 @@ IF [%1] == [] (
 
 cutechess-cli -tournament gauntlet -openings file=basicOpenings.pgn policy=round -debug ^
 -resign movecount=5 score=1400 twosided=true ^
--maxmoves 300 ^
+-maxmoves 150 ^
 -concurrency 2 ^
 -pgnout %1"games.pgn" -event %1 ^
 -engine conf=magog.Challenger ^
