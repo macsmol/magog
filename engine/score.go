@@ -48,7 +48,7 @@ func pieceToScore(p piece) int {
 		// as king only appears as attacker. TODO Test it
 		return 0
 	}
-	return 0
+	panic(fmt.Sprintf("Should not get score for this piece: %v", p))
 }
 
 // Returns fulll static evaluation score for Position pos. It's given relative to the currently playing

@@ -278,8 +278,8 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		// this will require boundscheck if I ever decide to implement
 		// https://www.talkchess.com/forum/viewtopic.php?p=696431&sid=0f2d2d56c1fed62bbf4d2b793617857f#p696431
 		to = from + square(pawnAdvanceDirection) + 1
-		enemyPiece := pos.board[to] & enemyColorBit
-		if enemyPiece != NullPiece {
+		enemyPiece := pos.board[to] 
+		if enemyPiece & enemyColorBit != NullPiece {
 			pos.appendPawnCaptures(from, to, promotionRank, enemyPiece&ColorlessPiece, outputMoves)
 		} else if to == pos.enPassSquare {
 			pos.appendPawnCaptures(from, to, promotionRank, Pawn, outputMoves)
@@ -305,7 +305,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 {
-					appendRankedMoveOrCapture(outputMoves, from, to, pos)
+					appendMoveOrCapture(outputMoves, from, to, pos)
 				}
 			}
 		case WBishop, BBishop:
@@ -326,7 +326,7 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		if to&InvalidSquare == 0 && pos.board[to]&currColorBit == 0 &&
 			// IDEA same check done later in MakeMove. Skip here?
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, to) {
-			appendRankedMoveOrCapture(outputMoves, currentKingSq, to, pos)
+			appendMoveOrCapture(outputMoves, currentKingSq, to, pos)
 		}
 	}
 	if queensideCastlePossible {
@@ -338,9 +338,9 @@ func (gen *Generator) generatePseudoLegalMoves() {
 			pos.board[kingAsByte+dirAsByte*3] == NullPiece &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, currentKingSq) &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
-			// IDEA same check done later in MakeMove. Skip here?
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
-			appendRankedMoveOrCapture(outputMoves, currentKingSq, square(kingDest), pos)
+				mov := NewMove(currentKingSq, square(kingDest))
+				*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, pos.ply), 0})
 		}
 	}
 	if kingsideCastlePossible {
@@ -349,15 +349,15 @@ func (gen *Generator) generatePseudoLegalMoves() {
 		if pos.board[kingAsByte+dirAsByte] == NullPiece && pos.board[kingDest] == NullPiece &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, currentKingSq) &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingAsByte+dirAsByte)) &&
-			// IDEA same check done later in MakeMove. Skip here?
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKingSq, square(kingDest)) {
-			appendRankedMoveOrCapture(outputMoves, currentKingSq, square(kingDest), pos)
+				mov := NewMove(currentKingSq, square(kingDest))
+				*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, pos.ply), 0})
 		}
 	}
 }
 
 // TODO I only take board from pos. How would it affect the speed if I passed it as a table, or ref to table.
-func appendRankedMoveOrCapture(outputMoves *[]rankedMove, from, to square, pos *Position) {
+func appendMoveOrCapture(outputMoves *[]rankedMove, from, to square, pos *Position) {
 	mov := NewMove(from, to)
 	attacked := pos.board[mov.to] & ColorlessPiece
 	if attacked == NullPiece {
@@ -370,12 +370,18 @@ func appendRankedMoveOrCapture(outputMoves *[]rankedMove, from, to square, pos *
 		rankedMove{mov, captureRanking, mFlagTactical})
 }
 
-func appendRankedMove(outputMoves *[]rankedMove, from, to square, attacker, attacked piece, ply int16) {
+func appendSlidingPieceMoveOrCapture(outputMoves *[]rankedMove, from, to square, attacker, attacked piece, ply int16) {
 	mov := NewMove(from, to)
 	if attacked == NullPiece {
-		*outputMoves = append(*outputMoves, rankedMove{mov, 0, 0})
+		*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov, ply), 0})
 		return
 	}
+	captureRanking := int16(pieceToScore(attacked) - pieceToScore(attacker)) + rankingBonusTactical
+	*outputMoves = append(*outputMoves,	rankedMove{mov, captureRanking, mFlagTactical})
+}
+
+func appendCapture(outputMoves *[]rankedMove, from, to square, attacker, attacked piece) {
+	mov := NewMove(from, to)
 	captureRanking := int16(pieceToScore(attacked) - pieceToScore(attacker)) + rankingBonusTactical
 	*outputMoves = append(*outputMoves,	rankedMove{mov, captureRanking, mFlagTactical})
 }
@@ -434,17 +440,17 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 			for _, dir := range dirs {
 				to := from + square(dir)
 				if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 {
-					appendRankedMove(outputMoves, from, to, Knight, pos.board[to]&ColorlessPiece, pos.ply)
+					appendCapture(outputMoves, from, to, Knight, pos.board[to]&ColorlessPiece)
 				}
 			}
 		case WBishop, BBishop:
 			dirs := []Direction{DirNE, DirSE, DirNW, DirSW}
-			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+			pos.appendSlidingPieceCaptures(from, currColorBit, enemyColorBit, dirs, outputMoves)
 		case WRook, BRook:
 			dirs := []Direction{DirN, DirS, DirE, DirW}
-			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, dirs, outputMoves)
+			pos.appendSlidingPieceCaptures(from, currColorBit, enemyColorBit, dirs, outputMoves)
 		case WQueen, BQueen:
-			pos.appendSlidingPieceTacticalMoves(from, currColorBit, enemyColorBit, kingDirections, outputMoves)
+			pos.appendSlidingPieceCaptures(from, currColorBit, enemyColorBit, kingDirections, outputMoves)
 		default:
 			panic(fmt.Sprintf("Unexpected piece found: %v at %v pos %v", byte(piece), from, pos))
 		}
@@ -454,7 +460,7 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 		to := currentKingSq + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 &&
 			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
-			appendRankedMoveOrCapture(outputMoves, currentKingSq, to, pos)
+			appendCapture(outputMoves, currentKingSq, to, King, pos.board[to]&ColorlessPiece)
 		}
 	}
 }
@@ -539,14 +545,7 @@ func appendPawnPushes(from, to square, promotionRank rank, ply int16, outputMove
 		)
 	} else {
 		mov := NewMove(from, to)
-		killers := killerMoves[ply]
-		var moveRanking int16 = 0
-		if mov == killers[0] {
-			moveRanking = rankingBonusKiller1st
-		} else if mov == killers [1] {
-			moveRanking = rankingBonusKiller2nd
-		}
-		*outputMoves = append(*outputMoves, rankedMove{mov, moveRanking, 0})
+		*outputMoves = append(*outputMoves, rankedMove{mov, probeKillerMoves(mov,ply), 0})
 	}
 }
 
@@ -565,7 +564,8 @@ func (pos *Position) appendPawnCaptures(from, to square, promotionRank rank, cap
 	}
 }
 
-func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction, outputMoves *[]rankedMove) {
+func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyColorBit piece,
+	 dirs []Direction, outputMoves *[]rankedMove) {
 	attacker := pos.board[from] & ColorlessPiece
 	for _, dir := range dirs {
 		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
@@ -573,7 +573,7 @@ func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyCol
 			if toContent&currColorBit != 0 {
 				break
 			}
-			appendRankedMove(outputMoves, from, to, attacker, toContent&ColorlessPiece, pos.ply)
+			appendSlidingPieceMoveOrCapture(outputMoves, from, to, attacker, toContent&ColorlessPiece, pos.ply)
 			if toContent&enemyColorBit != 0 {
 				break
 			}
@@ -581,7 +581,8 @@ func (pos *Position) appendSlidingPieceMoves(from square, currColorBit, enemyCol
 	}
 }
 
-func (pos *Position) appendSlidingPieceTacticalMoves(from square, currColorBit, enemyColorBit piece, dirs []Direction, outputMoves *[]rankedMove) {
+func (pos *Position) appendSlidingPieceCaptures(from square, currColorBit, enemyColorBit piece, 
+	dirs []Direction, outputMoves *[]rankedMove) {
 	for _, dir := range dirs {
 		for to := from + square(dir); to&InvalidSquare == 0; to = to + square(dir) {
 			toContent := pos.board[to]
@@ -589,8 +590,8 @@ func (pos *Position) appendSlidingPieceTacticalMoves(from square, currColorBit, 
 				break
 			}
 			if toContent&enemyColorBit != 0 {
-				appendRankedMove(outputMoves, from, to, pos.board[from]&ColorlessPiece,
-					toContent&ColorlessPiece, pos.ply)
+				appendCapture(outputMoves, from, to, pos.board[from]&ColorlessPiece,
+					toContent&ColorlessPiece)
 				break
 			}
 		}

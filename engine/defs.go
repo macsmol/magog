@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const VERSION_STRING string = "0.13"
+const VERSION_STRING string = "0.13.killersBugfix2"
 
 type rank int8
 
@@ -162,7 +162,7 @@ const (
 func (p piece) String() string {
 	switch p {
 	case NullPiece:
-		return "- "
+		return "--"
 	case Pawn:
 		return "p"
 	case Knight:
