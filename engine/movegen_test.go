@@ -173,6 +173,12 @@ func TestPerftTacticalMoves(t *testing.T) {
 		{"4k3/8/8/8/8/8/p7/1N2K3 b - - 0 1", []int64{8, 0, 271}},
 		//newgame
 		{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", []int64{0, 0, 34, 1576, 82719, 2812008}},
+
+		// positions to test recently added bugfixes - crosschecked against AdaChess
+		// bugfix for rook being able to kill piece hidden behing another
+		{"rnbqkbnr/p1pppppp/8/8/p7/4P3/1PPP1PPP/RNBQKBNR w KQkq - 0 3", []int64{1,4,1117,9710, 1104108}},
+		// bugfix for king hiding from check 'in his own shadow'
+		{"rnbq1bnr/pppkpppp/8/3P4/8/8/PP1PPPPP/RNBQKBNR w KQ - 1 3", []int64{0, 3, 240, 6855}},
 	}
 
 	for _, test := range tests {

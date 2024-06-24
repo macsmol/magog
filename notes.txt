@@ -652,3 +652,7 @@ of bishops. Also scores 1.5 point more against DrB than 0.9! By only improving t
     Magog.0.11.addedTime4 - EnkoChess_290818 : 2,0/14 1-11-2 (00000000010==0)  14%  -315
     Magog.0.11.addedTime4 - Magog.0.9        : 10,0/14 7-1-6 (=1==1111==110=)  71%  +156
 
+23.06.2024
+Good thing that I decided to add tperft from command line.
+I discovered two bugs in tactical movegen thanks to that.
+Fixed the bugs and crosschecked the fixes against AdaChess.

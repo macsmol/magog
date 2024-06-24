@@ -331,8 +331,10 @@ func (pos *Position) countSlidingPieceTacticalMoves(from square, currColorBit, e
 			if toContent&currColorBit != 0 {
 				break
 			}
-			if toContent&enemyColorBit != 0 && isLegal(pos, NewMove(from, to)) {
-				movesCount++
+			if toContent&enemyColorBit != 0 {
+				if isLegal(pos, NewMove(from, to)) {
+					movesCount++
+				}
 				break
 			}
 		}

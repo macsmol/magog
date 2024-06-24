@@ -486,9 +486,9 @@ func (gen *Generator) generatePseudoLegalTacticalMoves() {
 // Counts all tactical moves possible from pos position
 func (pos *Position) countTacticalMoves() int {
 	var movesCount int = 0
-	currentPieces, enemyPieces,
-		currentPawns, enemyPawns,
-		currentKingSq, enemyKing,
+	currentPieces, _,
+		currentPawns, _,
+		currentKingSq, _,
 		pawnAdvanceDirection,
 		currColorBit, enemyColorBit,
 		promotionRank := pos.GetCurrentTacticalMoveContext()
@@ -540,7 +540,7 @@ func (pos *Position) countTacticalMoves() int {
 	for _, dir := range kingDirections {
 		to := currentKingSq + square(dir)
 		if to&InvalidSquare == 0 && pos.board[to]&enemyColorBit != 0 &&
-			!pos.isUnderCheck(enemyPieces, enemyPawns, enemyKing, to) {
+			isLegal(pos, NewMove(currentKingSq, to)) {
 			movesCount++
 		}
 	}
