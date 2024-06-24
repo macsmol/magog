@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const VERSION_STRING string = "0.13.kiBfix2"
+const VERSION_STRING string = "0.14"
 
 type rank int8
 
