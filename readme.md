@@ -33,10 +33,12 @@ Feel free to try it out! Please report any obvious bugs or crashes you may find.
 
 ## Compilation
 To build *.exe file run this in repository root: 
->go build .
+
+`go build .`
 
 To run perft test suite run:
->go test .\engine -v
+
+`go test .\engine -v`
 
 ## Credits
 This engine would not have been possible if it weren't for many people who shared their knowledge:
