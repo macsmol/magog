@@ -1,13 +1,19 @@
 1.0:
--investigate wrong perft in tactical movegen. Getting wrong (too big) perft
--better readme.md
--submit to CCRL
+-submit to some tournament/league
 
 
     
 
 2.0:
--0x88 board with padding for faster sliders movegen: https://www.talkchess.com/forum/viewtopic.php?t=62279&sid=c7b5a5b1b3297382937208ab995ba79d
+-strength related:
+    -try out other values for pst
+    -0x88 board with padding for faster sliders movegen: https://www.talkchess.com/forum/viewtopic.php?t=62279&sid=c7b5a5b1b3297382937208ab995ba79d
+        -turn off boundcheck in go
+    -improve endgame play
+        -repetitions handling
+        -dont miss opportunity to promote pawns
+    -investigale blunders listed in critical positions
+    
 -better time management (large fraction of preallocated time wasted in opening and midgame due to large branching factor in iterative deepening)
 -fen export
 -useful/fun position transformations from commandline:  
