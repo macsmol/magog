@@ -36,8 +36,8 @@ func main() {
 }
 
 func printWelcome() {
-	var banner string = `
-  _ __  ____ ____ ___  ____
+	var banner string = 
+`  _ __  ____ ____ ___  ____
  | '  \/ _  / _  / _ \/ _  |
  |_|_|_\__,_\__, \___/\__, |
  v. . . . . |___/ . . |___/
@@ -49,6 +49,5 @@ func printWelcome() {
 	copy(mutableBanner[i:], []rune(engine.VERSION_STRING + " "))
 	fmt.Println(string(mutableBanner))
 
-	fmt.Println("Welcome!")
-	fmt.Println("Please input a UCI command or type 'help' for additional commands.")
+	fmt.Println("Welcome! Please input a UCI command or type 'help'.")
 }

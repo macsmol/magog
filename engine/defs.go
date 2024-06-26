@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const VERSION_STRING string = "0.14"
+const VERSION_STRING string = "0.14.timefixes"
 
 type rank int8
 
@@ -203,4 +203,19 @@ func (p piece) String() string {
 		return "K "
 	}
 	panic(fmt.Sprintf("Unknown piece %X", byte(p)))
+}
+
+func min(a, b int) int {
+	if a < b { return a }
+	return b
+}
+
+func max(a, b int) int {
+	if a > b { return a }
+	return b
+}
+
+func abs(a int) int {
+	if a < 0 { return -a }
+	return a
 }

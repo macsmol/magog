@@ -656,3 +656,10 @@ of bishops. Also scores 1.5 point more against DrB than 0.9! By only improving t
 Good thing that I decided to add tperft from command line.
 I discovered two bugs in tactical movegen thanks to that.
 Fixed the bugs and crosschecked the fixes against AdaChess.
+
+25.06.2024
+Found a bug in time management when lowering movestogo ,eg.
+    > go wtime 500 btime 501 winc 500 binc 500 movestogo 2
+It exceeds time by 205 millis!
+    < info score cp -50 depth 6 nps 413307 time 705 nodes 291683 pv b8c6 b1c3 e7e5 g1f3 f8c5 f1c4
+    < bestmove b8c6

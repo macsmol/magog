@@ -252,21 +252,20 @@ func calcEndtime(startTime time.Time, blackMillisLeft, blackMillisInc, whiteMill
 	var millisForMove int
 	if isBlackTurn {
 		if blackMillisLeft > blackMillisInc {
-			millisForMove = blackMillisLeft/movesToGo + blackMillisInc
+			millisForMove = min(blackMillisLeft/movesToGo + blackMillisInc, blackMillisLeft)
 		} else {
 			millisForMove = blackMillisLeft
 		}
 	} else {
 		if whiteMillisLeft > whiteMillisInc {
-			millisForMove = whiteMillisLeft/movesToGo + whiteMillisInc
+			millisForMove = min(whiteMillisLeft/movesToGo + whiteMillisInc, whiteMillisLeft)
 		} else {
 			millisForMove = whiteMillisLeft
 		}
 	}
 	millisForMove -= antiflagMillis
-	if millisForMove < 1 {
-		millisForMove = 1
-	}
+	millisForMove = max(millisForMove, 1)
+
 	endtime := startTime.Add(time.Millisecond * time.Duration(millisForMove))
 	return endtime
 }
@@ -312,10 +311,7 @@ func formatScore(score int) string {
 }
 
 func closeToMate(score int) bool {
-	if score < 0 {
-		score = -score
-	}
-	return score > ScoreCloseToMate
+	return abs(score) > ScoreCloseToMate
 }
 
 func fullMovesToMate(score int) int {
@@ -332,12 +328,7 @@ func fullMovesToMate(score int) int {
 }
 
 func pliesToMate(score int) int {
-	if score < 0 {
-		score = -score
-	}
-	pliesToMate := -LostScore - score
-
-	return pliesToMate
+	return -LostScore - abs(score)
 }
 
 func parseMoveString(moveStr string) (Move, error) {
