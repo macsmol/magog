@@ -16,4 +16,4 @@ cutechess-cli -tournament gauntlet -openings file=basicOpenings.pgn policy=round
 -engine conf=DoctorB ^
 -engine conf=Supra28 ^
 -engine conf=EnkoChess_290818 ^
--each tc=120+1 -games 2 -rounds 7 -repeat > %1".debug"
+-each tc=60+0.5 -games 2 -rounds 7 -repeat > %1".debug"
