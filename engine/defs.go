@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-const VERSION_STRING string = "0.14.timefixes"
+const VERSION_STRING string = "1.0"
 
 type rank int8
 
